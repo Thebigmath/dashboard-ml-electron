@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:translateY(0); }
+
+        .cat-filter-btn { background:rgba(255,255,255,.06); border:1px solid var(--sep,rgba(255,255,255,.1)); border-radius:8px; color:var(--l2,#8ca0b3); font-size:12px; font-weight:600; padding:6px 14px; cursor:pointer; transition:all .18s; }
+        .cat-filter-btn:hover { background:rgba(255,255,255,.12); color:var(--l1,#fff); }
+        .cat-filter-btn.cat-filter-ativo { background:#0a84ff; border-color:#0a84ff; color:#fff; }
+        /* ── Filter sidebar ── */
+        .content-with-filter { display:flex; gap:0; align-items:flex-start; }
+        .main-col { flex:1; min-width:0; padding:24px; }
+        .filter-sidebar { width:260px; min-width:260px; background:var(--s1,#111); border-left:1px solid var(--sep,rgba(255,255,255,.08)); padding:20px 16px; height:calc(100vh - 64px); overflow-y:auto; position:sticky; top:64px; transition:width .25s, opacity .25s; }
+        .filter-sidebar.collapsed { width:0; min-width:0; opacity:0; padding:0; overflow:hidden; }
+        .filter-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--l3,#8ca0b3); margin-bottom:10px; }
+        .filter-toggle-row { display:flex; align-items:center; justify-content:space-between; padding:5px 0; }
+        .filter-toggle-label { font-size:12px; color:var(--l2,#b0b8c4); cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .toggle-switch { position:relative; width:32px; height:18px; flex-shrink:0; }
+        .toggle-switch input { opacity:0; width:0; height:0; }
+        .toggle-knob { position:absolute; inset:0; background:rgba(255,255,255,.15); border-radius:18px; cursor:pointer; transition:.2s; }
+        .toggle-knob:before { content:''; position:absolute; width:12px; height:12px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+        .toggle-switch input:checked + .toggle-knob { background:#0a84ff; }
+        .toggle-switch input:checked + .toggle-knob:before { transform:translateX(14px); }
+        .filter-select { width:100%; background:var(--s2,#1c1c1e); border:1px solid var(--sep,rgba(255,255,255,.1)); border-radius:8px; color:var(--l1,#fff); padding:8px 10px; font-size:12px; outline:none; cursor:pointer; }
+        .filter-period-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--l2,#b0b8c4); }
+        .filter-period-input { width:64px; background:var(--s2,#1c1c1e); border:1px solid var(--sep,rgba(255,255,255,.1)); border-radius:6px; color:var(--l1,#fff); padding:5px 8px; font-size:12px; text-align:center; outline:none; }
+        .marca-list { display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; }
+        .marca-item { display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:6px; cursor:pointer; font-size:12px; color:var(--l2,#b0b8c4); transition:background .15s; }
+        .marca-item:hover { background:rgba(255,255,255,.06); }
+        .marca-item input { accent-color:#0a84ff; width:14px; height:14px; cursor:pointer; }
+        .btn-filtro-toggle { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; border:1px solid var(--sep,rgba(255,255,255,.1)); background:none; color:var(--l2,#b0b8c4); font-size:12px; font-weight:600; cursor:pointer; transition:all .18s; }
+        .btn-filtro-toggle:hover, .btn-filtro-toggle.ativo { background:rgba(255,255,255,.08); color:var(--l1,#fff); }
+        .btn-filtro-toggle .badge-filtros { background:#0a84ff; color:#fff; border-radius:10px; padding:1px 6px; font-size:10px; margin-left:2px; }
+        .filter-divider { height:1px; background:var(--sep,rgba(255,255,255,.08)); margin:16px 0; }
+        .filter-clear { font-size:11px; color:#0a84ff; cursor:pointer; float:right; margin-top:-2px; }
+        .filter-clear:hover { text-decoration:underline; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<svg class="deco-art" viewBox="0 0 520 520" fill="none">
+  <circle cx="420" cy="80" r="180" stroke="rgba(10,132,255,0.06)" stroke-width="0.8"/>
+  <circle cx="420" cy="80" r="240" stroke="rgba(10,132,255,0.04)" stroke-width="0.6"/>
+</svg>
+
+<div class="d-flex">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+
+        <ul class="menu">
+            <li class="active"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li id="btnAtualizarML"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li id="btnGerarPlanilhaFull"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li id="btnEnviarFull"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+
+        <div class="sidebar-footer">v5.0</div>
+
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Research & Development</h4>
+                <small class="text-secondary">Controle inteligente de estoque</small>
+            </div>
+            <div class="topbar-right">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="pesquisaProduto" placeholder="Pesquisar produto...">
+                </div>
+                <button class="notification" id="btnAlertas">
+                    <i class="bi bi-bell"></i>
+                    <span id="badgeAlertas" class="badge-alertas">0</span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="content-with-filter">
+        <div class="main-col">
+
+            <!-- MOTOR -->
+            <div class="reposicao-engine">
+                <div class="engine-header">
+                    <div class="engine-icon"><i class="bx bx-line-chart"></i></div>
+                    <div><h2>Estratégia de Reposição</h2><span>Configuração do motor inteligente de cálculo</span></div>
+                </div>
+                <div class="engine-grid">
+                    <div class="field"><label>Dias até coleta ou reserva Full</label><input type="number" id="diasColeta" value="7"></div>
+                    <div class="field"><label>Dias de Estoque Alvo Full</label><input type="number" id="diasAlvo" value="44"></div>
+                    <div class="strategy-box"><div id="tipoEstratagia" class="estrategia-label">Equilibrada</div></div>
+                </div>
+                <div class="slider-area">
+                    <input type="range" min="15" max="70" value="44" id="sliderReposicao">
+                </div>
+                <button id="btnRecalcular"><i class="bx bx-refresh"></i> Recalcular Estratégia</button>
+            </div>
+
+            <!-- TABELA -->
+            <div class="dashboard-card">
+                <div class="table-header" style="flex-wrap:wrap;gap:12px">
+                    <div>
+                        <h4>Produtos para Reposição</h4>
+                        <small>Resultado do motor de cálculo</small>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <button class="cat-filter-btn cat-filter-ativo" data-cat="todos"        onclick="setFiltroCategoria('todos')">Todos</button>
+                        <button class="cat-filter-btn"                  data-cat="outros"       onclick="setFiltroCategoria('outros')">Peças Auto</button>
+                        <button class="cat-filter-btn"                  data-cat="empilhadeira" onclick="setFiltroCategoria('empilhadeira')">Empilhadeira</button>
+                        <button id="btnToggleFiltros" class="btn-filtro-toggle" onclick="toggleFiltros()"><i class="bi bi-sliders"></i> Filtros <span id="badgeFiltros" class="badge-filtros" style="display:none">0</span></button>
+                    </div>
+                </div>
+                <div id="paginacaoReposicaoTopo" class="px-2 pt-2"></div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Urgência</th><th>Produto</th><th>SKU</th>
+                                <th>Estoque</th><th>Vendas 30d</th><th>Média Dia</th>
+                                <th>Cobertura</th><th>Reposição</th><th>Em Trânsito</th><th>Qtd Full</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaReposicao">
+                            <tr><td colspan="10" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="paginacaoReposicao" class="px-2 py-3"></div>
+            </div>
+
+        </div><!-- /main-col -->
+
+        <!-- FILTER SIDEBAR -->
+        <div id="filterSidebar" class="filter-sidebar collapsed">
+            <div class="filter-section-title">Mostrar apenas: <span class="filter-clear" onclick="limparFiltros()">Limpar</span></div>
+
+            <div class="filter-toggle-row">
+                <label class="filter-toggle-label" for="f-ruptura">com Ruptura <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Sem estoque e com vendas"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-ruptura" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+            </div>
+            <div class="filter-toggle-row">
+                <label class="filter-toggle-label" for="f-reposicao">em Ponto de Reposição <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Reposição > 0"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-reposicao" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+            </div>
+            <div class="filter-toggle-row">
+                <label class="filter-toggle-label" for="f-semvenda">sem venda / estoque <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Média Dia = 0"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-semvenda" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+            </div>
+            <div class="filter-toggle-row">
+                <label class="filter-toggle-label" for="f-ajuste">Ajuste de Ruptura <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Tem vendas mas estoque zerado"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-ajuste" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+            </div>
+            <div class="filter-toggle-row">
+                <label class="filter-toggle-label" for="f-comtransito">com itens em trânsito <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Tem qtd em trânsito"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-comtransito" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+            </div>
+            <div class="filter-toggle-row">
+                <label class="filter-toggle-label" for="f-semtransito">sem itens em trânsito <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Trânsito = 0"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-semtransito" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+            </div>
+
+            <div class="filter-divider"></div>
+
+            <div class="filter-section-title">Período observado:</div>
+            <div class="filter-period-row">
+                Últimos <input type="number" id="f-periodo" class="filter-period-input" value="30" min="7" max="365" onchange="aplicarFiltros()"> dias
+            </div>
+
+            <div class="filter-divider"></div>
+
+            <div class="filter-section-title">Status do Anúncio:</div>
+            <select id="f-status" class="filter-select" multiple size="3" onchange="aplicarFiltros()" style="height:auto">
+                <option value="active" selected>Ativo</option>
+                <option value="paused" selected>Pausado</option>
+                <option value="under_review" selected>Em revisão</option>
+            </select>
+
+            <div class="filter-divider"></div>
+
+            <div class="filter-section-title">Filtro por Marca:</div>
+            <div id="f-marcas" class="marca-list"></div>
+
+        </div><!-- /filter-sidebar -->
+
+        </div><!-- /content-with-filter -->
+    </main>
+</div>
+
+<!-- Modal Atualizar -->
+<div class="modal fade" id="modalAtualizando" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#111;border:0.5px solid rgba(255,255,255,.1)">
+            <div class="modal-body p-4">
+                <h5 style="color:#fff;margin-bottom:16px"><i class="bi bi-arrow-clockwise"></i> Atualizando estoque...</h5>
+                <pre id="logMotor" style="color:#8ca0b3;font-size:12px;max-height:300px;overflow-y:auto;background:#0a0d14;padding:12px;border-radius:8px"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+// Atualizar estoque via streaming
+document.getElementById('btnAtualizarML')?.addEventListener('click', async () => {
+    const modal = new bootstrap.Modal(document.getElementById('modalAtualizando'));
+    const log = document.getElementById('logMotor');
+    log.textContent = '';
+    modal.show();
+
+    const resp = await fetch('/api/atualizar', { method: 'POST' });
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        log.textContent += decoder.decode(value);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    setTimeout(() => { modal.hide(); carregarProdutos(); }, 1500);
+});
+
+requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.add('page-ready')));
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valor do Estoque — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:translateY(0); }
+        .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+        .stat-card { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:20px; }
+        .stat-label { font-size:11px; text-transform:uppercase; color:var(--l3); margin-bottom:6px; letter-spacing:.5px; }
+        .stat-value { font-size:22px; font-weight:600; color:var(--l1); }
+        .table-wrap { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:24px; }
+        .ve-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .ve-table th { text-align:left; padding:10px 12px; font-size:11px; text-transform:uppercase; color:var(--l3); letter-spacing:.5px; border-bottom:1px solid var(--sep); font-weight:500; }
+        .ve-table td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.04); color:var(--l1); vertical-align:middle; }
+        .ve-table tr:last-child td { border-bottom:none; }
+        .ve-table tr:hover td { background:rgba(255,255,255,.03); }
+        .custo-input { width:90px; background:var(--s2); border:1px solid var(--sep2); border-radius:6px; color:var(--l1); padding:4px 8px; font-size:12px; text-align:right; outline:none; }
+        .custo-input:focus { border-color:var(--blue); }
+        .pesq-input { width:100%; padding:10px 14px; background:var(--s1); border:1px solid var(--sep); border-radius:10px; color:var(--l1); font-size:13px; outline:none; margin-bottom:16px; }
+        .pesq-input:focus { border-color:var(--blue); }
+        .btn-salvar { background:var(--blue); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-salvar:hover { opacity:.85; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li class="active"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Valor do Estoque</h4>
+                <small class="text-secondary">Informe o custo por produto ou importe de uma planilha Excel</small>
+            </div>
+            <div class="topbar-right" style="gap:10px">
+                <button id="btnSync" onclick="sincronizar()" title="Lê automaticamente do caminho configurado em config.json" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--sep);background:none;color:var(--l1);font-size:13px;font-weight:600;cursor:pointer;">
+                    <i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha
+                </button>
+                <label id="btnImportar" title="Importar planilha Excel manualmente" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--sep);background:none;color:var(--l2);font-size:13px;font-weight:600;cursor:pointer;">
+                    <i class="bi bi-upload" style="color:var(--l3)"></i> Upload Manual
+                    <input type="file" id="inputXlsx" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarPlanilha(this)">
+                </label>
+                <button class="btn-salvar" onclick="salvarCustos()"><i class="bi bi-floppy"></i> Salvar Custos</button>
+            </div>
+        </nav>
+
+        <div style="padding:24px">
+
+            <!-- Cards resumo -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Valor Total em Estoque</div>
+                    <div class="stat-value" id="valorTotal" style="color:#00ff99;font-size:26px">R$ 0,00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Produtos com Custo</div>
+                    <div class="stat-value" id="comCusto">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Sem Custo Informado</div>
+                    <div class="stat-value" id="semCusto" style="color:#ff9500">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total de SKUs</div>
+                    <div class="stat-value" id="totalSkus">—</div>
+                </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-wrap">
+                <input class="pesq-input" type="text" id="pesquisa" placeholder="🔍  Pesquisar produto ou SKU..." oninput="filtrar()">
+                <div style="overflow-x:auto">
+                    <table class="ve-table">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>SKU</th>
+                                <th style="text-align:right">Estoque</th>
+                                <th style="text-align:right">Custo Unit. (R$)</th>
+                                <th style="text-align:right">Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
+                            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--l3)">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+let produtos = [];
+let custos = {};
+let filtro = '';
+
+function fmt(v) {
+    return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function recalcularTotal() {
+    let total = 0, com = 0, sem = 0;
+    produtos.forEach(p => {
+        const c = Number(custos[(p.sku||'').toLowerCase()] || 0);
+        total += c * Number(p.estoque || 0);
+        if (c > 0) com++; else sem++;
+    });
+    document.getElementById('valorTotal').textContent = fmt(total);
+    document.getElementById('comCusto').textContent = com;
+    document.getElementById('semCusto').textContent = sem;
+    document.getElementById('totalSkus').textContent = produtos.length;
+}
+
+function renderizar() {
+    const lista = filtro
+        ? produtos.filter(p => (p.titulo||'').toLowerCase().includes(filtro) || (p.sku||'').toLowerCase().includes(filtro))
+        : produtos;
+
+    if (!lista.length) {
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--l3)">Nenhum produto encontrado.</td></tr>';
+        return;
+    }
+
+    document.getElementById('tbody').innerHTML = lista.map(p => {
+        const custo = Number(custos[(p.sku||'').toLowerCase()] || 0);
+        const est = Number(p.estoque || 0);
+        const vt = custo * est;
+        return `<tr>
+            <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.titulo}">${p.titulo}</td>
+            <td style="color:var(--l3);font-size:11px;font-family:monospace">${p.sku}</td>
+            <td style="text-align:right;font-weight:600">${est.toLocaleString('pt-BR')}</td>
+            <td style="text-align:right">
+                <input class="custo-input" type="number" min="0" step="0.01"
+                    value="${custo > 0 ? custo.toFixed(2) : ''}"
+                    placeholder="0,00"
+                    oninput="atualizarCusto('${p.sku}', this.value)">
+            </td>
+            <td style="text-align:right;font-weight:600;color:${vt>0?'#00ff99':'var(--l3)'}">
+                ${vt > 0 ? fmt(vt) : '—'}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function atualizarCusto(sku, valor) {
+    const key = (sku||'').toLowerCase();
+    const v = parseFloat(valor);
+    if (!isNaN(v) && v > 0) custos[key] = v;
+    else delete custos[key];
+    recalcularTotal();
+}
+
+async function salvarCustos() {
+    const btn = document.querySelector('.btn-salvar');
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+    btn.disabled = true;
+    await fetch('/api/custos', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(custos)
+    });
+    btn.innerHTML = '<i class="bi bi-check-circle"></i> Salvo!';
+    setTimeout(() => { btn.innerHTML = '<i class="bi bi-floppy"></i> Salvar Custos'; btn.disabled = false; }, 1500);
+}
+
+function filtrar() {
+    filtro = document.getElementById('pesquisa').value.toLowerCase().trim();
+    renderizar();
+}
+
+async function sincronizar() {
+    const btn = document.getElementById('btnSync');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split" style="color:#0a84ff"></i> Sincronizando...';
+    try {
+        const r = await fetch('/api/importar_custos');
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.erro);
+        const rc = await fetch('/api/custos');
+        custos = await rc.json();
+        recalcularTotal();
+        renderizar();
+        btn.innerHTML = `<i class="bi bi-check-circle" style="color:#00ff99"></i> ${d.importados} SKUs atualizados`;
+        setTimeout(() => {
+            btn.innerHTML = '<i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha';
+            btn.disabled = false;
+        }, 2500);
+    } catch (e) {
+        alert('Erro ao sincronizar: ' + e.message);
+        btn.innerHTML = '<i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha';
+        btn.disabled = false;
+    }
+}
+
+async function importarPlanilha(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const btn = document.getElementById('btnImportar');
+    btn.style.opacity = '0.6';
+    btn.style.pointerEvents = 'none';
+    btn.querySelector('i').className = 'bi bi-hourglass-split';
+    btn.childNodes[btn.childNodes.length - 2].textContent = ' Importando...';
+
+    try {
+        const fd = new FormData();
+        fd.append('planilha', file);
+        const r = await fetch('/api/importar_custos', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.erro);
+
+        // Recarrega custos atualizados do servidor
+        const rc = await fetch('/api/custos');
+        custos = await rc.json();
+        recalcularTotal();
+        renderizar();
+
+        btn.querySelector('i').className = 'bi bi-check-circle';
+        btn.childNodes[btn.childNodes.length - 2].textContent = ` ${d.importados} SKUs importados`;
+        setTimeout(() => {
+            btn.querySelector('i').className = 'bi bi-file-earmark-excel';
+            btn.childNodes[btn.childNodes.length - 2].textContent = ' Importar Planilha';
+            btn.style.opacity = '';
+            btn.style.pointerEvents = '';
+            input.value = '';
+        }, 2500);
+    } catch (e) {
+        alert('Erro ao importar: ' + e.message);
+        btn.querySelector('i').className = 'bi bi-file-earmark-excel';
+        btn.childNodes[btn.childNodes.length - 2].textContent = ' Importar Planilha';
+        btn.style.opacity = '';
+        btn.style.pointerEvents = '';
+        input.value = '';
+    }
+}
+
+async function init() {
+    const [rd, rc] = await Promise.all([fetch('/api/dados'), fetch('/api/custos')]);
+    const d = await rd.json();
+    custos = await rc.json();
+    produtos = d.produtos || [];
+    recalcularTotal();
+    renderizar();
+    document.body.classList.add('page-ready');
+}
+
+init().catch(e => {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff453a;padding:40px">Erro: ${e.message}</td></tr>`;
+    document.body.classList.add('page-ready');
+});
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

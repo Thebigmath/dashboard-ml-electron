@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Dashboard ML</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.card { background: #111; border: 0.5px solid rgba(255,255,255,.1); border-radius: 20px; padding: 40px; width: 100%; max-width: 380px; }
+.logo { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #0a84ff; }
+.sub { font-size: 13px; color: rgba(255,255,255,.4); margin-bottom: 32px; }
+label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: rgba(255,255,255,.35); margin-bottom: 6px; }
+input { width: 100%; height: 46px; background: rgba(255,255,255,.05); border: 0.5px solid rgba(255,255,255,.12); border-radius: 12px;
+    color: #fff; font-size: 14px; padding: 0 16px; outline: none; margin-bottom: 16px; transition: border-color .2s; }
+input:focus { border-color: #0a84ff; }
+button { width: 100%; height: 46px; background: #0a84ff; border: none; border-radius: 12px; color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: opacity .2s; }
+button:hover { opacity: .88; }
+.erro { background: rgba(255,69,58,.1); border: 0.5px solid rgba(255,69,58,.3); border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; color: #ff453a; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">CRC-18</div>
+    <div class="sub">Intelligence Stock — Flavia Stock</div>
+    <div id="erro" class="erro" style="display:none">Usuário ou senha incorretos.</div>
+    <form method="POST" action="/login">
+        <label>Usuário</label>
+        <input type="text" name="username" placeholder="CORDEIRO" autofocus autocomplete="off">
+        <label>Senha</label>
+        <input type="password" name="password" placeholder="••••••">
+        <button type="submit">Entrar</button>
+    </form>
+</div>
+<script>
+    if (location.search.includes('erro=1')) document.getElementById('erro').style.display = 'block';
+</script>
+</body>
+</html>
