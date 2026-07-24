@@ -60,11 +60,13 @@ app.whenReady().then(() => {
             show: false,
         });
 
-        mainWindow.loadURL('http://localhost:3001');
-        mainWindow.webContents.openDevTools({ mode: 'detach' });
+        const tokenPath = path.join(storagePath, 'token.json');
+        const temToken  = fs.existsSync(tokenPath);
+        const startUrl  = temToken ? 'http://localhost:3001' : 'http://localhost:3001/auth/gerar_token';
+
+        mainWindow.loadURL(startUrl);
         mainWindow.once('ready-to-show', () => {
             mainWindow.show();
-            // Verificar updates 5s após abrir
             setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
         });
     });
