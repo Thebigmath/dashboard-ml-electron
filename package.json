@@ -1,0 +1,71 @@
+{
+  "name": "dashboard-ml",
+  "version": "1.1.0",
+  "description": "Dashboard ML - Controle de Estoque Flavia Stock",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win --x64",
+    "build:dir": "electron-builder --win --x64 --dir",
+    "release": "electron-builder --win --x64 --publish always"
+  },
+  "author": "Thebigmath",
+  "license": "ISC",
+  "type": "commonjs",
+  "build": {
+    "appId": "com.thebigmath.dashboard-ml",
+    "productName": "Dashboard ML",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Thebigmath",
+      "repo": "dashboard-ml-electron"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/assets/img/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "server.js",
+      "routes/**",
+      "lib/**",
+      "public/**",
+      "storage/config.json",
+      "storage/usuarios.json",
+      "node_modules/**"
+    ],
+    "extraResources": [
+      {
+        "from": "storage",
+        "to": "storage",
+        "filter": ["config.json", "usuarios.json"]
+      }
+    ],
+    "asar": true
+  },
+  "dependencies": {
+    "axios": "^1.18.1",
+    "bcryptjs": "^3.0.3",
+    "electron-updater": "^6.8.9",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "multer": "^2.2.0",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
+  }
+}

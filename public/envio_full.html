@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envio Full — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:translateY(0); }
+
+        .card-section { background:var(--s1); border:1px solid var(--sep); border-radius:16px; overflow:hidden; margin-bottom:20px; }
+        .card-header-bar { padding:16px 20px; border-bottom:1px solid var(--sep); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .card-header-bar h5 { margin:0; font-size:14px; font-weight:600; }
+
+        .drop-zone { border:1.5px dashed var(--sep); border-radius:12px; padding:40px 24px; text-align:center; cursor:pointer; transition:all .2s; }
+        .drop-zone:hover, .drop-zone.over { border-color:var(--blue); background:rgba(10,132,255,.05); }
+        .drop-zone i { font-size:36px; color:var(--blue); display:block; margin-bottom:12px; }
+
+        .col-grid { display:grid; grid-template-columns:140px 100px 140px 1fr 160px; background:var(--s2); }
+        .col-head { padding:9px 14px; font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--l3); border-right:1px solid var(--sep); }
+        .col-head:last-child { border-right:none; }
+
+        .ship-row { display:grid; grid-template-columns:140px 100px 140px 1fr 160px; border-bottom:1px solid rgba(255,255,255,.04); transition:background .15s; }
+        .ship-row:hover { background:rgba(255,255,255,.02); }
+        .ship-row:last-child { border-bottom:none; }
+        .ship-cell { padding:13px 14px; border-right:1px solid rgba(255,255,255,.04); font-size:13px; }
+        .ship-cell:last-child { border-right:none; }
+
+        .badge-status { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; }
+        .badge-pendente { background:rgba(255,149,0,.15); color:#ff9500; }
+        .badge-recebido { background:rgba(0,255,153,.12); color:#00ff99; }
+        .badge-parcial  { background:rgba(10,132,255,.15); color:#0a84ff; }
+
+        .prog-bg { height:5px; background:var(--s2); border-radius:3px; overflow:hidden; margin-top:5px; }
+        .prog-fill { height:100%; border-radius:3px; transition:width .4s; }
+
+        .btn-sm-acao { display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:6px; border:1px solid var(--sep); background:none; color:var(--l2); font-size:11px; cursor:pointer; }
+        .btn-sm-acao:hover { background:rgba(255,255,255,.06); color:var(--l1); }
+        .btn-sm-acao.danger { border-color:rgba(255,69,58,.3); color:#ff453a; }
+        .btn-sm-acao.danger:hover { background:rgba(255,69,58,.1); }
+
+        .how-step { display:flex; gap:10px; margin-bottom:14px; align-items:flex-start; }
+        .how-num { width:22px; height:22px; border-radius:50%; background:var(--blue); color:#fff; display:grid; place-items:center; font-size:10px; font-weight:700; flex-shrink:0; }
+
+        /* Modal */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:28px; width:100%; max-width:440px; margin:0 20px; }
+        .field-group { display:flex; flex-direction:column; gap:4px; }
+        .field-group label { font-size:11px; text-transform:uppercase; color:var(--l3); font-weight:600; letter-spacing:.4px; }
+        .field-group input { background:var(--s2); border:1px solid var(--sep); border-radius:8px; color:var(--l1); padding:9px 12px; font-size:13px; outline:none; }
+        .field-group input:focus { border-color:var(--blue); }
+        .btn-primary-full { background:var(--blue); color:#fff; border:none; border-radius:10px; padding:11px; font-size:14px; font-weight:600; cursor:pointer; width:100%; margin-top:8px; }
+        .btn-primary-full:hover { opacity:.85; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="location.href='/'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li class="active"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Envio Full</h4>
+                <small class="text-secondary">Gerencie seus envios para o Fulfillment do Mercado Livre</small>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-sm-acao" style="padding:7px 14px;font-size:12px;" onclick="abrirModal()">
+                    <i class="bi bi-plus-lg"></i> Novo Envio
+                </button>
+            </div>
+        </nav>
+
+        <div style="padding:24px">
+
+            <!-- Upload PDF -->
+            <div class="card-section">
+                <div class="card-header-bar">
+                    <i class="bi bi-cloud-arrow-up" style="color:var(--blue)"></i>
+                    <div style="flex:1">
+                        <h5>Upload de PDFs</h5>
+                        <div style="font-size:12px;color:var(--l3)">Cadastre envios a partir de PDFs do ML Full</div>
+                    </div>
+                    <button class="btn-sm-acao" onclick="toggleUpload()"><i class="bi bi-chevron-up" id="iconToggle"></i></button>
+                </div>
+                <div id="uploadArea" style="padding:20px">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                        <div>
+                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('inputPdfs').click()">
+                                <i class="bi bi-cloud-upload"></i>
+                                <p style="font-size:14px;font-weight:600;margin-bottom:6px">Arraste seus PDFs aqui</p>
+                                <p style="font-size:12px;color:var(--l3);margin-bottom:0">ou clique para selecionar</p>
+                                <input type="file" id="inputPdfs" multiple accept=".pdf" style="display:none">
+                            </div>
+                            <div id="uploadStatus" style="margin-top:10px;font-size:12px;color:var(--l3)"></div>
+                        </div>
+                        <div style="background:var(--s2);border-radius:12px;padding:20px">
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--l3);margin-bottom:16px">
+                                <i class="bi bi-info-circle" style="color:var(--blue);margin-right:6px"></i> Como funciona?
+                            </div>
+                            <div class="how-step"><div class="how-num">1</div><div><div style="font-size:12px;font-weight:600">Acesse o Mercado Livre</div><div style="font-size:11px;color:var(--l3);margin-top:1px">Vá para sua área de envios FULL</div></div></div>
+                            <div class="how-step"><div class="how-num">2</div><div><div style="font-size:12px;font-weight:600">Baixe os PDFs</div><div style="font-size:11px;color:var(--l3);margin-top:1px">Envios com status pendente ou recebido</div></div></div>
+                            <div class="how-step"><div class="how-num">3</div><div><div style="font-size:12px;font-weight:600">Faça o upload</div><div style="font-size:11px;color:var(--l3);margin-top:1px">Arraste os PDFs na área ao lado</div></div></div>
+                            <div class="how-step" style="margin-bottom:0"><div class="how-num">4</div><div><div style="font-size:12px;font-weight:600">Confirme os dados</div><div style="font-size:11px;color:var(--l3);margin-top:1px">Verifique itens e quantidades</div></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Envios Ativos -->
+            <div class="card-section">
+                <div class="card-header-bar">
+                    <i class="bi bi-box-seam" style="color:var(--blue)"></i>
+                    <h5>Envios Ativos <span id="badgeAtivos" style="background:var(--blue);color:#fff;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">0</span></h5>
+                    <div style="margin-left:auto">
+                        <input type="text" id="buscaEnvios" placeholder="Buscar envio..." oninput="filtrarEnvios()"
+                            style="background:var(--s2);border:1px solid var(--sep);border-radius:8px;color:var(--l1);padding:6px 12px;font-size:12px;outline:none;width:200px">
+                    </div>
+                </div>
+                <div class="col-grid">
+                    <div class="col-head">Envio</div>
+                    <div class="col-head">Unidades</div>
+                    <div class="col-head">Status</div>
+                    <div class="col-head">Informações</div>
+                    <div class="col-head">Ações</div>
+                </div>
+                <div id="listaAtivos">
+                    <div style="text-align:center;padding:40px;color:var(--l3)">
+                        <i class="bi bi-hourglass-split" style="font-size:24px;display:block;margin-bottom:8px"></i>
+                        Carregando envios...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Envios Inativos -->
+            <div class="card-section">
+                <div class="card-header-bar" style="cursor:pointer" onclick="toggleInativos()">
+                    <i class="bi bi-archive" style="color:var(--l3)"></i>
+                    <h5 style="color:var(--l2)">Envios Inativos <span id="badgeInativos" style="background:var(--s2);color:var(--l3);border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">0</span></h5>
+                    <i class="bi bi-chevron-down" id="iconInativos" style="margin-left:auto;color:var(--l3)"></i>
+                </div>
+                <div id="listaInativos" style="display:none"></div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Modal Novo Envio -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-box">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(10,132,255,.15);display:grid;place-items:center">
+                <i class="bi bi-box-seam" style="color:var(--blue)"></i>
+            </div>
+            <div>
+                <div style="font-weight:600" id="modalTitulo">Novo Envio</div>
+                <div style="font-size:12px;color:var(--l3)">Preencha os dados do envio</div>
+            </div>
+            <button onclick="fecharModal()" style="margin-left:auto;background:none;border:none;color:var(--l3);cursor:pointer;font-size:18px">✕</button>
+        </div>
+        <form id="formEnvio" onsubmit="salvarEnvio(event)">
+            <input type="hidden" id="editNumero">
+            <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="field-group">
+                    <label>Número do Envio</label>
+                    <input type="text" id="campoNumero" placeholder="Ex: 70383485" required>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="field-group">
+                        <label>Unidades</label>
+                        <input type="number" id="campoUnidades" placeholder="0" min="0" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Recebido</label>
+                        <input type="number" id="campoRecebido" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="field-group">
+                        <label>Data de Coleta</label>
+                        <input type="date" id="campoData">
+                    </div>
+                    <div class="field-group">
+                        <label>Custo do Envio (R$)</label>
+                        <input type="text" id="campoCusto" placeholder="0,00">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>SKUs (opcional)</label>
+                    <input type="text" id="campoSkus" placeholder="Ex: 010tb:5, 31178e:10">
+                </div>
+                <button type="submit" class="btn-primary-full">
+                    <i class="bi bi-check2-circle"></i> Salvar Envio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let todosEnvios = [];
+
+function fmt(v) { return 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+function fmtData(d) { if (!d) return '—'; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; }
+
+function renderEnvio(e, inativo=false) {
+    const uns = Number(e.unidades||0);
+    const rec = Number(e.recebido||0);
+    const pct = uns>0 ? Math.min(100,Math.round((rec/uns)*100)) : 0;
+    const status = rec===0?'Pendente':rec>=uns?'Recebido':'Parcial';
+    const badgeClass = rec===0?'badge-pendente':rec>=uns?'badge-recebido':'badge-parcial';
+    const cor = rec===0?'#ff9500':rec>=uns?'#00ff99':'#0a84ff';
+
+    const skusHtml = e.skus
+        ? Object.entries(e.skus).map(([k,v])=>`<span style="font-size:10px;background:var(--s2);border-radius:4px;padding:1px 6px;margin:1px">${k}: ${v}</span>`).join('')
+        : '<span style="color:var(--l3);font-size:11px">—</span>';
+
+    return `<div class="ship-row">
+        <div class="ship-cell">
+            <div style="font-weight:600;font-size:13px">#${e.numero}</div>
+            ${e.custo ? `<div style="font-size:11px;color:var(--l3);margin-top:2px">${fmt(e.custo)}</div>` : ''}
+        </div>
+        <div class="ship-cell">
+            <div style="font-weight:600">${uns.toLocaleString('pt-BR')}</div>
+            ${uns>0?`<div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${cor}"></div></div><div style="font-size:10px;color:var(--l3);margin-top:3px">${rec} recebido (${pct}%)</div>`:''}
+        </div>
+        <div class="ship-cell">
+            <span class="badge-status ${badgeClass}">${status}</span>
+        </div>
+        <div class="ship-cell">
+            <div style="font-size:11px;color:var(--l3);margin-bottom:4px"><i class="bi bi-calendar3"></i> ${fmtData(e.data_coleta)}</div>
+            <div style="flex-wrap:wrap;display:flex;gap:2px">${skusHtml}</div>
+        </div>
+        <div class="ship-cell" style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn-sm-acao" onclick="editarEnvio('${e.numero}')"><i class="bi bi-pencil"></i> Editar</button>
+            ${inativo
+                ? `<button class="btn-sm-acao" onclick="ativarEnvio('${e.numero}')"><i class="bi bi-arrow-up-circle"></i> Reativar</button>`
+                : `<button class="btn-sm-acao" onclick="inativarEnvio('${e.numero}')"><i class="bi bi-archive"></i> Arquivar</button>`
+            }
+            <button class="btn-sm-acao danger" onclick="excluirEnvio('${e.numero}')"><i class="bi bi-trash"></i> Excluir</button>
+        </div>
+    </div>`;
+}
+
+function renderListas(filtro='') {
+    const f = filtro.toLowerCase();
+    const lista = f ? todosEnvios.filter(e=>String(e.numero).includes(f)||(e.skus&&JSON.stringify(e.skus).toLowerCase().includes(f))) : todosEnvios;
+    const ativos   = lista.filter(e=>!e.inativo);
+    const inativos = lista.filter(e=>e.inativo);
+
+    document.getElementById('badgeAtivos').textContent   = ativos.length;
+    document.getElementById('badgeInativos').textContent = inativos.length;
+
+    document.getElementById('listaAtivos').innerHTML = ativos.length
+        ? ativos.map(e=>renderEnvio(e,false)).join('')
+        : '<div style="text-align:center;padding:40px;color:var(--l3)">Nenhum envio ativo.</div>';
+
+    const listaInEl = document.getElementById('listaInativos');
+    listaInEl.innerHTML = inativos.length
+        ? inativos.map(e=>renderEnvio(e,true)).join('')
+        : '<div style="text-align:center;padding:24px;color:var(--l3);font-size:12px">Nenhum envio inativo.</div>';
+}
+
+function filtrarEnvios() { renderListas(document.getElementById('buscaEnvios').value); }
+
+async function carregarEnvios() {
+    const r = await fetch('/api/envios');
+    todosEnvios = await r.json();
+    renderListas();
+}
+
+function abrirModal(dados=null) {
+    document.getElementById('modalTitulo').textContent = dados ? 'Editar Envio' : 'Novo Envio';
+    document.getElementById('editNumero').value = dados?.numero || '';
+    document.getElementById('campoNumero').value = dados?.numero || '';
+    document.getElementById('campoNumero').disabled = !!dados;
+    document.getElementById('campoUnidades').value = dados?.unidades || '';
+    document.getElementById('campoRecebido').value = dados?.recebido || '';
+    document.getElementById('campoData').value = dados?.data_coleta || '';
+    document.getElementById('campoCusto').value = dados?.custo || '';
+    document.getElementById('campoSkus').value = dados?.skus ? Object.entries(dados.skus).map(([k,v])=>`${k}:${v}`).join(', ') : '';
+    document.getElementById('modal').classList.add('open');
+}
+
+function fecharModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function salvarEnvio(e) {
+    e.preventDefault();
+    const numero = document.getElementById('editNumero').value || document.getElementById('campoNumero').value;
+    const skusRaw = document.getElementById('campoSkus').value.trim();
+    const skus = {};
+    if (skusRaw) {
+        skusRaw.split(',').forEach(part => {
+            const [k,v] = part.trim().split(':');
+            if (k && v) skus[k.trim().toLowerCase()] = parseInt(v)||0;
+        });
+    }
+    const payload = {
+        numero: numero.trim(),
+        unidades: parseInt(document.getElementById('campoUnidades').value)||0,
+        recebido: parseInt(document.getElementById('campoRecebido').value)||0,
+        data_coleta: document.getElementById('campoData').value,
+        custo: parseFloat(document.getElementById('campoCusto').value.replace(',','.'))||0,
+        skus: Object.keys(skus).length ? skus : null,
+    };
+    await fetch('/api/salvar_envio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    fecharModal();
+    await carregarEnvios();
+}
+
+function editarEnvio(numero) {
+    const e = todosEnvios.find(x=>x.numero===numero);
+    if (e) abrirModal(e);
+}
+
+async function inativarEnvio(numero) {
+    const e = todosEnvios.find(x=>x.numero===numero);
+    if (!e) return;
+    await fetch('/api/salvar_envio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...e, inativo:true}) });
+    await carregarEnvios();
+}
+
+async function ativarEnvio(numero) {
+    const e = todosEnvios.find(x=>x.numero===numero);
+    if (!e) return;
+    await fetch('/api/salvar_envio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...e, inativo:false}) });
+    await carregarEnvios();
+}
+
+async function excluirEnvio(numero) {
+    if (!confirm(`Excluir envio #${numero}?`)) return;
+    todosEnvios = todosEnvios.filter(x=>x.numero!==numero);
+    await fetch('/api/salvar_envio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({numero, _excluir:true}) });
+    await carregarEnvios();
+}
+
+// Upload PDF
+function toggleUpload() {
+    const el = document.getElementById('uploadArea');
+    const icon = document.getElementById('iconToggle');
+    const vis = el.style.display !== 'none';
+    el.style.display = vis ? 'none' : 'block';
+    icon.className = vis ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+}
+
+function toggleInativos() {
+    const el = document.getElementById('listaInativos');
+    const icon = document.getElementById('iconInativos');
+    const vis = el.style.display !== 'none';
+    el.style.display = vis ? 'none' : 'block';
+    icon.className = vis ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+}
+
+// Drag & drop PDF
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); processarPdfs(e.dataTransfer.files); });
+document.getElementById('inputPdfs').addEventListener('change', e => processarPdfs(e.target.files));
+
+async function processarPdfs(files) {
+    const st = document.getElementById('uploadStatus');
+    st.textContent = `Processando ${files.length} arquivo(s)...`;
+    for (const file of files) {
+        try {
+            const fd = new FormData(); fd.append('pdf', file);
+            const r = await fetch('/api/upload_pdf', { method:'POST', body:fd });
+            const d = await r.json();
+            if (d.numero) {
+                await fetch('/api/salvar_envio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+                st.textContent = `✅ ${file.name} → Envio #${d.numero} cadastrado`;
+            }
+        } catch { st.textContent = `❌ Erro em ${file.name}`; }
+    }
+    await carregarEnvios();
+}
+
+// Fecha modal ao clicar fora
+document.getElementById('modal').addEventListener('click', e => { if (e.target===e.currentTarget) fecharModal(); });
+
+// Init
+carregarEnvios().then(() => document.body.classList.add('page-ready'));
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>
