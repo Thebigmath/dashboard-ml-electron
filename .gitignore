@@ -3,6 +3,6 @@ dist/
 storage/token.json
 storage/reposicao.json
 storage/transito_local.json
-storage/custos.json
+
 storage/ultima_atualizacao.txt
 *.log
