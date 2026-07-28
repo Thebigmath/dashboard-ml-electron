@@ -33,6 +33,13 @@ const server = require('./server');
 // Auto-updater
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'Thebigmath',
+    repo: 'dashboard-ml-electron',
+    private: true,
+    token: process.env.GH_TOKEN,
+});
 autoUpdater.logger = require('electron').app && (() => {
     const log = { info: console.log, warn: console.warn, error: console.error, debug: console.log };
     return log;
