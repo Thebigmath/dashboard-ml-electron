@@ -158,40 +158,40 @@
 
             <div class="filter-toggle-row">
                 <label class="filter-toggle-label" for="f-ruptura">com Ruptura <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Sem estoque e com vendas"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-ruptura" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-ruptura" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
                 <label class="filter-toggle-label" for="f-reposicao">em Ponto de Reposição <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Reposição > 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-reposicao" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-reposicao" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
                 <label class="filter-toggle-label" for="f-semvenda">sem venda / estoque <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Média Dia = 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-semvenda" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-semvenda" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
                 <label class="filter-toggle-label" for="f-ajuste">Ajuste de Ruptura <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Tem vendas mas estoque zerado"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-ajuste" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-ajuste" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
                 <label class="filter-toggle-label" for="f-comtransito">com itens em trânsito <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Tem qtd em trânsito"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-comtransito" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-comtransito" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
                 <label class="filter-toggle-label" for="f-semtransito">sem itens em trânsito <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Trânsito = 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-semtransito" onchange="aplicarFiltros()"><span class="toggle-knob"></span></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-semtransito" onchange=""><span class="toggle-knob"></span></label>
             </div>
 
             <div class="filter-divider"></div>
 
             <div class="filter-section-title">Período observado:</div>
             <div class="filter-period-row">
-                Últimos <input type="number" id="f-periodo" class="filter-period-input" value="30" min="7" max="365" onchange="aplicarFiltros()"> dias
+                Últimos <input type="number" id="f-periodo" class="filter-period-input" value="30" min="7" max="365" onchange=""> dias
             </div>
 
             <div class="filter-divider"></div>
 
             <div class="filter-section-title">Status do Anúncio:</div>
-            <select id="f-status" class="filter-select" multiple size="3" onchange="aplicarFiltros()" style="height:auto">
+            <select id="f-status" class="filter-select" multiple size="3" onchange="" style="height:auto">
                 <option value="active" selected>Ativo</option>
                 <option value="paused" selected>Pausado</option>
                 <option value="under_review" selected>Em revisão</option>
@@ -201,6 +201,11 @@
 
             <div class="filter-section-title">Filtro por Marca:</div>
             <div id="f-marcas" class="marca-list"></div>
+
+            <div class="filter-divider"></div>
+            <button onclick="window.aplicarFiltros()" style="width:100%;padding:10px;background:var(--accent,#0a84ff);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                <i class="bi bi-funnel-fill"></i> Aplicar Filtros
+            </button>
 
         </div><!-- /filter-sidebar -->
 
