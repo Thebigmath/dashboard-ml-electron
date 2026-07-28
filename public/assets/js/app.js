@@ -133,13 +133,13 @@ function aplicarFiltros() {
     if (fComEstoque)  lista = lista.filter(p => Number(p.estoque) > 0);
 
     const PRIORIDADE = ['tapete','lanterna','calota'];
-    lista.sort((a, b) => {
-        const ta = (a.titulo || '').toLowerCase();
-        const tb = (b.titulo || '').toLowerCase();
-        const pa = PRIORIDADE.some(k => ta.includes(k)) ? 0 : 1;
-        const pb = PRIORIDADE.some(k => tb.includes(k)) ? 0 : 1;
-        return pa - pb;
-    });
+    function nivelPrioridade(p) {
+        if (isEmpilhadeira(p)) return 2;
+        const t = (p.titulo || '').toLowerCase();
+        if (PRIORIDADE.some(k => t.includes(k))) return 0;
+        return 1;
+    }
+    lista.sort((a, b) => nivelPrioridade(a) - nivelPrioridade(b));
 
     produtosFiltrados = lista;
     paginaAtual = 1;
