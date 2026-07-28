@@ -135,6 +135,8 @@ function aplicarFiltros() {
     atualizarBadgeFiltros();
 }
 
+window.aplicarFiltros = aplicarFiltros;
+
 window.toggleFiltros = function() {
     const sidebar = document.getElementById('filterSidebar');
     const btn     = document.getElementById('btnToggleFiltros');
@@ -282,7 +284,9 @@ function carregarProdutos() {
                     mapa[sku].estoque   = estoqueMax;
                     mapa[sku].mediaDia  = Math.round(mediaDia * 100) / 100;
                     mapa[sku].cobertura = mediaDia > 0 ? Math.round((estoqueMax / mediaDia) * 10) / 10 : 999;
-                    mapa[sku].reposicao = Math.max(0, Math.ceil(mediaDia * 44) - estoqueMax);
+                    const _diasC = parseInt(diasColeta?.value) || 0;
+                    const _diasA = parseInt(diasAlvo?.value)   || 44;
+                    mapa[sku].reposicao = Math.max(0, Math.ceil(mediaDia * (_diasC + _diasA)) - estoqueMax);
                 }
             });
             const produtos = Object.values(mapa);
