@@ -170,22 +170,54 @@ router.post('/upload_pdf', auth, upload.single('pdf'), async (req, res) => {
         const { text } = await pdf(buffer);
         fs.unlinkSync(req.file.path);
 
-        const transito = lerJson('transito_local.json', {});
-        const linhas = text.split('\n');
-        let encontrados = 0;
+        const linhas = text.split('\n').map(l => l.trim());
 
-        for (const linha of linhas) {
-            const m = linha.match(/SKU[:\s]+([A-Za-z0-9\-]+).*?(\d+)/i);
-            if (m) {
-                const sku = m[1].toLowerCase();
-                const qty = parseInt(m[2]);
-                transito[sku] = { quantidade: qty, envio: req.body.numero || '' };
-                encontrados++;
+        // Número do frete — "Frete #70594904"
+        const mNumero = text.match(/Frete\s*#(\d+)/i);
+        if (!mNumero) return res.status(400).json({ erro: 'Número do frete não encontrado no PDF' });
+        const numero = mNumero[1];
+
+        // Total de unidades
+        const mTotal = text.match(/Total de unidades[:\s]+(\d+)/i);
+        const totalUnidades = mTotal ? parseInt(mTotal[1]) : 0;
+
+        // SKUs em ordem — "SKU:" no fim da linha, valor SKU na próxima linha não-vazia
+        const skusOrdem = [];
+        for (let i = 0; i < linhas.length; i++) {
+            if (/SKU:\s*$/i.test(linhas[i])) {
+                // SKU na próxima linha não-vazia
+                for (let j = i + 1; j < linhas.length; j++) {
+                    if (linhas[j]) { skusOrdem.push(linhas[j].toLowerCase()); break; }
+                }
+            } else {
+                // SKU inline: "... SKU: 31178E"
+                const m = linhas[i].match(/SKU:\s+(\S+)\s*$/i);
+                if (m) skusOrdem.push(m[1].toLowerCase());
             }
         }
 
-        salvarJson('transito_local.json', transito);
-        res.json({ ok: true, encontrados });
+        // Quantidades — após cabeçalho da tabela (pode ser "PRODUTOUNIDADES" sem espaços)
+        // Cada linha pode ser "20" (pura) ou "20•Texto..." (colada no bullet do ML)
+        const tabelaIdx = linhas.findIndex(l => /PRODUTO.{0,5}UNIDADES/i.test(l));
+        const qtds = [];
+        if (tabelaIdx >= 0) {
+            for (let i = tabelaIdx + 1; i < linhas.length; i++) {
+                const m = linhas[i].match(/^(\d+)(\s|•|$)/);
+                if (m) qtds.push(parseInt(m[1]));
+                if (qtds.length >= skusOrdem.length) break;
+            }
+        }
+
+        // Monta mapa SKU -> quantidade
+        const skus = {};
+        skusOrdem.forEach((sku, i) => { if (qtds[i] !== undefined) skus[sku] = qtds[i]; });
+
+        res.json({
+            numero,
+            unidades: totalUnidades,
+            recebido: 0,
+            skus: Object.keys(skus).length ? skus : null,
+        });
 
     } catch (err) {
         res.status(500).json({ erro: err.message });
