@@ -132,6 +132,15 @@ function aplicarFiltros() {
     if (fSemTransito) lista = lista.filter(p => Number(window.transitoMap[p.sku] || 0) === 0);
     if (fComEstoque)  lista = lista.filter(p => Number(p.estoque) > 0);
 
+    const PRIORIDADE = ['tapete','lanterna','calota'];
+    lista.sort((a, b) => {
+        const ta = (a.titulo || '').toLowerCase();
+        const tb = (b.titulo || '').toLowerCase();
+        const pa = PRIORIDADE.some(k => ta.includes(k)) ? 0 : 1;
+        const pb = PRIORIDADE.some(k => tb.includes(k)) ? 0 : 1;
+        return pa - pb;
+    });
+
     produtosFiltrados = lista;
     paginaAtual = 1;
     renderPagina(produtosFiltrados, paginaAtual);

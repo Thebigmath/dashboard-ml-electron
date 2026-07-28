@@ -29,7 +29,7 @@
                 const r = await fetch('/api/switch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ porta: outro.porta, exe: outro.exe }),
+                    body: JSON.stringify({ porta: outro.porta, exe: outro.exe, nome: outro.nome }),
                 });
                 const d = await r.json();
                 if (d.ok) window.location.href = `http://localhost:${d.porta}`;
@@ -58,6 +58,18 @@
         window.electronAPI.onUpdateDownloaded(() => {
             mostrarToastUpdate('Atualização pronta! Clique para instalar.', true);
         });
+        window.electronAPI.onUpdateStatus((msg) => {
+            console.log('[updater]', msg);
+            let el = document.getElementById('update-status-debug');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'update-status-debug';
+                el.style.cssText = 'position:fixed;bottom:8px;left:8px;background:rgba(0,0,0,.75);color:#0a84ff;font-size:10px;padding:4px 8px;border-radius:6px;z-index:9999;max-width:300px;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            setTimeout(() => el?.remove(), 8000);
+        });
     }
 
     function mostrarToastUpdate(msg, instalar) {
@@ -77,4 +89,23 @@
             ${instalar ? `<button onclick="window.electronAPI.installUpdate()" style="background:#0a84ff;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Instalar</button>` : ''}
         `;
     }
+})();
+
+/* ── Tema claro / escuro ────────────────────────────────────────────────── */
+(function() {
+    const tema = localStorage.getItem('tema') || 'light';
+    aplicarTema(tema);
+
+    function aplicarTema(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        const icone = document.getElementById('iconeTema');
+        if (icone) icone.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    }
+
+    window.toggleTema = function() {
+        const atual = document.documentElement.getAttribute('data-theme') || 'light';
+        const novo  = atual === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('tema', novo);
+        aplicarTema(novo);
+    };
 })();
