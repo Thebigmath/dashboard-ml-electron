@@ -270,11 +270,11 @@ router.post('/importar_custos', auth, upload.single('planilha'), (req, res) => {
         let importados = 0;
         for (const row of rows) {
             const keys = Object.keys(row);
-            const skuKey  = keys.find(k => k.toUpperCase() === 'SKU');
-            const custoKey = keys.find(k => k.toUpperCase() === 'CUSTO');
+            const skuKey  = keys.find(k => k.trim().toUpperCase() === 'SKU');
+            const custoKey = keys.find(k => k.trim().toUpperCase() === 'CUSTO');
             if (!skuKey || !custoKey) continue;
             const sku   = String(row[skuKey] || '').trim().toLowerCase();
-            const custo = parseFloat(String(row[custoKey]).replace(',', '.'));
+            const custo = parseFloat(String(row[custoKey]).replace(',', '.').trim());
             if (sku && !isNaN(custo) && custo > 0) {
                 custos[sku] = custo;
                 importados++;
@@ -336,11 +336,23 @@ router.get('/app_info', auth, (req, res) => {
 
 // ── Trocar de conta (lança outro app se offline) ─────────────────────────────
 router.post('/switch', auth, (req, res) => {
-    const { porta, exe } = req.body;
+    const { porta, exe, nome } = req.body;
     if (!porta) return res.status(400).json({ erro: 'porta obrigatória' });
 
-    const http = require('http');
+    const http   = require('http');
     const { spawn } = require('child_process');
+
+    // Resolve caminho do exe: tenta o configurado, depois o caminho padrão de instalação NSIS
+    const exePath = (() => {
+        if (exe && fs.existsSync(exe)) return exe;
+        const appNome = (nome || '').trim() || 'Dashboard';
+        const localPrograms = path.join(process.env.LOCALAPPDATA || '', 'Programs', appNome, `${appNome}.exe`);
+        if (fs.existsSync(localPrograms)) return localPrograms;
+        // Fallback: busca em Program Files
+        const pf = path.join(process.env.PROGRAMFILES || 'C:\\Program Files', appNome, `${appNome}.exe`);
+        if (fs.existsSync(pf)) return pf;
+        return null;
+    })();
 
     const checar = () => new Promise(ok => {
         const r = http.get(`http://127.0.0.1:${porta}/api/app_info`, (resp) => {
@@ -351,14 +363,15 @@ router.post('/switch', auth, (req, res) => {
     });
 
     checar().then(async (online) => {
-        if (!online && exe) {
-            spawn(exe, [], { detached: true, stdio: 'ignore' }).unref();
-            // Espera até 8s o outro app subir
+        if (!online && exePath) {
+            spawn(exePath, [], { detached: true, stdio: 'ignore' }).unref();
             for (let i = 0; i < 8; i++) {
                 await new Promise(r => setTimeout(r, 1000));
                 if (await checar()) break;
             }
         }
+        const ainda = await checar();
+        if (!ainda) return res.json({ ok: false, erro: 'Outro app não está aberto. Abra-o primeiro.' });
         res.json({ ok: true, porta });
     });
 });
