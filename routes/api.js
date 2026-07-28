@@ -28,6 +28,17 @@ router.get('/dados', auth, (req, res) => {
     const ultima    = fs.existsSync(path.join(STORAGE, 'ultima_atualizacao.txt'))
         ? fs.readFileSync(path.join(STORAGE, 'ultima_atualizacao.txt'), 'utf8') : null;
 
+    // Soma SKUs dos envios Full ativos que ainda não foram totalmente recebidos
+    const envios = lerJson('envios_full.json', []);
+    for (const e of envios) {
+        if (e.inativo || !e.skus) continue;
+        if ((e.recebido || 0) >= (e.unidades || 0) && (e.unidades || 0) > 0) continue;
+        for (const [sku, qty] of Object.entries(e.skus)) {
+            const k = sku.toLowerCase();
+            transito[k] = (transito[k] || 0) + qty;
+        }
+    }
+
     res.json({ produtos: reposicao, transito, ultima_atualizacao: ultima });
 });
 
