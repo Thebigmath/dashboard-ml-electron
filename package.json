@@ -1,6 +1,6 @@
 {
   "name": "dashboard-ml",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Dashboard ML - Controle de Estoque Flavia Stock",
   "main": "main.js",
   "scripts": {
@@ -74,4 +74,5 @@
     "electron-builder": "^26.15.3"
   }
 }
+
 

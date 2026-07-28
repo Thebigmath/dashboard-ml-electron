@@ -10,7 +10,7 @@ const storagePath = path.join(userDataPath, 'storage');
 if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
 
 const appStorage = path.join(__dirname, 'storage');
-for (const file of ['config.json', 'usuarios.json']) {
+for (const file of ['config.json', 'usuarios.json', 'custos.json']) {
     const dest = path.join(storagePath, file);
     const src  = path.join(appStorage, file);
     if (!fs.existsSync(src)) continue;
@@ -33,12 +33,27 @@ const server = require('./server');
 // Auto-updater
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.logger = require('electron').app && (() => {
+    const log = { info: console.log, warn: console.warn, error: console.error, debug: console.log };
+    return log;
+})();
 
+autoUpdater.on('checking-for-update', () => {
+    mainWindow?.webContents.send('update-status', 'Verificando atualizações...');
+});
 autoUpdater.on('update-available', (info) => {
     mainWindow?.webContents.send('update-available', info.version);
+    mainWindow?.webContents.send('update-status', `Update encontrado: v${info.version}`);
 });
-
+autoUpdater.on('update-not-available', () => {
+    mainWindow?.webContents.send('update-status', 'App já está atualizado.');
+});
+autoUpdater.on('error', (err) => {
+    mainWindow?.webContents.send('update-status', `Erro update: ${err.message}`);
+});
+let updateReady = false;
 autoUpdater.on('update-downloaded', () => {
+    updateReady = true;
     mainWindow?.webContents.send('update-downloaded');
 });
 
@@ -68,6 +83,9 @@ app.whenReady().then(() => {
         mainWindow.once('ready-to-show', () => {
             mainWindow.show();
             setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
+        });
+        mainWindow.webContents.on('did-finish-load', () => {
+            if (updateReady) mainWindow.webContents.send('update-downloaded');
         });
     });
 });
