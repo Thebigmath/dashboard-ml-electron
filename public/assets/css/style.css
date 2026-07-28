@@ -62,6 +62,17 @@
   --sep:     rgba(230,237,243,0.10);
   --sep2:    rgba(230,237,243,0.06);
 }
+[data-theme="dark"] .sidebar  { background: rgba(22,27,34,0.92); }
+[data-theme="dark"] .topbar   { background: rgba(22,27,34,0.90); }
+[data-theme="dark"] .dashboard-card,
+[data-theme="dark"] .reposicao-engine,
+[data-theme="dark"] .stat-card { background: var(--s1); }
+[data-theme="dark"] .dashboard-table thead th { background: var(--s2); color: var(--l2); }
+[data-theme="dark"] .dashboard-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .search-box { background: var(--s2); border-color: var(--sep); }
+[data-theme="dark"] .search-box input { color: var(--l1); }
+[data-theme="dark"] .filter-sidebar { background: var(--s1); }
+[data-theme="dark"] .notification { background: var(--s2); border-color: var(--sep); color: var(--l2); }
 
 /* ══════════════════════════════════════════════════════
    RESET
