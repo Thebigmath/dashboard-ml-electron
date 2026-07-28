@@ -128,10 +128,6 @@
                         <h4>Produtos para Reposição</h4>
                         <small>Resultado do motor de cálculo</small>
                     </div>
-                    <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:8px 16px;display:flex;flex-direction:column;align-items:flex-end">
-                        <span style="font-size:10px;color:var(--l3);text-transform:uppercase;letter-spacing:.5px">Valor em Estoque</span>
-                        <span id="totalValorEstoque" style="font-size:16px;font-weight:700;color:var(--accent)">—</span>
-                    </div>
                     <div style="display:flex;gap:6px;align-items:center">
                         <button class="cat-filter-btn cat-filter-ativo" data-cat="todos"        onclick="setFiltroCategoria('todos')">Todos</button>
                         <button class="cat-filter-btn"                  data-cat="outros"       onclick="setFiltroCategoria('outros')">Peças Auto</button>
@@ -146,11 +142,11 @@
                             <tr>
                                 <th>Urgência</th><th>Produto</th><th>SKU</th>
                                 <th>Estoque</th><th>Vendas 30d</th><th>Média Dia</th>
-                                <th>Cobertura</th><th>Reposição</th><th>Valor Estoque</th><th>Em Trânsito</th><th>Qtd Full</th>
+                                <th>Cobertura</th><th>Reposição</th><th>Em Trânsito</th><th>Qtd Full</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaReposicao">
-                            <tr><td colspan="11" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
+                            <tr><td colspan="10" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
                         </tbody>
                     </table>
                 </div>
