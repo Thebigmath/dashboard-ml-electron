@@ -232,8 +232,8 @@ function renderPagina(lista, pagina) {
             <td>${p.estoque}</td>
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
-            <td>${p.cobertura}</td>
-            <td><strong>${p.reposicao}</strong></td>
+            <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
+            <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
             <td><input type="number" class="qtd-full" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.itemId]=parseInt(this.value)||0"></td>
         </tr>`).join('');
