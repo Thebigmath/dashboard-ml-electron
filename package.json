@@ -1,6 +1,6 @@
 {
   "name": "dashboard-ml",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Dashboard ML - Controle de Estoque Flavia Stock",
   "main": "main.js",
   "scripts": {
