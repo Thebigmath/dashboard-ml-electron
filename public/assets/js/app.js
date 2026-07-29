@@ -74,18 +74,41 @@ async function renderizarGraficoFaturamento() {
             const y = H - PAD_B - h;
             const mesAtual = i === dados.length - 1;
             return `
-                <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3"
-                    fill="${mesAtual ? '#0a84ff' : 'rgba(10,132,255,0.35)'}"/>
+                <rect class="fat-bar" x="${x}" y="${y}" width="${barW}" height="${h}" rx="3"
+                    data-mes="${d.mes}" data-valor="${fmt(d.valor)}" data-atual="${mesAtual}"
+                    fill="${mesAtual ? '#0a84ff' : 'rgba(10,132,255,0.35)'}"
+                    style="cursor:pointer;transition:fill .15s"/>
                 <text x="${x + barW/2}" y="${H - 6}" text-anchor="middle"
-                    font-size="9" fill="var(--l3)">${d.mes}</text>`;
+                    font-size="9" fill="var(--l3)" style="pointer-events:none">${d.mes}</text>`;
         }).join('');
         const total = dados.reduce((s, d) => s + d.valor, 0);
         el.innerHTML = `
             <div style="font-size:18px;font-weight:700;color:var(--l1);margin-bottom:4px">${fmt(total)}</div>
             <div style="font-size:11px;color:var(--l3);margin-bottom:10px">últimos 6 meses</div>
-            <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="overflow:visible">
-                ${bars}
-            </svg>`;
+            <div style="position:relative">
+                <div id="fat-tooltip" style="display:none;position:absolute;background:var(--s1);border:1px solid var(--sep);border-radius:8px;padding:6px 10px;font-size:12px;pointer-events:none;white-space:nowrap;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div>
+                <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="overflow:visible">${bars}</svg>
+            </div>`;
+
+        const tooltip = el.querySelector('#fat-tooltip');
+        el.querySelectorAll('.fat-bar').forEach(rect => {
+            rect.addEventListener('mouseenter', () => {
+                tooltip.innerHTML = `<span style="color:var(--l3)">${rect.dataset.mes}&nbsp;</span><strong style="color:var(--l1)">${rect.dataset.valor}</strong>`;
+                tooltip.style.display = 'block';
+                rect.style.fill = '#0a84ff';
+            });
+            rect.addEventListener('mousemove', (e) => {
+                const box = el.getBoundingClientRect();
+                let left = e.clientX - box.left + 12;
+                if (left + 180 > box.width) left = e.clientX - box.left - 190;
+                tooltip.style.left = left + 'px';
+                tooltip.style.top  = (e.clientY - box.top - 40) + 'px';
+            });
+            rect.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
+                rect.style.fill = rect.dataset.atual === 'true' ? '#0a84ff' : 'rgba(10,132,255,0.35)';
+            });
+        });
     } catch {
         el.innerHTML = `<div style="text-align:center;color:var(--l3);font-size:12px;padding:20px 0">Sem dados de faturamento</div>`;
     }
