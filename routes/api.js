@@ -74,12 +74,15 @@ router.post('/atualizar', auth, async (req, res) => {
         } while (offset < total);
         escrever(`Pedidos: ${pedidos.length}`);
 
-        // 2. Vendas por SKU
+        // 2. Vendas e faturamento por SKU
         const vendasPorSku = {};
+        const faturamentoPorSku = {};
         for (const pedido of pedidos) {
             for (const item of pedido.order_items || []) {
                 const sku = (item.item?.seller_sku || '').trim().toLowerCase();
-                if (sku) vendasPorSku[sku] = (vendasPorSku[sku] || 0) + item.quantity;
+                if (!sku) continue;
+                vendasPorSku[sku] = (vendasPorSku[sku] || 0) + item.quantity;
+                faturamentoPorSku[sku] = (faturamentoPorSku[sku] || 0) + (item.unit_price || 0) * item.quantity;
             }
         }
 
@@ -145,10 +148,11 @@ router.post('/atualizar', auth, async (req, res) => {
 
         const reposicao = Object.values(porSku).map(d => {
             const vendas30 = vendasPorSku[d.sku] || 0;
+            const faturamento30 = +(faturamentoPorSku[d.sku] || 0).toFixed(2);
             const mediaDia = +(vendas30 / 30).toFixed(2);
             const cobertura = d.estoque === 0 ? 0 : (mediaDia > 0 ? +(d.estoque / mediaDia).toFixed(1) : 999);
             const rep = Math.max(0, Math.ceil(diasAlvo * mediaDia - d.estoque));
-            return { ...d, vendas30, mediaDia, cobertura, reposicao: rep };
+            return { ...d, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
         }).sort((a, b) => b.reposicao - a.reposicao);
 
         salvarJson('reposicao.json', reposicao);

@@ -101,21 +101,32 @@
         <div class="content-with-filter">
         <div class="main-col">
 
-            <!-- MOTOR -->
-            <div class="reposicao-engine">
-                <div class="engine-header">
-                    <div class="engine-icon"><i class="bx bx-line-chart"></i></div>
-                    <div><h2>Estratégia de Reposição</h2><span>Configuração do motor inteligente de cálculo</span></div>
+            <!-- MOTOR + GRÁFICO -->
+            <div style="display:flex;gap:16px;margin-bottom:0">
+                <div class="reposicao-engine" style="flex:1;margin-bottom:0">
+                    <div class="engine-header">
+                        <div class="engine-icon"><i class="bx bx-line-chart"></i></div>
+                        <div><h2>Estratégia de Reposição</h2><span>Configuração do motor inteligente de cálculo</span></div>
+                    </div>
+                    <div class="engine-grid">
+                        <div class="field"><label>Dias até coleta ou reserva Full</label><input type="number" id="diasColeta" value="7"></div>
+                        <div class="field"><label>Dias de Estoque Alvo Full</label><input type="number" id="diasAlvo" value="44"></div>
+                        <div class="strategy-box"><div id="tipoEstratagia" class="estrategia-label">Equilibrada</div></div>
+                    </div>
+                    <div class="slider-area">
+                        <input type="range" min="15" max="70" value="44" id="sliderReposicao">
+                    </div>
+                    <button id="btnRecalcular"><i class="bx bx-refresh"></i> Recalcular Estratégia</button>
                 </div>
-                <div class="engine-grid">
-                    <div class="field"><label>Dias até coleta ou reserva Full</label><input type="number" id="diasColeta" value="7"></div>
-                    <div class="field"><label>Dias de Estoque Alvo Full</label><input type="number" id="diasAlvo" value="44"></div>
-                    <div class="strategy-box"><div id="tipoEstratagia" class="estrategia-label">Equilibrada</div></div>
+                <div class="reposicao-engine" style="width:280px;min-width:280px;margin-bottom:0">
+                    <div class="engine-header" style="padding-bottom:12px">
+                        <div class="engine-icon"><i class="bx bx-bar-chart-alt-2"></i></div>
+                        <div><h2>Faturamento 30d</h2><span>Por fornecedor</span></div>
+                    </div>
+                    <div id="grafico-faturamento" style="padding:4px 0">
+                        <div style="text-align:center;color:var(--l3);font-size:12px;padding:20px 0">Atualize o motor para ver o faturamento</div>
+                    </div>
                 </div>
-                <div class="slider-area">
-                    <input type="range" min="15" max="70" value="44" id="sliderReposicao">
-                </div>
-                <button id="btnRecalcular"><i class="bx bx-refresh"></i> Recalcular Estratégia</button>
             </div>
 
             <!-- TABELA -->
@@ -202,8 +213,12 @@
 
             <div class="filter-divider"></div>
 
-            <div class="filter-section-title">Filtro por Marca:</div>
-            <div id="f-marcas" class="marca-list"></div>
+            <div class="filter-section-title">Fornecedor:</div>
+            <div id="f-fornecedores" class="marca-list">
+                <label class="marca-item"><input type="checkbox" value="Fitam" checked onchange="aplicarFiltros()"><span>Fitam <small style="color:var(--l3)">(Lanternas)</small></span></label>
+                <label class="marca-item"><input type="checkbox" value="Attis" checked onchange="aplicarFiltros()"><span>Attis <small style="color:var(--l3)">(Tapetes 00TB)</small></span></label>
+                <label class="marca-item"><input type="checkbox" value="Grid"  checked onchange="aplicarFiltros()"><span>Grid <small style="color:var(--l3)">(Tapetes TB)</small></span></label>
+            </div>
 
             <div class="filter-divider"></div>
             <button onclick="window.aplicarFiltros()" style="width:100%;padding:10px;background:var(--accent,#0a84ff);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
