@@ -167,6 +167,50 @@ router.post('/atualizar', auth, async (req, res) => {
     }
 });
 
+// ── Faturamento mensal ───────────────────────────────────────────────────────
+router.get('/faturamento_mensal', auth, async (req, res) => {
+    const cacheFile = 'faturamento_mensal.json';
+    const cached = lerJson(cacheFile, null);
+    if (cached && cached._atualizado) {
+        const idade = Date.now() - new Date(cached._atualizado).getTime();
+        if (idade < 6 * 3600 * 1000) return res.json(cached.dados);
+    }
+    try {
+        const { access_token, user_id } = await TokenManager.getToken();
+        const headers = { Authorization: `Bearer ${access_token}` };
+        const LIMIT = 50;
+        const hoje = new Date();
+        const dados = [];
+        for (let m = 5; m >= 0; m--) {
+            const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - m, 1);
+            const fim    = new Date(hoje.getFullYear(), hoje.getMonth() - m + 1, 0, 23, 59, 59);
+            const label  = inicio.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+            let total = 0, offset = 0, paging = null;
+            do {
+                const { data } = await axios.get('https://api.mercadolibre.com/orders/search', {
+                    headers,
+                    params: {
+                        seller: user_id,
+                        'order.date_created.from': inicio.toISOString(),
+                        'order.date_created.to':   fim.toISOString(),
+                        limit: LIMIT, offset,
+                    },
+                });
+                if (paging === null) paging = data.paging?.total || 0;
+                for (const pedido of data.results || [])
+                    for (const item of pedido.order_items || [])
+                        total += (item.unit_price || 0) * item.quantity;
+                offset += LIMIT;
+            } while (offset < paging);
+            dados.push({ mes: label, valor: +total.toFixed(2) });
+        }
+        salvarJson(cacheFile, { _atualizado: new Date().toISOString(), dados });
+        res.json(dados);
+    } catch (err) {
+        res.status(500).json({ erro: err.message });
+    }
+});
+
 // ── Trânsito ────────────────────────────────────────────────────────────────
 router.get('/transito', auth, (req, res) => {
     const t = lerJson('transito_local.json', {});

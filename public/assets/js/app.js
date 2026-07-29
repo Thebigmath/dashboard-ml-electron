@@ -55,32 +55,40 @@ function getFiltrosFornecedores() {
     return new Set([...checks].filter(c => c.checked).map(c => c.value));
 }
 
-function renderizarGraficoFaturamento() {
+async function renderizarGraficoFaturamento() {
     const el = document.getElementById('grafico-faturamento');
     if (!el) return;
-    const totais = { Fitam: 0, Attis: 0, Grid: 0 };
-    for (const p of window.produtosReposicao) {
-        const f = detectarFornecedor(p);
-        if (f && totais[f] !== undefined) totais[f] += p.faturamento30 || 0;
+    el.innerHTML = `<div style="text-align:center;color:var(--l3);font-size:12px;padding:20px 0">Carregando...</div>`;
+    try {
+        const r = await fetch('/api/faturamento_mensal');
+        const dados = await r.json();
+        if (!Array.isArray(dados) || !dados.length) throw new Error();
+        const max = Math.max(...dados.map(d => d.valor), 1);
+        const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        const W = 240, H = 120, PAD_L = 8, PAD_B = 22, barW = Math.floor((W - PAD_L) / dados.length) - 4;
+        const barH = (v) => Math.max(2, ((v / max) * (H - PAD_B - 8)));
+        const barX = (i) => PAD_L + i * ((W - PAD_L) / dados.length) + 2;
+        const bars = dados.map((d, i) => {
+            const h = barH(d.valor);
+            const x = barX(i);
+            const y = H - PAD_B - h;
+            const mesAtual = i === dados.length - 1;
+            return `
+                <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3"
+                    fill="${mesAtual ? '#0a84ff' : 'rgba(10,132,255,0.35)'}"/>
+                <text x="${x + barW/2}" y="${H - 6}" text-anchor="middle"
+                    font-size="9" fill="var(--l3)">${d.mes}</text>`;
+        }).join('');
+        const total = dados.reduce((s, d) => s + d.valor, 0);
+        el.innerHTML = `
+            <div style="font-size:18px;font-weight:700;color:var(--l1);margin-bottom:4px">${fmt(total)}</div>
+            <div style="font-size:11px;color:var(--l3);margin-bottom:10px">últimos 6 meses</div>
+            <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="overflow:visible">
+                ${bars}
+            </svg>`;
+    } catch {
+        el.innerHTML = `<div style="text-align:center;color:var(--l3);font-size:12px;padding:20px 0">Sem dados de faturamento</div>`;
     }
-    const semDados = Object.values(totais).every(v => v === 0);
-    if (semDados) {
-        el.innerHTML = `<div style="text-align:center;color:var(--l3);font-size:12px;padding:20px 0">Atualize o motor para ver o faturamento</div>`;
-        return;
-    }
-    const max = Math.max(...Object.values(totais), 1);
-    const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const cores = { Fitam: '#0a84ff', Attis: '#30d158', Grid: '#ff9f0a' };
-    el.innerHTML = Object.entries(totais).map(([nome, val]) => `
-        <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
-                <span style="color:var(--l2);font-weight:600">${nome}</span>
-                <span style="color:var(--l1)">${fmt(val)}</span>
-            </div>
-            <div style="background:var(--s2);border-radius:4px;height:8px;overflow:hidden">
-                <div style="height:100%;border-radius:4px;background:${cores[nome]};width:${(val/max*100).toFixed(1)}%;transition:width .5s"></div>
-            </div>
-        </div>`).join('');
 }
 
 function contarFiltrosAtivos() {
