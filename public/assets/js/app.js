@@ -39,36 +39,48 @@ window.setFiltroCategoria = function(cat) {
     aplicarFiltros();
 };
 
-const MARCAS_CONHECIDAS = ['Retrovex','Fitam','Toyota','Crown','Linde','Still','BYD','Fiat','Chevrolet','Jeep','Renault','Volkswagen','Ford','Honda','Nissan','Mitsubishi','Caterpillar','Hyster','Yale'];
-
-function detectarMarca(titulo) {
-    const t = (titulo || '').toLowerCase();
-    for (const m of MARCAS_CONHECIDAS) {
-        if (t.includes(m.toLowerCase())) return m;
-    }
+function detectarFornecedor(p) {
+    const t = (p.titulo || '').toLowerCase();
+    const s = (p.sku    || '').toLowerCase();
+    if (t.includes('lanterna')) return 'Fitam';
+    if (/^\d+tb/.test(s))      return 'Attis';
+    if (/^tb\d+/.test(s))      return 'Grid';
     return null;
 }
 
-function construirListaMarcas() {
-    const presentes = new Set();
-    window.produtosReposicao.forEach(p => {
-        const m = detectarMarca(p.titulo);
-        if (m) presentes.add(m);
-    });
-    const el = document.getElementById('f-marcas');
-    if (!el) return;
-    el.innerHTML = [...presentes].sort().map(m => `
-        <label class="marca-item">
-            <input type="checkbox" value="${m}" checked onchange="aplicarFiltros()">
-            <span>${m}</span>
-        </label>`).join('');
-}
-
-function getFiltrosMarcas() {
-    const checks = document.querySelectorAll('#f-marcas input[type=checkbox]');
+function getFiltrosFornecedores() {
+    const checks = document.querySelectorAll('#f-fornecedores input[type=checkbox]');
     if (!checks.length) return null;
     if ([...checks].every(c => c.checked)) return null;
     return new Set([...checks].filter(c => c.checked).map(c => c.value));
+}
+
+function renderizarGraficoFaturamento() {
+    const el = document.getElementById('grafico-faturamento');
+    if (!el) return;
+    const totais = { Fitam: 0, Attis: 0, Grid: 0 };
+    for (const p of window.produtosReposicao) {
+        const f = detectarFornecedor(p);
+        if (f && totais[f] !== undefined) totais[f] += p.faturamento30 || 0;
+    }
+    const semDados = Object.values(totais).every(v => v === 0);
+    if (semDados) {
+        el.innerHTML = `<div style="text-align:center;color:var(--l3);font-size:12px;padding:20px 0">Atualize o motor para ver o faturamento</div>`;
+        return;
+    }
+    const max = Math.max(...Object.values(totais), 1);
+    const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const cores = { Fitam: '#0a84ff', Attis: '#30d158', Grid: '#ff9f0a' };
+    el.innerHTML = Object.entries(totais).map(([nome, val]) => `
+        <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+                <span style="color:var(--l2);font-weight:600">${nome}</span>
+                <span style="color:var(--l1)">${fmt(val)}</span>
+            </div>
+            <div style="background:var(--s2);border-radius:4px;height:8px;overflow:hidden">
+                <div style="height:100%;border-radius:4px;background:${cores[nome]};width:${(val/max*100).toFixed(1)}%;transition:width .5s"></div>
+            </div>
+        </div>`).join('');
 }
 
 function contarFiltrosAtivos() {
@@ -79,7 +91,7 @@ function contarFiltrosAtivos() {
     if ((parseInt(document.getElementById('f-periodo')?.value) || 30) !== 30) n++;
     const statusOpts = [...(document.getElementById('f-status')?.options || [])];
     if (statusOpts.some(o => !o.selected)) n++;
-    if (getFiltrosMarcas()) n++;
+    if (getFiltrosFornecedores()) n++;
     return n;
 }
 
@@ -101,7 +113,7 @@ function aplicarFiltros() {
     const fSemTransito = document.getElementById('f-semtransito')?.checked;
     const fComEstoque  = document.getElementById('f-comestoque')?.checked;
     const statusSel    = new Set([...(document.getElementById('f-status')?.selectedOptions || [])].map(o => o.value));
-    const marcasSel    = getFiltrosMarcas();
+    const fornecedoresSel = getFiltrosFornecedores();
 
     let lista = window.produtosReposicao.map(p => {
         if (periodo !== 30) {
@@ -120,8 +132,8 @@ function aplicarFiltros() {
     if (statusSel.size && statusSel.size < 3)
         lista = lista.filter(p => statusSel.has(p.status));
 
-    if (marcasSel)
-        lista = lista.filter(p => { const m = detectarMarca(p.titulo); return m ? marcasSel.has(m) : false; });
+    if (fornecedoresSel)
+        lista = lista.filter(p => { const f = detectarFornecedor(p); return f ? fornecedoresSel.has(f) : false; });
 
     if (fRuptura)     lista = lista.filter(p => Number(p.estoque) === 0 && Number(p.mediaDia) > 0);
     if (fReposicao)   lista = lista.filter(p => Number(p.reposicao) > 0);
@@ -161,7 +173,7 @@ window.limparFiltros = function() {
     });
     const periodo = document.getElementById('f-periodo'); if (periodo) periodo.value = 30;
     const status  = document.getElementById('f-status');  if (status) [...status.options].forEach(o => o.selected = true);
-    document.querySelectorAll('#f-marcas input').forEach(c => c.checked = true);
+    document.querySelectorAll('#f-fornecedores input').forEach(c => c.checked = true);
     aplicarFiltros();
 };
 
@@ -302,7 +314,7 @@ function carregarProdutos() {
             });
             const produtos = Object.values(mapa);
             window.produtosReposicao = produtos;
-            construirListaMarcas();
+            renderizarGraficoFaturamento();
             aplicarFiltros();
         })
         .catch(() => {
