@@ -112,8 +112,7 @@ function aplicarFiltros() {
         return p;
     });
 
-    if (filtroCategoria === 'empilhadeira') lista = lista.filter(p => isEmpilhadeira(p));
-    else if (filtroCategoria === 'outros')  lista = lista.filter(p => !isEmpilhadeira(p));
+    lista = lista.filter(p => !isEmpilhadeira(p));
 
     if (textoPesquisa) lista = lista.filter(p =>
         p.titulo.toLowerCase().includes(textoPesquisa) || (p.sku||'').toLowerCase().includes(textoPesquisa));
@@ -229,7 +228,7 @@ function renderPagina(lista, pagina) {
             <td>${badgeUrgencia(p.cobertura)}</td>
             <td>${p.titulo}</td>
             <td>${p.sku}</td>
-            <td>${p.estoque}</td>
+            <td>${Math.max(0, Number(p.estoque) - (window.transitoMap[p.sku] || 0))}</td>
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
