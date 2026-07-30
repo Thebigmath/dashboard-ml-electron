@@ -117,3 +117,52 @@
         aplicarTema(novo);
     };
 })();
+
+/* ── Tema de fundo (aurora) ─────────────────────────────────────────────── */
+(function() {
+    const FUNDOS = [
+        { id: 'padrao',  nome: 'Padrão',  cor: '#007AFF' },
+        { id: 'oceano',  nome: 'Oceano',  cor: '#5AC8FA' },
+        { id: 'menta',   nome: 'Menta',   cor: '#34C759' },
+        { id: 'poente',  nome: 'Poente',  cor: '#FF9500' },
+        { id: 'grafite', nome: 'Grafite', cor: '#8E8E93' },
+    ];
+
+    // Aplica antes de montar a UI para não piscar o fundo anterior.
+    const salvo = localStorage.getItem('fundo') || 'padrao';
+    aplicarFundo(salvo);
+
+    function aplicarFundo(id) {
+        const root = document.documentElement;
+        if (id === 'padrao') root.removeAttribute('data-bg');
+        else root.setAttribute('data-bg', id);
+        document.querySelectorAll('.bg-dot').forEach(b => {
+            b.classList.toggle('ativo', b.dataset.fundo === id);
+            b.setAttribute('aria-pressed', String(b.dataset.fundo === id));
+        });
+    }
+
+    const sidebar = document.querySelector('.sidebar');
+    const footer  = sidebar && sidebar.querySelector('.sidebar-footer');
+    if (!sidebar || !footer) return;
+
+    const bloco = document.createElement('div');
+    bloco.className = 'bg-picker';
+    bloco.innerHTML =
+        '<div class="bg-picker-label">Fundo</div><div class="bg-dots">' +
+        FUNDOS.map(f =>
+            `<button type="button" class="bg-dot" data-fundo="${f.id}" title="${f.nome}" aria-label="Fundo ${f.nome}" style="background:${f.cor}"></button>`
+        ).join('') +
+        '</div>';
+
+    sidebar.insertBefore(bloco, footer);
+
+    bloco.addEventListener('click', e => {
+        const btn = e.target.closest('.bg-dot');
+        if (!btn) return;
+        localStorage.setItem('fundo', btn.dataset.fundo);
+        aplicarFundo(btn.dataset.fundo);
+    });
+
+    aplicarFundo(salvo);   // marca o selecionado agora que os botões existem
+})();
