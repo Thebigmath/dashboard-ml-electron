@@ -109,8 +109,8 @@
                         <div><h2>Estratégia de Reposição</h2><span>Configuração do motor inteligente de cálculo</span></div>
                     </div>
                     <div class="engine-grid">
-                        <div class="field"><label>Dias até coleta ou reserva Full</label><input type="number" id="diasColeta" value="7"></div>
-                        <div class="field"><label>Dias de Estoque Alvo Full</label><input type="number" id="diasAlvo" value="44"></div>
+                        <div class="field"><label>Dias até coleta ou reserva Full</label><input type="number" id="diasColeta" value="17"></div>
+                        <div class="field"><label>Dias de Estoque Alvo Full</label><input type="number" id="diasAlvo" value="35"></div>
                         <div class="strategy-box"><div id="tipoEstratagia" class="estrategia-label">Equilibrada</div></div>
                     </div>
                     <div class="slider-area">
@@ -147,13 +147,21 @@
                     <table class="table align-middle mb-0 dashboard-table">
                         <thead>
                             <tr>
-                                <th>Urgência</th><th>Produto</th><th>SKU</th>
-                                <th>Estoque</th><th>Vendas 30d</th><th>Média Dia</th>
-                                <th>Cobertura</th><th>Reposição</th><th>Em Trânsito</th><th>Qtd Full</th>
+                                <th>Urgência <i class="bi bi-info-circle th-info-icon" data-tip="Nível de risco de ruptura, baseado na cobertura em dias"></i></th>
+                                <th>Produto</th>
+                                <th>SKU</th>
+                                <th>Estoque <i class="bi bi-info-circle th-info-icon" data-tip="Estoque físico total no FULL (inclui unidades em transferência)"></i></th>
+                                <th>Vendas 30d <i class="bi bi-info-circle th-info-icon" data-tip="Unidades vendidas nos últimos 30 dias, excluindo pedidos cancelados"></i></th>
+                                <th>Média Dia <i class="bi bi-info-circle th-info-icon" data-tip="Vendas 30d ÷ 30 = média de vendas por dia"></i></th>
+                                <th>Cobertura <i class="bi bi-info-circle th-info-icon" data-tip="Estoque ÷ Média Dia = quantos dias o estoque atual dura no ritmo de vendas"></i></th>
+                                <th>Estoque Alvo <i class="bi bi-info-circle th-info-icon" data-tip="ceil(Média Dia × Dias de Estoque Alvo) = estoque ideal para cobrir o período alvo, sem considerar coleta"></i></th>
+                                <th>Reposição <i class="bi bi-info-circle th-info-icon" data-tip="Quantidade a enviar hoje. Anúncios ativos somam o buffer de dias até coleta; pausados usam só o Estoque Alvo"></i></th>
+                                <th>Em Trânsito <i class="bi bi-info-circle th-info-icon" data-tip="Unidades já enviadas para o FULL mas ainda não recebidas"></i></th>
+                                <th>Qtd Full <i class="bi bi-info-circle th-info-icon" data-tip="Quantidade sugerida para enviar hoje ao FULL (editável)"></i></th>
                             </tr>
                         </thead>
                         <tbody id="tabelaReposicao">
-                            <tr><td colspan="10" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
+                            <tr><td colspan="11" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
                         </tbody>
                     </table>
                 </div>

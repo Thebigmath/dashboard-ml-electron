@@ -2,6 +2,8 @@
     "client_id": "459859228023536",
     "client_secret": "jTgBytqCU23qwLg5veZNEWiquZboeEqr",
     "planilha_custos": "C:\\Users\\Matheus Prata\\Desktop\\ALL TIME\\estoqueall(Ollie)\\planilha de custos .xlsx",
+    "dias_coleta": 17,
+    "dias_alvo": 35,
     "app_nome": "Flavia Stock",
     "app_porta": 3001,
     "outro_app": {

@@ -265,6 +265,8 @@ function renderPagina(lista, pagina) {
     const fatia  = lista.slice(inicio, inicio + POR_PAGINA);
 
     const inputStyle = 'width:70px;background:var(--s2,#1c1c1e);border:1px solid var(--sep2,#3a3a3c);border-radius:6px;color:var(--l1,#fff);padding:3px 6px;font-size:12px;text-align:center;outline:none;';
+    // Estoque alvo é só exibição (sem coleta), não afeta o cálculo de reposição
+    const diasAlvoExibicao = parseInt(diasAlvo?.value) || 35;
 
     tabela.innerHTML = fatia.map(p => `
         <tr data-sku="${p.sku}">
@@ -275,6 +277,7 @@ function renderPagina(lista, pagina) {
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
+            <td>${Math.ceil(Number(p.mediaDia) * diasAlvoExibicao)}</td>
             <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
             <td><input type="number" class="qtd-full" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.itemId]=parseInt(this.value)||0"></td>
@@ -339,8 +342,9 @@ function carregarProdutos() {
                     mapa[sku].mediaDia  = Math.round(mediaDia * 100) / 100;
                     mapa[sku].cobertura = mediaDia > 0 ? Math.round((estoqueMax / mediaDia) * 10) / 10 : 999;
                     const _diasC = parseInt(diasColeta?.value) || 0;
-                    const _diasA = parseInt(diasAlvo?.value)   || 44;
-                    mapa[sku].reposicao = Math.max(0, Math.ceil(mediaDia * (_diasC + _diasA)) - estoqueMax);
+                    const _diasA = parseInt(diasAlvo?.value)   || 35;
+                    const _diasTotal = (mapa[sku].status === 'active') ? (_diasC + _diasA) : _diasA;
+                    mapa[sku].reposicao = Math.max(0, Math.ceil(mediaDia * _diasTotal) - estoqueMax);
                 }
             });
             const produtos = Object.values(mapa);
@@ -349,7 +353,7 @@ function carregarProdutos() {
             aplicarFiltros();
         })
         .catch(() => {
-            if (tabela) tabela.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
+            if (tabela) tabela.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
         });
 }
 
@@ -371,25 +375,44 @@ if (pesquisa) {
     });
 }
 
+/* ── Cálculo Magis5 ─────────────────────────────────────────────────────── */
+function calcularReposicaoMagis5(vendas30d, diasColeta, diasAlvo, estoqueAtualFull, transitoFull, itensPorKit, ativo) {
+    transitoFull  = transitoFull  || 0;
+    itensPorKit   = itensPorKit   || 1;
+    const vdm = Math.round((vendas30d / 30) * 100) / 100;
+    // Buffer de coleta só se aplica a anúncios ativos — pausado não tem risco de ruptura nesse período
+    const diasTotal = ativo ? (diasAlvo + diasColeta) : diasAlvo;
+    const coberturaNecessaria  = vdm * diasTotal;
+    const estoqueDisponivelTotal = estoqueAtualFull + transitoFull;
+    const necessidade = coberturaNecessaria - estoqueDisponivelTotal;
+    if (necessidade <= 0) return 0;
+    let sugestao = Math.ceil(necessidade);
+    if (itensPorKit > 1) {
+        const resto = sugestao % itensPorKit;
+        if (resto !== 0) sugestao += (itensPorKit - resto);
+    }
+    return sugestao;
+}
+
 /* ── Recalcular ─────────────────────────────────────────────────────────── */
 if (btnRecalcular) {
     btnRecalcular.addEventListener('click', () => {
         if (!window.produtosReposicao.length) return;
         const diasC = parseInt(diasColeta?.value) || 0;
-        const diasA = parseInt(diasAlvo?.value)   || 44;
-        const diasT = diasC + diasA;
+        const diasA = parseInt(diasAlvo?.value)   || 35;
 
-        produtosFiltrados = window.produtosReposicao.map(p => {
-            const estoque   = Number(p.estoque);
-            const mediaDia  = Number(p.mediaDia);
-            const transito  = Number(window.transitoMap[p.sku] || 0);
-            const cobertura = mediaDia > 0 ? parseFloat((estoque / mediaDia).toFixed(1)) : 999;
-            const reposicao = Math.max(Math.ceil(mediaDia * diasT) - estoque - transito, 0);
-            return { ...p, cobertura, reposicao };
+        window.produtosReposicao = window.produtosReposicao.map(p => {
+            const estoque  = Number(p.estoque);
+            const vendas30 = Number(p.vendas30);
+            const transito = Number(window.transitoMap[p.sku] || 0);
+            const vdm      = Math.round((vendas30 / 30) * 100) / 100;
+            const cobertura = vdm > 0 ? parseFloat((estoque / vdm).toFixed(1)) : 999;
+            const reposicao = calcularReposicaoMagis5(vendas30, diasC, diasA, estoque, transito, 1, p.status === 'active');
+            return { ...p, mediaDia: vdm, cobertura, reposicao };
         });
 
         paginaAtual = 1;
-        renderPagina(produtosFiltrados, paginaAtual);
+        aplicarFiltros();
     });
 }
 
@@ -470,5 +493,34 @@ if (btnEnviarFull) {
         window.open('https://myaccount.mercadolivre.com.br/shipping/import/excel/upload', '_blank');
     });
 }
+
+/* ── Tooltips de cabeçalho (clique, não hover) ─────────────────────────── */
+const thTooltipPopup = document.createElement('div');
+thTooltipPopup.id = 'th-tooltip-popup';
+document.body.appendChild(thTooltipPopup);
+
+document.addEventListener('click', (e) => {
+    const icone = e.target.closest('.th-info-icon');
+    if (icone) {
+        const jaAberto = thTooltipPopup.classList.contains('show') && thTooltipPopup._alvo === icone;
+        if (jaAberto) {
+            thTooltipPopup.classList.remove('show');
+            thTooltipPopup._alvo = null;
+            return;
+        }
+        thTooltipPopup.textContent = icone.dataset.tip || '';
+        thTooltipPopup.classList.add('show');
+        thTooltipPopup._alvo = icone;
+
+        const r = icone.getBoundingClientRect();
+        thTooltipPopup.style.top  = (r.bottom + 6) + 'px';
+        let left = r.left + r.width / 2 - thTooltipPopup.offsetWidth / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - thTooltipPopup.offsetWidth - 8));
+        thTooltipPopup.style.left = left + 'px';
+    } else if (!e.target.closest('#th-tooltip-popup')) {
+        thTooltipPopup.classList.remove('show');
+        thTooltipPopup._alvo = null;
+    }
+});
 
 }); // DOMContentLoaded
