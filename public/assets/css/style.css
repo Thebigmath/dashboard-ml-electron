@@ -474,6 +474,25 @@ body {
   border-bottom: 0.5px solid var(--sep2);
   white-space: nowrap;
 }
+.th-info-icon { cursor: pointer; }
+#th-tooltip-popup {
+  position: fixed;
+  max-width: 240px;
+  background: var(--l1, #0D1117);
+  color: var(--s1, #fff);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  z-index: 2000;
+  display: none;
+}
+#th-tooltip-popup.show { display: block; }
 .dashboard-table tbody td {
   padding: 11px 14px;
   font-size: 13px; color: var(--l1);

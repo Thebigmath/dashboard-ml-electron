@@ -6,3 +6,6 @@ storage/transito_local.json
 
 storage/ultima_atualizacao.txt
 *.log
+storage/faturamento_mensal.json
+storage/uploads/
+test_server.js
