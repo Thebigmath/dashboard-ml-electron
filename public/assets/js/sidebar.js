@@ -97,7 +97,15 @@
     aplicarTema(tema);
 
     function aplicarTema(t) {
-        document.documentElement.setAttribute('data-theme', t);
+        const root = document.documentElement;
+        // Congela transições durante a troca: evita dezenas de cross-fades ao mesmo
+        // tempo e força o Chromium a recalcular var() em box-shadow (que ele mantém
+        // com o valor antigo quando a propriedade está em transition).
+        root.classList.add('sem-transicao');
+        root.setAttribute('data-theme', t);
+        void root.offsetHeight;
+        requestAnimationFrame(() => root.classList.remove('sem-transicao'));
+
         const icone = document.getElementById('iconeTema');
         if (icone) icone.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
     }
