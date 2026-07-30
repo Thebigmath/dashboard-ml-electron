@@ -513,9 +513,17 @@ document.addEventListener('click', (e) => {
         thTooltipPopup._alvo = icone;
 
         const r = icone.getBoundingClientRect();
-        thTooltipPopup.style.top  = (r.bottom + 6) + 'px';
-        let left = r.left + r.width / 2 - thTooltipPopup.offsetWidth / 2;
-        left = Math.max(8, Math.min(left, window.innerWidth - thTooltipPopup.offsetWidth - 8));
+        const h = thTooltipPopup.offsetHeight;
+        const w = thTooltipPopup.offsetWidth;
+
+        // Abre abaixo do ícone; se não couber, abre acima. Nunca sai da tela.
+        let top = r.bottom + 6;
+        if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+        top = Math.max(8, Math.min(top, window.innerHeight - h - 8));
+        thTooltipPopup.style.top = top + 'px';
+
+        let left = r.left + r.width / 2 - w / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
         thTooltipPopup.style.left = left + 'px';
     } else if (!e.target.closest('#th-tooltip-popup')) {
         thTooltipPopup.classList.remove('show');
