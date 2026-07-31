@@ -121,7 +121,7 @@
 /* ── Tema de fundo (aurora) ─────────────────────────────────────────────── */
 (function() {
     const FUNDOS = [
-        { id: 'padrao',  nome: 'Padrão',  cor: '#007AFF' },
+        { id: 'padrao',  nome: 'Padrão',  cor: 'var(--accent)' },  // segue a cor da marca do app
         { id: 'oceano',  nome: 'Oceano',  cor: '#5AC8FA' },
         { id: 'menta',   nome: 'Menta',   cor: '#34C759' },
         { id: 'poente',  nome: 'Poente',  cor: '#FF9500' },

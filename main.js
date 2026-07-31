@@ -21,6 +21,11 @@ for (const file of ['config.json', 'usuarios.json', 'custos.json']) {
             const existing = JSON.parse(fs.readFileSync(dest, 'utf8'));
             const defaults = JSON.parse(fs.readFileSync(src,  'utf8'));
             const merged   = { ...defaults, ...existing };
+            // outro_app é aninhado: o spread raso preservaria o objeto antigo inteiro
+            // e chaves novas (ex: exe_nome) nunca chegariam em quem já tem o app.
+            if (defaults.outro_app || existing.outro_app) {
+                merged.outro_app = { ...(defaults.outro_app || {}), ...(existing.outro_app || {}) };
+            }
             fs.writeFileSync(dest, JSON.stringify(merged, null, 4), 'utf8');
         } catch {}
     }
