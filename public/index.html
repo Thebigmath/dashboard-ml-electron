@@ -114,7 +114,7 @@
                         <div class="strategy-box"><div id="tipoEstratagia" class="estrategia-label">Equilibrada</div></div>
                     </div>
                     <div class="slider-area">
-                        <input type="range" min="15" max="70" value="44" id="sliderReposicao">
+                        <input type="range" min="15" max="70" value="35" id="sliderReposicao">
                     </div>
                     <button id="btnRecalcular"><i class="bx bx-refresh"></i> Recalcular Estratégia</button>
                 </div>
@@ -154,14 +154,13 @@
                                 <th>Vendas 30d <i class="bi bi-info-circle th-info-icon" data-tip="Unidades vendidas nos últimos 30 dias, excluindo pedidos cancelados"></i></th>
                                 <th>Média Dia <i class="bi bi-info-circle th-info-icon" data-tip="Vendas 30d ÷ 30 = média de vendas por dia"></i></th>
                                 <th>Cobertura <i class="bi bi-info-circle th-info-icon" data-tip="Estoque ÷ Média Dia = quantos dias o estoque atual dura no ritmo de vendas"></i></th>
-                                <th>Estoque Alvo <i class="bi bi-info-circle th-info-icon" data-tip="ceil(Média Dia × Dias de Estoque Alvo) = estoque ideal para cobrir o período alvo, sem considerar coleta"></i></th>
                                 <th>Reposição <i class="bi bi-info-circle th-info-icon" data-tip="Quantidade a enviar hoje. Anúncios ativos somam o buffer de dias até coleta; pausados usam só o Estoque Alvo"></i></th>
                                 <th>Em Trânsito <i class="bi bi-info-circle th-info-icon" data-tip="Unidades já enviadas para o FULL mas ainda não recebidas"></i></th>
                                 <th>Qtd Full <i class="bi bi-info-circle th-info-icon" data-tip="Quantidade sugerida para enviar hoje ao FULL (editável)"></i></th>
                             </tr>
                         </thead>
                         <tbody id="tabelaReposicao">
-                            <tr><td colspan="11" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
+                            <tr><td colspan="10" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
                         </tbody>
                     </table>
                 </div>

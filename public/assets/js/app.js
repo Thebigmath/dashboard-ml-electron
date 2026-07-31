@@ -265,8 +265,6 @@ function renderPagina(lista, pagina) {
     const fatia  = lista.slice(inicio, inicio + POR_PAGINA);
 
     const inputStyle = 'width:70px;background:var(--s2,#1c1c1e);border:1px solid var(--sep2,#3a3a3c);border-radius:6px;color:var(--l1,#fff);padding:3px 6px;font-size:12px;text-align:center;outline:none;';
-    // Estoque alvo é só exibição (sem coleta), não afeta o cálculo de reposição
-    const diasAlvoExibicao = parseInt(diasAlvo?.value) || 35;
 
     tabela.innerHTML = fatia.map(p => `
         <tr data-sku="${p.sku}">
@@ -277,7 +275,6 @@ function renderPagina(lista, pagina) {
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
-            <td>${Math.ceil(Number(p.mediaDia) * diasAlvoExibicao)}</td>
             <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
             <td><input type="number" class="qtd-full" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.itemId]=parseInt(this.value)||0"></td>
@@ -355,7 +352,7 @@ function carregarProdutos() {
             aplicarFiltros();
         })
         .catch(() => {
-            if (tabela) tabela.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
+            if (tabela) tabela.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
         });
 }
 
