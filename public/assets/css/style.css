@@ -535,6 +535,69 @@ body {
 .dashboard-table tbody tr:hover td { background: color-mix(in srgb, var(--blue) 6%, transparent); }
 
 /* ══════════════════════════════════════════════════════
+   SELEÇÃO DE PRODUTOS
+══════════════════════════════════════════════════════ */
+.col-sel { width: 34px; text-align: center; padding-right: 0 !important; }
+.sel-check {
+  width: 15px; height: 15px;
+  accent-color: var(--blue);
+  cursor: pointer; vertical-align: middle;
+}
+.dashboard-table tbody tr.linha-sel td { background: color-mix(in srgb, var(--blue) 9%, transparent); }
+.dashboard-table tbody tr.linha-sel:hover td { background: color-mix(in srgb, var(--blue) 13%, transparent); }
+
+#painel-selecao {
+  position: fixed; right: 24px; bottom: 24px;
+  width: 250px; padding: 14px;
+  background: color-mix(in srgb, var(--s1) 92%, transparent);
+  backdrop-filter: var(--mat-blur);
+  -webkit-backdrop-filter: var(--mat-blur);
+  border: 0.5px solid var(--sep);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-4);
+  z-index: 1500;
+  animation: painel-in .26s var(--ease-out) both;
+}
+@keyframes painel-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+
+#painel-selecao .ps-topo {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; color: var(--l1);
+  padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 0.5px solid var(--sep2);
+}
+#painel-selecao .ps-topo i { color: var(--blue); font-size: 14px; }
+#painel-selecao .ps-num {
+  display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px;
+}
+#painel-selecao .ps-num strong {
+  font-size: 24px; font-weight: 600; color: var(--blue);
+  letter-spacing: -0.8px; font-variant-numeric: tabular-nums;
+}
+#painel-selecao .ps-num span { font-size: 11px; color: var(--l3); }
+
+#painel-selecao .ps-btn {
+  display: flex; align-items: center; gap: 7px;
+  width: 100%; padding: 8px 11px; margin-bottom: 6px;
+  border: none; border-radius: 9px;
+  background: color-mix(in srgb, var(--l1) 6%, transparent);
+  color: var(--l1);
+  font-size: 12px; font-weight: 500; font-family: inherit;
+  text-align: left; cursor: pointer;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-spring);
+}
+#painel-selecao .ps-btn:hover  { background: color-mix(in srgb, var(--l1) 11%, transparent); }
+#painel-selecao .ps-btn:active { transform: scale(0.97); }
+#painel-selecao .ps-primario   { background: var(--blue); color: #fff; box-shadow: var(--sh-key); }
+#painel-selecao .ps-primario:hover { background: var(--blue); filter: brightness(1.07); }
+#painel-selecao .ps-limpar     { color: var(--l3); margin-bottom: 0; }
+#painel-selecao .ps-limpar:hover { color: var(--red); }
+
+@media (max-width: 640px) {
+  #painel-selecao { right: 12px; left: 12px; bottom: 12px; width: auto; }
+}
+
+/* ══════════════════════════════════════════════════════
    STAT CARDS
 ══════════════════════════════════════════════════════ */
 .stat-grid { display: grid; gap: 14px; }
