@@ -331,9 +331,12 @@ router.post('/atualizar', auth, async (req, res) => {
             const diasTotal = d.status === 'active' ? (diasAlvo + diasColeta) : diasAlvo;
             const rep = Math.max(0, Math.ceil(diasTotal * mediaDia - d.estoque));
             const { _itemIds, ...rest } = d;   // não persistir metadata interna
-            // Limpar sufixo interno do SKU (ex: "013tb~mlb123" → "013tb")
-            const skuLimpo = rest.sku.includes('~') ? rest.sku.split('~')[0] : rest.sku;
-            return { ...rest, sku: skuLimpo, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
+            // "sku" é só rótulo e pode repetir entre produtos diferentes (ex: 010TB em
+            // Nivus, Polo e Tera). "chave" é o identificador único — sem ela o frontend
+            // reagrupa esses produtos e volta a somar vendas de itens distintos.
+            const chave = rest.sku;
+            const skuLimpo = chave.includes('~') ? chave.split('~')[0] : chave;
+            return { ...rest, sku: skuLimpo, chave, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
         }).sort((a, b) => b.reposicao - a.reposicao);
 
         salvarJson('reposicao.json', reposicao);
