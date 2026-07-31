@@ -29,7 +29,7 @@
                 const r = await fetch('/api/switch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ porta: outro.porta, exe: outro.exe, nome: outro.nome }),
+                    body: JSON.stringify({ porta: outro.porta, exe: outro.exe, nome: outro.nome, exe_nome: outro.exe_nome }),
                 });
                 const d = await r.json();
                 if (d.ok) window.location.href = `http://localhost:${d.porta}`;
