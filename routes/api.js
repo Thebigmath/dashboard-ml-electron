@@ -306,6 +306,18 @@ router.post('/atualizar', auth, async (req, res) => {
             }
         }
 
+        // Unidades já enviadas ao FULL e ainda não recebidas — mesma regra do /dados.
+        // Contam como estoque a caminho e abatem a reposição.
+        const transitoPorSku = { ...lerJson('transito_local.json', {}) };
+        for (const e of lerJson('envios_full.json', [])) {
+            if (e.inativo || !e.skus) continue;
+            if ((e.recebido || 0) >= (e.unidades || 0) && (e.unidades || 0) > 0) continue;
+            for (const [s, qty] of Object.entries(e.skus)) {
+                const k = s.toLowerCase();
+                transitoPorSku[k] = (transitoPorSku[k] || 0) + qty;
+            }
+        }
+
         const reposicao = Object.values(porSku).map(d => {
             let vendas30      = 0;
             let faturamento30 = 0;
@@ -332,12 +344,20 @@ router.post('/atualizar', auth, async (req, res) => {
             }
 
             faturamento30 = +faturamento30.toFixed(2);
-            const mediaDia = +(vendas30 / 30).toFixed(2);
+            // vdm em precisão total no cálculo; arredondar antes de multiplicar
+            // introduzia erro de até 1 unidade na reposição.
+            const vdm = vendas30 / 30;
+            const mediaDia = +vdm.toFixed(2);   // só para exibição
             const cobertura = d.estoque === 0 ? 0 : (mediaDia > 0 ? +(d.estoque / mediaDia).toFixed(1) : 999);
             // Buffer de dias de coleta só se aplica a anúncios ativos (vendendo agora).
             // Anúncio pausado não corre risco de ruptura durante a coleta, então usa só o alvo base.
             const diasTotal = d.status === 'active' ? (diasAlvo + diasColeta) : diasAlvo;
-            const rep = Math.max(0, Math.ceil(diasTotal * mediaDia - d.estoque));
+            // estoque alvo − estoque projetado no fim da coleta (já descontado o que
+            // vende nesse período), com o que está a caminho contando como disponível
+            // o trânsito é indexado pelo SKU do envio, sem o sufixo interno da chave
+            const skuBase = d.sku.includes('~') ? d.sku.split('~')[0] : d.sku;
+            const emTransito = transitoPorSku[skuBase] || 0;
+            const rep = Math.max(0, Math.ceil(vdm * diasTotal - d.estoque - emTransito));
             const { _itemIds, ...rest } = d;   // não persistir metadata interna
             // "sku" é só rótulo e pode repetir entre produtos diferentes (ex: 010TB em
             // Nivus, Polo e Tera). "chave" é o identificador único — sem ela o frontend

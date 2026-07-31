@@ -381,7 +381,8 @@ if (pesquisa) {
 function calcularReposicaoMagis5(vendas30d, diasColeta, diasAlvo, estoqueAtualFull, transitoFull, itensPorKit, ativo) {
     transitoFull  = transitoFull  || 0;
     itensPorKit   = itensPorKit   || 1;
-    const vdm = Math.round((vendas30d / 30) * 100) / 100;
+    // precisão total: arredondar o vdm antes de multiplicar errava até 1 unidade
+    const vdm = vendas30d / 30;
     // Buffer de coleta só se aplica a anúncios ativos — pausado não tem risco de ruptura nesse período
     const diasTotal = ativo ? (diasAlvo + diasColeta) : diasAlvo;
     const coberturaNecessaria  = vdm * diasTotal;
