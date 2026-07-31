@@ -21,6 +21,12 @@ window.produtosReposicao = [];
 window.qtdsFull   = {};
 window.transitoMap = {};
 window.custosMap   = {};
+// Seleção por "chave" (identificador único), não pelo SKU: assim ela sobrevive
+// à paginação, aos filtros e a SKUs repetidos entre produtos diferentes.
+window.selecionados = new Set();
+let apenasSelecionados = false;
+
+const chaveDe = p => p.chave || p.sku;
 
 const KEYWORDS_EMPILHADEIRA = ['empilhadeira','hyster','yale','bobcat','forklift','trator'];
 let filtroCategoria = 'todos';
@@ -173,6 +179,7 @@ function aplicarFiltros() {
     if (fComTransito) lista = lista.filter(p => Number(window.transitoMap[p.sku] || 0) > 0);
     if (fSemTransito) lista = lista.filter(p => Number(window.transitoMap[p.sku] || 0) === 0);
     if (fComEstoque)  lista = lista.filter(p => Number(p.estoque) > 0);
+    if (apenasSelecionados) lista = lista.filter(p => window.selecionados.has(chaveDe(p)));
 
     const PRIORIDADE = ['tapete','lanterna','calota'];
     function nivelPrioridade(p) {
@@ -267,7 +274,8 @@ function renderPagina(lista, pagina) {
     const inputStyle = 'width:70px;background:var(--s2,#1c1c1e);border:1px solid var(--sep2,#3a3a3c);border-radius:6px;color:var(--l1,#fff);padding:3px 6px;font-size:12px;text-align:center;outline:none;';
 
     tabela.innerHTML = fatia.map(p => `
-        <tr data-sku="${p.sku}">
+        <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' class="linha-sel"' : ''}>
+            <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
             <td>${badgeUrgencia(p.cobertura)}</td>
             <td>${p.titulo}</td>
             <td>${p.sku}</td>
@@ -281,7 +289,76 @@ function renderPagina(lista, pagina) {
         </tr>`).join('');
 
     renderControles(lista.length, pagina);
+    sincronizarSelecaoUI();
 }
+
+/* ── Seleção de produtos ────────────────────────────────────────────────── */
+function sincronizarSelecaoUI() {
+    const n = window.selecionados.size;
+
+    // checkbox mestre reflete o estado da página visível
+    const visiveis = [...document.querySelectorAll('.sel-linha')];
+    const master   = document.getElementById('selTodos');
+    if (master) {
+        const marcados = visiveis.filter(c => c.checked).length;
+        master.checked       = visiveis.length > 0 && marcados === visiveis.length;
+        master.indeterminate = marcados > 0 && marcados < visiveis.length;
+    }
+
+    let painel = document.getElementById('painel-selecao');
+    if (!n) { painel?.remove(); return; }
+
+    if (!painel) {
+        painel = document.createElement('div');
+        painel.id = 'painel-selecao';
+        document.body.appendChild(painel);
+        painel.addEventListener('click', e => {
+            const acao = e.target.closest('[data-acao]')?.dataset.acao;
+            if (acao === 'filtrar') { apenasSelecionados = !apenasSelecionados; paginaAtual = 1; aplicarFiltros(); }
+            if (acao === 'limpar')  { window.selecionados.clear(); apenasSelecionados = false; paginaAtual = 1; aplicarFiltros(); }
+            if (acao === 'planilha') document.getElementById('btnGerarPlanilhaFull')?.click();
+        });
+    }
+
+    // soma as quantidades informadas apenas dos selecionados
+    const porChave = {};
+    window.produtosReposicao.forEach(p => { porChave[chaveDe(p)] = p; });
+    let unidades = 0;
+    window.selecionados.forEach(c => {
+        const p = porChave[c];
+        if (p) unidades += Number(window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : 0)) || 0;
+    });
+
+    painel.innerHTML = `
+        <div class="ps-topo"><i class="bi bi-check2-square"></i> ${n} produto${n > 1 ? 's' : ''} selecionado${n > 1 ? 's' : ''}</div>
+        <div class="ps-num"><strong>${unidades}</strong><span>unidades a enviar</span></div>
+        <button class="ps-btn ps-primario" data-acao="filtrar">
+            <i class="bi bi-funnel"></i> ${apenasSelecionados ? 'Mostrar todos' : 'Mostrar apenas selecionados'}
+        </button>
+        <button class="ps-btn" data-acao="planilha"><i class="bi bi-file-earmark-arrow-down"></i> Gerar planilha dos selecionados</button>
+        <button class="ps-btn ps-limpar" data-acao="limpar"><i class="bi bi-x-circle"></i> Limpar seleção</button>`;
+}
+
+if (tabela) {
+    tabela.addEventListener('change', e => {
+        const chk = e.target.closest('.sel-linha');
+        if (!chk) return;
+        const c = chk.dataset.chave;
+        if (chk.checked) window.selecionados.add(c); else window.selecionados.delete(c);
+        chk.closest('tr')?.classList.toggle('linha-sel', chk.checked);
+        sincronizarSelecaoUI();
+    });
+}
+
+document.getElementById('selTodos')?.addEventListener('change', function () {
+    document.querySelectorAll('.sel-linha').forEach(chk => {
+        chk.checked = this.checked;
+        if (this.checked) window.selecionados.add(chk.dataset.chave);
+        else window.selecionados.delete(chk.dataset.chave);
+        chk.closest('tr')?.classList.toggle('linha-sel', this.checked);
+    });
+    sincronizarSelecaoUI();
+});
 
 function renderControles(total, pagina) {
     const totalPaginas = Math.ceil(total / POR_PAGINA);
@@ -352,7 +429,7 @@ function carregarProdutos() {
             aplicarFiltros();
         })
         .catch(() => {
-            if (tabela) tabela.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
+            if (tabela) tabela.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
         });
 }
 
@@ -459,14 +536,25 @@ if (btnGerarPlanilha) {
             if (id) window.qtdsFull[id] = qty;
         });
 
+        // Havendo seleção, exporta só os selecionados. Sem seleção, exporta tudo
+        // que tiver quantidade — comportamento de antes.
+        const itemIdsSelecionados = window.selecionados.size
+            ? new Set(window.produtosReposicao.filter(p => window.selecionados.has(chaveDe(p))).map(p => p.item_id))
+            : null;
+
         const produtosExportar = Object.entries(window.qtdsFull)
-            .filter(([, qty]) => qty > 0)
+            .filter(([item_id, qty]) => qty > 0 && (!itemIdsSelecionados || itemIdsSelecionados.has(item_id)))
             .map(([item_id, qtdFull]) => {
                 const produto = window.produtosReposicao.find(p => p.item_id === item_id);
                 return { item_id, qtdFull, sku: produto?.sku || '' };
             });
 
-        if (!produtosExportar.length) { alert('Nenhum produto com quantidade informada.'); return; }
+        if (!produtosExportar.length) {
+            alert(itemIdsSelecionados
+                ? 'Nenhum dos produtos selecionados tem quantidade informada.'
+                : 'Nenhum produto com quantidade informada.');
+            return;
+        }
 
         try {
             const resp = await fetch('/api/gerar_planilha', {
