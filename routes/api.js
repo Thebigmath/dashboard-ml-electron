@@ -170,7 +170,15 @@ router.post('/atualizar', auth, async (req, res) => {
             await Promise.all(lote.map(async (invId) => {
                 try {
                     const { data } = await axios.get(`https://api.mercadolibre.com/inventories/${invId}/stock/fulfillment`, { headers });
-                    if (typeof data.total === 'number') estoqueFullPorInventory[invId] = data.total;
+                    // "total" também soma unidades perdidas, em processamento interno e em
+                    // retirada, que não voltam a vender. Só o que está em transferência entre
+                    // galpões continua sendo estoque — é o mesmo critério que o Magico usa.
+                    if (typeof data.available_quantity === 'number') {
+                        const emTransferencia = (data.not_available_detail || [])
+                            .filter(x => x.status === 'transfer')
+                            .reduce((soma, x) => soma + (x.quantity || 0), 0);
+                        estoqueFullPorInventory[invId] = data.available_quantity + emTransferencia;
+                    }
                 } catch { /* item sem estoque FULL detalhado, mantém fallback */ }
             }));
         }
