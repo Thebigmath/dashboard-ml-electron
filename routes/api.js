@@ -497,8 +497,9 @@ router.get('/importar_custos', auth, (req, res) => {
     try {
         const config = JSON.parse(fs.readFileSync(path.join(STORAGE, 'config.json'), 'utf8'));
         const filePath = config.planilha_custos;
-        if (!filePath) return res.status(400).json({ erro: 'planilha_custos não configurada em config.json' });
-        if (!fs.existsSync(filePath)) return res.status(404).json({ erro: `Arquivo não encontrado: ${filePath}` });
+        const dica = 'Use o botão de enviar planilha para importar o arquivo .xlsx.';
+        if (!filePath) return res.status(400).json({ erro: `Nenhuma planilha fixa configurada. ${dica}` });
+        if (!fs.existsSync(filePath)) return res.status(404).json({ erro: `A planilha configurada não existe mais neste computador. ${dica}` });
 
         const XLSX = require('xlsx');
         const wb = XLSX.readFile(filePath);
@@ -614,15 +615,44 @@ router.post('/switch', auth, (req, res) => {
     const http   = require('http');
     const { spawn } = require('child_process');
 
-    // Resolve caminho do exe: tenta o configurado, depois o caminho padrão de instalação NSIS
+    // Resolve o caminho do exe. O nome exibido ("Cordeiro Car") nem sempre é o
+    // productName da instalação ("Dashboard Cordeiro"), então além dos caminhos
+    // exatos procuramos uma pasta instalada que compartilhe uma palavra do nome.
     const exePath = (() => {
         if (exe && fs.existsSync(exe)) return exe;
-        const appNome = (nome || '').trim() || 'Dashboard';
-        const localPrograms = path.join(process.env.LOCALAPPDATA || '', 'Programs', appNome, `${appNome}.exe`);
-        if (fs.existsSync(localPrograms)) return localPrograms;
-        // Fallback: busca em Program Files
-        const pf = path.join(process.env.PROGRAMFILES || 'C:\\Program Files', appNome, `${appNome}.exe`);
-        if (fs.existsSync(pf)) return pf;
+
+        const bases = [
+            process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Programs'),
+            process.env.PROGRAMFILES,
+            process.env['PROGRAMFILES(X86)'],
+        ].filter(Boolean);
+
+        const nomes = [req.body.exe_nome, nome].map(n => (n || '').trim()).filter(Boolean);
+
+        // 1) caminho exato <base>/<nome>/<nome>.exe
+        for (const base of bases) {
+            for (const n of nomes) {
+                const p = path.join(base, n, `${n}.exe`);
+                if (fs.existsSync(p)) return p;
+            }
+        }
+
+        // 2) pasta instalada que compartilhe uma palavra significativa do nome
+        const palavras = nomes.flatMap(n => n.split(/\s+/)).filter(p => p.length >= 4).map(p => p.toLowerCase());
+        if (!palavras.length) return null;
+
+        for (const base of bases) {
+            let dirs = [];
+            try {
+                dirs = fs.readdirSync(base, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+            } catch { continue; }
+            for (const d of dirs) {
+                const dl = d.toLowerCase();
+                if (!palavras.some(p => dl.includes(p))) continue;
+                const p = path.join(base, d, `${d}.exe`);
+                if (fs.existsSync(p)) return p;
+            }
+        }
         return null;
     })();
 
