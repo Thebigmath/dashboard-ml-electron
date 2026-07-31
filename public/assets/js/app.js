@@ -330,7 +330,9 @@ function carregarProdutos() {
             // Aqui apenas indexa por SKU como segurança
             const mapa = {};
             raw.forEach(p => {
-                const sku = p.sku;
+                // agrupa pela chave única, não pelo rótulo: SKUs iguais podem ser
+                // produtos diferentes e não devem ter as vendas somadas
+                const sku = p.chave || p.sku;
                 if (!mapa[sku]) {
                     mapa[sku] = { ...p };
                 } else {
