@@ -615,6 +615,9 @@ router.post('/gerar_planilha', auth, (req, res) => {
             maxRow = row;
         });
         ws['!ref'] = `A1:F${maxRow}`;
+        // Template do ML tem duas sheets: "Planilha 1" (vazia) e "Dados Mercado Livre"
+        const wsVazia = { 'A1': { v: '', t: 's' }, '!ref': 'A1' };
+        XLSX.utils.book_append_sheet(wb, wsVazia, 'Planilha 1');
         XLSX.utils.book_append_sheet(wb, ws, 'Dados Mercado Livre');
 
         const config = lerJson('config.json', {});
