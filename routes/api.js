@@ -597,32 +597,34 @@ router.post('/importar_custos', auth, upload.single('planilha'), (req, res) => {
 });
 
 // ── Gerar planilha Full ─────────────────────────────────────────────────────
+// Formato exigido pelo ML: sheet "Dados Mercado Livre", coluna D = item_id,
+// coluna F = quantidade, dados começando na linha 6 (linhas 1-5 vazias).
 router.post('/gerar_planilha', auth, (req, res) => {
     try {
         const XLSX = require('xlsx');
-        const itens = req.body; // [{ item_id, sku, qtdFull }]
+        const itens = req.body; // [{ item_id, sku, qtdFull, chave }]
         if (!Array.isArray(itens) || !itens.length) return res.status(400).json({ erro: 'Sem itens' });
-        const reposicao = lerJson('reposicao.json', []);
-        const rows = itens.map(({ item_id, sku, qtdFull, chave }) => {
-            // Busca pela chave: um mesmo item_id pode ter duas variações (ex: 1102 e
-            // 1103 no mesmo anúncio), e procurar por item_id traria sempre a primeira.
-            const p = (chave && reposicao.find(x => x.chave === chave))
-                   || reposicao.find(x => x.item_id === item_id)
-                   || {};
-            return {
-                'Item ID': item_id,
-                'SKU': sku || p.sku || '',
-                'Título': p.titulo || '',
-                'Estoque Atual': p.estoque || 0,
-                'Vendas 30d': p.vendas30 || 0,
-                'Média/Dia': p.mediaDia || 0,
-                'Qtd Full': qtdFull,
-            };
-        });
+
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Reposição Full');
+        const ws = {};
+        let maxRow = 5;
+        itens.forEach(({ item_id, qtdFull }, i) => {
+            const row = 6 + i; // linha 6 em diante (1-indexed)
+            ws[`D${row}`] = { v: item_id, t: 's' };
+            ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
+            maxRow = row;
+        });
+        ws['!ref'] = `A1:F${maxRow}`;
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados Mercado Livre');
+
+        const config = lerJson('config.json', {});
+        const nomeApp = (config.app_nome || 'FULL').toUpperCase().replace(/\s+/g, '_');
+        const ts = new Date().toLocaleString('pt-BR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' })
+            .replace(/[\/\s,:]/g, '').replace(/(\d{2})(\d{2})(\d{4})(\d{6})/, '$3$2$1$4');
+        const filename = `${nomeApp}-${ts}-full-preenchido.xlsx`;
+
         const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-        res.setHeader('Content-Disposition', 'attachment; filename="reposicao_full.xlsx"');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.send(buf);
     } catch (e) {
