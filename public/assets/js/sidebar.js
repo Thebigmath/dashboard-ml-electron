@@ -118,6 +118,62 @@
     };
 })();
 
+/* ── Sidebar recolhível (hambúrguer) ────────────────────────────────────── */
+(function() {
+    const root = document.documentElement;
+
+    // Aplica antes de montar a UI para a sidebar não "pular" ao carregar.
+    if (localStorage.getItem('menuRecolhido') === '1') root.classList.add('sidebar-recolhida');
+
+    function montar() {
+        const topbar = document.querySelector('.topbar');
+        if (!topbar) return;
+
+        // Nem toda página tem o wrapper; normaliza para o botão ficar junto do título.
+        let esquerda = topbar.querySelector('.topbar-left');
+        if (!esquerda) {
+            const primeiro = topbar.firstElementChild;
+            esquerda = document.createElement('div');
+            esquerda.className = 'topbar-left';
+            topbar.insertBefore(esquerda, primeiro);
+            if (primeiro) esquerda.appendChild(primeiro);
+        }
+
+        let btn = document.getElementById('btnMenu');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'btnMenu';
+            btn.className = 'btn-hamburguer';
+            btn.setAttribute('aria-label', 'Recolher menu');
+            btn.innerHTML = '<span></span><span></span><span></span>';
+            esquerda.insertBefore(btn, esquerda.firstChild);
+        }
+
+        // Com os rótulos escondidos, o texto vira tooltip no hover.
+        document.querySelectorAll('.sidebar .menu li').forEach(li => {
+            const txt = li.querySelector('span')?.textContent.trim();
+            if (txt) li.dataset.rotulo = txt;
+        });
+
+        const sincronizar = () => {
+            const recolhida = root.classList.contains('sidebar-recolhida');
+            btn.title = recolhida ? 'Abrir menu' : 'Recolher menu';
+            btn.setAttribute('aria-expanded', String(!recolhida));
+        };
+
+        btn.addEventListener('click', () => {
+            const recolhida = root.classList.toggle('sidebar-recolhida');
+            localStorage.setItem('menuRecolhido', recolhida ? '1' : '0');
+            sincronizar();
+        });
+
+        sincronizar();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar);
+    else montar();
+})();
+
 /* ── Tema de fundo (aurora) ─────────────────────────────────────────────── */
 (function() {
     const FUNDOS = [

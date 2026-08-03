@@ -269,6 +269,54 @@ body {
   color: var(--l4); font-size: 10px; letter-spacing: 0.4px;
 }
 
+/* ══════════════════════════════════════════════════════
+   SIDEBAR RECOLHIDA  (html.sidebar-recolhida)
+   Some com os rótulos e deixa só os ícones, centralizados.
+══════════════════════════════════════════════════════ */
+:root.sidebar-recolhida { --sw: 60px; }
+
+/* a largura anima junto com a variável */
+.sidebar { transition: width var(--t-base) var(--ease-out); }
+
+.sidebar-recolhida .logo { padding: 0; justify-content: center; gap: 0; }
+.sidebar-recolhida .logo > div:not(.logo-icon) { display: none; }
+
+.sidebar-recolhida .menu { padding: 10px 8px; }
+.sidebar-recolhida .menu li { justify-content: center; padding: 10px 0; gap: 0; }
+.sidebar-recolhida .menu li span { display: none; }
+.sidebar-recolhida .menu li i { font-size: 16px; }
+
+.sidebar-recolhida .bg-picker { padding: 12px 8px 4px; }
+.sidebar-recolhida .bg-picker-label { display: none; }
+.sidebar-recolhida .bg-dots { flex-wrap: wrap; justify-content: center; gap: 6px; }
+.sidebar-recolhida .bg-dot { width: 14px; height: 14px; }
+
+.sidebar-recolhida .sidebar-footer { display: none; }
+
+.sidebar-recolhida .account-switcher { margin: 8px 8px 14px; padding: 9px 0; justify-content: center; }
+.sidebar-recolhida .account-switcher > div > div:last-child,
+.sidebar-recolhida .account-switcher span,
+.sidebar-recolhida .account-switcher i { display: none; }
+.sidebar-recolhida .account-switcher .account-switcher-dot { display: block; margin: 0 auto; }
+
+/* rótulo flutuante ao passar o mouse, já que o texto sumiu */
+.sidebar-recolhida .menu li { position: relative; }
+.sidebar-recolhida .menu li::after {
+  content: attr(data-rotulo);
+  position: absolute; left: calc(100% + 10px); top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--l1) 92%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  color: var(--s1);
+  font-size: 12px; font-weight: 500; white-space: nowrap;
+  border-radius: 9px; box-shadow: var(--sh-3);
+  opacity: 0; pointer-events: none; z-index: 200;
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out);
+}
+.sidebar-recolhida .menu li:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+
 /* ── Seletor de tema de fundo ── */
 .bg-picker { padding: 12px 18px 4px; border-top: 0.5px solid var(--sep2); }
 .bg-picker-label {
@@ -313,7 +361,30 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 50;
 }
+.topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .topbar h4 { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; color: var(--l1); margin: 0; }
+
+/* ── Botão hambúrguer ── */
+.btn-hamburguer {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: none; border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-spring);
+}
+.btn-hamburguer:hover  { background: color-mix(in srgb, var(--l1) 7%, transparent); }
+.btn-hamburguer:active { transform: scale(0.92); }
+.btn-hamburguer span {
+  display: block; width: 16px; height: 1.5px; border-radius: 2px;
+  background: var(--l2);
+  transition: transform var(--t-base) var(--ease-out), opacity var(--t-fast) var(--ease);
+}
+/* vira um "X" quando a sidebar está aberta, e três traços quando recolhida */
+:root:not(.sidebar-recolhida) .btn-hamburguer span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+:root:not(.sidebar-recolhida) .btn-hamburguer span:nth-child(2) { opacity: 0; }
+:root:not(.sidebar-recolhida) .btn-hamburguer span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
 .topbar .text-secondary { color: var(--l3) !important; font-size: 12px; }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
 
