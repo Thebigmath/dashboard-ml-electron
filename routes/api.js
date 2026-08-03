@@ -603,8 +603,12 @@ router.post('/gerar_planilha', auth, (req, res) => {
         const itens = req.body; // [{ item_id, sku, qtdFull }]
         if (!Array.isArray(itens) || !itens.length) return res.status(400).json({ erro: 'Sem itens' });
         const reposicao = lerJson('reposicao.json', []);
-        const rows = itens.map(({ item_id, sku, qtdFull }) => {
-            const p = reposicao.find(x => x.item_id === item_id) || {};
+        const rows = itens.map(({ item_id, sku, qtdFull, chave }) => {
+            // Busca pela chave: um mesmo item_id pode ter duas variações (ex: 1102 e
+            // 1103 no mesmo anúncio), e procurar por item_id traria sempre a primeira.
+            const p = (chave && reposicao.find(x => x.chave === chave))
+                   || reposicao.find(x => x.item_id === item_id)
+                   || {};
             return {
                 'Item ID': item_id,
                 'SKU': sku || p.sku || '',

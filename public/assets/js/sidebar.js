@@ -104,7 +104,11 @@
         root.classList.add('sem-transicao');
         root.setAttribute('data-theme', t);
         void root.offsetHeight;
-        requestAnimationFrame(() => root.classList.remove('sem-transicao'));
+        // rAF não dispara com a janela minimizada ou em segundo plano; sem o
+        // respaldo por tempo a classe ficaria presa e mataria todas as animações.
+        const liberar = () => root.classList.remove('sem-transicao');
+        requestAnimationFrame(liberar);
+        setTimeout(liberar, 150);
 
         const icone = document.getElementById('iconeTema');
         if (icone) icone.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
@@ -177,11 +181,9 @@
 /* ── Tema de fundo (aurora) ─────────────────────────────────────────────── */
 (function() {
     const FUNDOS = [
-        { id: 'padrao',  nome: 'Padrão',  cor: 'var(--accent)' },  // segue a cor da marca do app
-        { id: 'oceano',  nome: 'Oceano',  cor: '#5AC8FA' },
-        { id: 'menta',   nome: 'Menta',   cor: '#34C759' },
-        { id: 'poente',  nome: 'Poente',  cor: '#FF9500' },
-        { id: 'grafite', nome: 'Grafite', cor: '#8E8E93' },
+        { id: 'padrao',   nome: 'Original', cor: 'var(--accent)' },   // segue a cor da marca do app
+        { id: 'espacial', nome: 'Espacial', cor: 'linear-gradient(140deg,#7C3AED,#22D3EE)' },
+        { id: 'natalino', nome: 'Natalino', cor: 'linear-gradient(140deg,#C81E2D,#148C46)' },
     ];
 
     // Aplica antes de montar a UI para não piscar o fundo anterior.
