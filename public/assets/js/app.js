@@ -285,7 +285,7 @@ function renderPagina(lista, pagina) {
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
             <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
-            <td><input type="number" class="qtd-full" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.itemId]=parseInt(this.value)||0"></td>
+            <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`).join('');
 
     renderControles(lista.length, pagina);
@@ -531,27 +531,28 @@ if (btnGerarPlanilha) {
     btnGerarPlanilha.addEventListener('click', async function () {
         // salva inputs visiveis antes de exportar
         document.querySelectorAll('.qtd-full').forEach(input => {
-            const id  = input.dataset.itemId;
+            const c   = input.dataset.chave;
             const qty = parseInt(input.value) || 0;
-            if (id) window.qtdsFull[id] = qty;
+            if (c) window.qtdsFull[c] = qty;
         });
 
-        // Havendo seleção, exporta só os selecionados. Sem seleção, exporta tudo
-        // que tiver quantidade — comportamento de antes.
-        const itemIdsSelecionados = window.selecionados.size
-            ? new Set(window.produtosReposicao.filter(p => window.selecionados.has(chaveDe(p))).map(p => p.item_id))
-            : null;
-
-        const produtosExportar = Object.entries(window.qtdsFull)
-            .filter(([item_id, qty]) => qty > 0 && (!itemIdsSelecionados || itemIdsSelecionados.has(item_id)))
-            .map(([item_id, qtdFull]) => {
-                const produto = window.produtosReposicao.find(p => p.item_id === item_id);
-                return { item_id, qtdFull, sku: produto?.sku || '' };
-            });
+        // Percorre a lista completa, não os inputs visíveis: um produto
+        // selecionado em outra página nunca foi renderizado e sumiria calado.
+        // Sem quantidade digitada, vale a reposição sugerida — que é o número
+        // que o campo já mostra.
+        const temSelecao = window.selecionados.size > 0;
+        const produtosExportar = window.produtosReposicao
+            .filter(p => !temSelecao || window.selecionados.has(chaveDe(p)))
+            .map(p => {
+                const c = chaveDe(p);
+                const qtd = window.qtdsFull[c] ?? (p.reposicao > 0 ? p.reposicao : 0);
+                return { chave: c, item_id: p.item_id, sku: p.sku, qtdFull: Number(qtd) || 0 };
+            })
+            .filter(p => p.qtdFull > 0);
 
         if (!produtosExportar.length) {
-            alert(itemIdsSelecionados
-                ? 'Nenhum dos produtos selecionados tem quantidade informada.'
+            alert(temSelecao
+                ? 'Nenhum dos produtos selecionados tem quantidade a enviar.'
                 : 'Nenhum produto com quantidade informada.');
             return;
         }

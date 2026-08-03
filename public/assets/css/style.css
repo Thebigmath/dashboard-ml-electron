@@ -32,25 +32,27 @@
   --pink:    #FF2D55;
   --indigo:  #5856D6;
 
-  /* raios (contínuos, estilo Apple) */
-  --r:       12px;
-  --r-lg:    18px;
-  --r-xl:    22px;
+  /* raios generosos, como no iOS */
+  --r:       16px;
+  --r-lg:    22px;
+  --r-xl:    28px;
 
-  /* elevação em camadas */
-  --sh-1: 0 1px 1px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.04);
-  --sh-2: 0 1px 2px rgba(0,0,0,.04), 0 4px 10px rgba(0,0,0,.05);
-  --sh-3: 0 2px 4px rgba(0,0,0,.04), 0 10px 24px rgba(0,0,0,.07);
-  --sh-4: 0 6px 12px rgba(0,0,0,.06), 0 22px 48px rgba(0,0,0,.10);
-  --sh-key: 0 4px 16px rgba(0,122,255,.28);
+  /* elevação em camadas, mais profunda */
+  --sh-1: 0 1px 2px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.04);
+  --sh-2: 0 2px 4px rgba(0,0,0,.05), 0 8px 18px rgba(0,0,0,.07);
+  --sh-3: 0 4px 8px rgba(0,0,0,.05), 0 16px 36px rgba(0,0,0,.10);
+  --sh-4: 0 8px 18px rgba(0,0,0,.08), 0 32px 68px rgba(0,0,0,.16);
+  --sh-key: 0 6px 22px rgba(0,122,255,.36);
 
-  /* brilho superior do card (vidro) */
-  --gloss: linear-gradient(90deg, transparent, rgba(0,0,0,.05) 30%, rgba(0,0,0,.07) 50%, rgba(0,0,0,.05) 70%, transparent);
+  /* borda de vidro: fio claro no topo do card, como no material da Apple */
+  --gloss: linear-gradient(90deg, transparent, rgba(255,255,255,.55) 25%, rgba(255,255,255,.85) 50%, rgba(255,255,255,.55) 75%, transparent);
+  --aro-vidro: inset 0 1px 0 rgba(255,255,255,.7), inset 0 0 0 .5px rgba(255,255,255,.35);
 
-  /* material / vibrancy */
-  --mat-side: rgba(255,255,255,0.72);
-  --mat-top:  rgba(255,255,255,0.68);
-  --mat-blur: saturate(180%) blur(40px);
+  /* material / vibrancy — mais translúcido e mais saturado */
+  --mat-side: rgba(255,255,255,0.58);
+  --mat-top:  rgba(255,255,255,0.55);
+  --mat-blur: saturate(210%) blur(50px);
+  --mat-card: rgba(255,255,255,0.74);
 
   /* curvas de animação */
   --ease:       cubic-bezier(.4,0,.2,1);
@@ -103,27 +105,101 @@
   --purple: #BF5AF2;
   --yellow: #FFD60A;
 
-  --sh-1: 0 1px 2px rgba(0,0,0,.40);
-  --sh-2: 0 2px 6px rgba(0,0,0,.45);
-  --sh-3: 0 6px 18px rgba(0,0,0,.50);
-  --sh-4: 0 14px 40px rgba(0,0,0,.60);
-  --sh-key: 0 4px 18px rgba(10,132,255,.40);
+  --sh-1: 0 1px 3px rgba(0,0,0,.45);
+  --sh-2: 0 3px 10px rgba(0,0,0,.50);
+  --sh-3: 0 8px 26px rgba(0,0,0,.58);
+  --sh-4: 0 18px 52px rgba(0,0,0,.68);
+  --sh-key: 0 6px 24px rgba(10,132,255,.48);
 
-  --gloss: linear-gradient(90deg, transparent, rgba(255,255,255,.07) 30%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.07) 70%, transparent);
+  --gloss: linear-gradient(90deg, transparent, rgba(255,255,255,.10) 25%, rgba(255,255,255,.20) 50%, rgba(255,255,255,.10) 75%, transparent);
+  --aro-vidro: inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 .5px rgba(255,255,255,.06);
 
-  --mat-side: rgba(28,28,30,0.72);
-  --mat-top:  rgba(28,28,30,0.68);
+  --mat-side: rgba(28,28,30,0.60);
+  --mat-top:  rgba(28,28,30,0.56);
+  --mat-card: rgba(38,38,42,0.72);
 }
 
 /* ══════════════════════════════════════════════════════
    TEMAS DE FUNDO  (html[data-bg="…"])
 ══════════════════════════════════════════════════════ */
-/* padrão primeiro; as variantes abaixo têm a mesma especificidade e precisam vir depois */
-:root                { --aur-a: 0,122,255;  --aur-b: 175,82,222;  --aur-c: 52,199,89;  }
-[data-bg="oceano"]   { --aur-a: 90,200,250; --aur-b: 0,122,255;   --aur-c: 88,86,214;  }
-[data-bg="menta"]    { --aur-a: 52,199,89;  --aur-b: 90,200,250;  --aur-c: 0,199,190;  }
-[data-bg="poente"]   { --aur-a: 255,149,0;  --aur-b: 255,45,85;   --aur-c: 175,82,222; }
-[data-bg="grafite"]  { --aur-a: 120,120,128;--aur-b: 99,99,102;   --aur-c: 142,142,147;}
+/* ORIGINAL — o azul de sistema. Precisa vir antes das variantes. */
+:root { --aur-a: 0,122,255; --aur-b: 175,82,222; --aur-c: 52,199,89; --aur-op: .16; }
+
+/* ─────────── ESPACIAL ───────────
+   Sempre escuro, independente do tema claro/escuro: é a graça dele. */
+[data-bg="espacial"] {
+  --aur-a: 124,58,237; --aur-b: 34,211,238; --aur-c: 217,70,239; --aur-op: .34;
+
+  --bg:   #05070F;
+  --s1:   #0D1120;
+  --s2:   #141A2E;
+  --s3:   #1D2440;
+  --l1:   #EAF0FF;
+  --l2:   rgba(234,240,255,0.70);
+  --l3:   rgba(234,240,255,0.45);
+  --l4:   rgba(234,240,255,0.18);
+  --sep:  rgba(150,180,255,0.16);
+  --sep2: rgba(150,180,255,0.09);
+
+  --blue:   #7C8CFF;
+  --green:  #34D399;
+  --orange: #FBBF24;
+  --red:    #FB7185;
+  --yellow: #FDE047;
+
+  --sh-1: 0 1px 3px rgba(0,0,0,.6);
+  --sh-2: 0 3px 12px rgba(0,0,0,.65);
+  --sh-3: 0 10px 30px rgba(0,0,0,.7);
+  --sh-4: 0 20px 60px rgba(0,0,0,.8);
+  --sh-key: 0 6px 26px rgba(124,140,255,.55);
+
+  --mat-side: rgba(13,17,32,0.62);
+  --mat-top:  rgba(13,17,32,0.58);
+  --mat-card: rgba(20,26,46,0.74);
+  --gloss: linear-gradient(90deg, transparent, rgba(160,190,255,.22) 25%, rgba(160,190,255,.42) 50%, rgba(160,190,255,.22) 75%, transparent);
+  --aro-vidro: inset 0 1px 0 rgba(160,190,255,.16), inset 0 0 0 .5px rgba(160,190,255,.08);
+}
+
+/* ─────────── NATALINO ─────────── */
+[data-bg="natalino"] {
+  --aur-a: 200,30,45; --aur-b: 20,140,70; --aur-c: 224,170,80; --aur-op: .26;
+
+  --bg:   #FAF3EF;
+  --s1:   #FFFFFF;
+  --s2:   #F6E9E4;
+  --s3:   #EDD8D1;
+  --l1:   #23140F;
+  --l2:   rgba(35,20,15,0.64);
+  --l3:   rgba(35,20,15,0.42);
+  --l4:   rgba(35,20,15,0.16);
+  --sep:  rgba(35,20,15,0.13);
+  --sep2: rgba(35,20,15,0.07);
+
+  --blue:   #C81E2D;   /* vermelho de natal como cor de destaque */
+  --green:  #148C46;
+  --orange: #E0AA50;
+  --red:    #C81E2D;
+
+  --sh-key: 0 6px 22px rgba(200,30,45,.34);
+  --mat-side: rgba(255,251,249,0.62);
+  --mat-top:  rgba(255,251,249,0.58);
+  --mat-card: rgba(255,252,250,0.78);
+}
+[data-theme="dark"][data-bg="natalino"] {
+  --bg:   #0C1710;
+  --s1:   #13241A;
+  --s2:   #1A3123;
+  --s3:   #23412E;
+  --l1:   #F0F7F2;
+  --l2:   rgba(240,247,242,0.70);
+  --l3:   rgba(240,247,242,0.44);
+  --sep:  rgba(240,247,242,0.12);
+  --sep2: rgba(240,247,242,0.07);
+  --blue: #F04452;
+  --mat-side: rgba(19,36,26,0.62);
+  --mat-top:  rgba(19,36,26,0.58);
+  --mat-card: rgba(26,49,35,0.74);
+}
 
 /* ══════════════════════════════════════════════════════
    RESET
@@ -150,17 +226,17 @@ body {
 .aur-1, .aur-2, .aur-3 { position: absolute; will-change: transform; }
 .aur-1 {
   width: 940px; height: 940px; top: -320px; right: -220px;
-  background: radial-gradient(ellipse at center, rgba(var(--aur-a),0.16) 0%, rgba(var(--aur-a),0.05) 42%, transparent 68%);
+  background: radial-gradient(ellipse at center, rgba(var(--aur-a),var(--aur-op)) 0%, rgba(var(--aur-a),calc(var(--aur-op) * .3)) 42%, transparent 68%);
   animation: aur-drift 22s var(--ease) infinite;
 }
 .aur-2 {
   width: 760px; height: 760px; bottom: -240px; left: -140px;
-  background: radial-gradient(ellipse at center, rgba(var(--aur-c),0.13) 0%, rgba(var(--aur-c),0.04) 42%, transparent 68%);
+  background: radial-gradient(ellipse at center, rgba(var(--aur-c),calc(var(--aur-op) * .82)) 0%, rgba(var(--aur-c),calc(var(--aur-op) * .25)) 42%, transparent 68%);
   animation: aur-drift 30s var(--ease) infinite reverse;
 }
 .aur-3 {
   width: 620px; height: 620px; top: 18%; right: 12%;
-  background: radial-gradient(ellipse at center, rgba(var(--aur-b),0.10) 0%, transparent 65%);
+  background: radial-gradient(ellipse at center, rgba(var(--aur-b),calc(var(--aur-op) * .65)) 0%, transparent 65%);
   animation: aur-drift 38s var(--ease) infinite 4s;
 }
 @keyframes aur-drift {
@@ -168,9 +244,83 @@ body {
   33%     { transform: translate3d(-34px,26px,0) scale(1.06); }
   66%     { transform: translate3d(26px,-20px,0) scale(0.96); }
 }
-[data-theme="dark"] .aur-1 { background: radial-gradient(ellipse at center, rgba(var(--aur-a),0.20) 0%, transparent 66%); }
-[data-theme="dark"] .aur-2 { background: radial-gradient(ellipse at center, rgba(var(--aur-c),0.16) 0%, transparent 66%); }
-[data-theme="dark"] .aur-3 { background: radial-gradient(ellipse at center, rgba(var(--aur-b),0.13) 0%, transparent 64%); }
+[data-theme="dark"] { --aur-op: .22; }
+
+/* ══════════════════════════════════════════════════════
+   CAMADAS DECORATIVAS DOS TEMAS
+   Usam ::before/::after do body, sem elemento extra no HTML.
+══════════════════════════════════════════════════════ */
+
+/* ── ESPACIAL: campo de estrelas em duas profundidades ── */
+[data-bg="espacial"] body::before,
+[data-bg="espacial"] body::after {
+  content: ''; position: fixed; inset: -50% 0 0 0;
+  pointer-events: none; z-index: 0;
+}
+[data-bg="espacial"] body::before {
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 18%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 68% 8%,  #cfe0ff, transparent),
+    radial-gradient(1.8px 1.8px at 34% 42%, #fff, transparent),
+    radial-gradient(1.3px 1.3px at 88% 36%, #b9d0ff, transparent),
+    radial-gradient(1.6px 1.6px at 52% 66%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 22% 78%, #dbe6ff, transparent),
+    radial-gradient(1.7px 1.7px at 78% 84%, #fff, transparent),
+    radial-gradient(1.3px 1.3px at 44% 92%, #c7d8ff, transparent);
+  background-size: 100% 50%;
+  animation: estrelas-brilho 5s ease-in-out infinite;
+}
+[data-bg="espacial"] body::after {
+  background-image:
+    radial-gradient(1px 1px at 28% 26%, rgba(255,255,255,.75), transparent),
+    radial-gradient(1px 1px at 74% 54%, rgba(200,220,255,.7), transparent),
+    radial-gradient(1px 1px at 8%  62%, rgba(255,255,255,.65), transparent),
+    radial-gradient(1px 1px at 92% 14%, rgba(210,225,255,.7), transparent),
+    radial-gradient(1px 1px at 60% 30%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1px 1px at 38% 74%, rgba(220,232,255,.65), transparent);
+  background-size: 100% 50%;
+  animation: estrelas-brilho 7s ease-in-out infinite 1.5s;
+}
+@keyframes estrelas-brilho {
+  0%, 100% { opacity: .55; }
+  50%      { opacity: 1; }
+}
+
+/* ── NATALINO: neve caindo em duas camadas ── */
+[data-bg="natalino"] body::before,
+[data-bg="natalino"] body::after {
+  content: ''; position: fixed; left: 0; right: 0; top: -120%; height: 220%;
+  pointer-events: none; z-index: 0;
+}
+[data-bg="natalino"] body::before {
+  background-image:
+    radial-gradient(3px 3px at 10% 4%,  rgba(255,255,255,.95), transparent),
+    radial-gradient(2.4px 2.4px at 30% 12%, rgba(255,255,255,.85), transparent),
+    radial-gradient(3.2px 3.2px at 55% 6%,  rgba(255,255,255,.9), transparent),
+    radial-gradient(2.6px 2.6px at 78% 16%, rgba(255,255,255,.85), transparent),
+    radial-gradient(3px 3px at 92% 3%,  rgba(255,255,255,.9), transparent),
+    radial-gradient(2.4px 2.4px at 20% 24%, rgba(255,255,255,.8), transparent),
+    radial-gradient(2.8px 2.8px at 66% 28%, rgba(255,255,255,.85), transparent);
+  background-size: 100% 22%;
+  animation: neve-cai 14s linear infinite;
+}
+[data-bg="natalino"] body::after {
+  background-image:
+    radial-gradient(2px 2px at 18% 8%,  rgba(255,255,255,.7), transparent),
+    radial-gradient(1.8px 1.8px at 44% 18%, rgba(255,255,255,.6), transparent),
+    radial-gradient(2.2px 2.2px at 70% 10%, rgba(255,255,255,.65), transparent),
+    radial-gradient(1.8px 1.8px at 86% 22%, rgba(255,255,255,.6), transparent),
+    radial-gradient(2px 2px at 34% 26%, rgba(255,255,255,.65), transparent);
+  background-size: 100% 18%;
+  animation: neve-cai 22s linear infinite 3s;
+}
+@keyframes neve-cai {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-18px, 55%, 0); }
+}
+/* no escuro a neve some um pouco para não ofuscar */
+[data-theme="dark"][data-bg="natalino"] body::before { opacity: .8; }
+[data-theme="dark"][data-bg="natalino"] body::after  { opacity: .6; }
 
 .deco-art {
   position: fixed; top: 0; right: 0;
@@ -432,22 +582,24 @@ body {
 ══════════════════════════════════════════════════════ */
 .reposicao-engine,
 .dashboard-card {
-  background: var(--s1);
+  background: var(--mat-card);
+  backdrop-filter: saturate(200%) blur(30px);
+  -webkit-backdrop-filter: saturate(200%) blur(30px);
   border: 0.5px solid var(--sep2);
   border-radius: var(--r-xl);
   padding: 22px;
   margin-bottom: 14px;
   position: relative; overflow: hidden;
-  box-shadow: var(--sh-2);
+  box-shadow: var(--sh-2), var(--aro-vidro);
   transition: box-shadow var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out);
   animation: card-in var(--t-slow) var(--ease-out) both;
 }
 .reposicao-engine:hover,
-.dashboard-card:hover { box-shadow: var(--sh-3); transform: translateY(-1px); }
+.dashboard-card:hover { box-shadow: var(--sh-3), var(--aro-vidro); transform: translateY(-2px); }
 .reposicao-engine::before,
 .dashboard-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: var(--gloss); opacity: .5;
+  background: var(--gloss);
 }
 @keyframes card-in {
   from { opacity: 0; transform: translateY(10px) scale(.995); }
@@ -673,19 +825,21 @@ body {
 ══════════════════════════════════════════════════════ */
 .stat-grid { display: grid; gap: 14px; }
 .stat-card {
-  background: var(--s1);
+  background: var(--mat-card);
+  backdrop-filter: saturate(200%) blur(30px);
+  -webkit-backdrop-filter: saturate(200%) blur(30px);
   border: 0.5px solid var(--sep2);
   border-radius: var(--r-lg);
   padding: 18px 20px;
   position: relative; overflow: hidden;
-  box-shadow: var(--sh-1);
+  box-shadow: var(--sh-1), var(--aro-vidro);
   transition: box-shadow var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out);
   animation: card-in var(--t-slow) var(--ease-out) both;
 }
-.stat-card:hover { box-shadow: var(--sh-3); transform: translateY(-2px); }
+.stat-card:hover { box-shadow: var(--sh-3), var(--aro-vidro); transform: translateY(-3px); }
 .stat-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: var(--gloss); opacity: .5;
+  background: var(--gloss);
 }
 .stat-card .stat-label {
   font-size: 10px; font-weight: 600;
