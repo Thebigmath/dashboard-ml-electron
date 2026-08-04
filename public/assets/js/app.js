@@ -19,6 +19,16 @@ let produtosFiltrados = [];
 let textoPesquisa     = '';
 window.produtosReposicao = [];
 window.qtdsFull   = {};
+
+// Quanto sugerir no campo QTD FULL. Não é a reposição: a reposição é o que falta
+// comprar, e não dá para enviar ao FULL mais do que se tem disponível. O que está em
+// trânsito já foi despachado, então sai da conta. O teto é a própria reposição —
+// sem ele, produto com estoque parado (31178e, 159 un e reposição 0) sugeriria um
+// envio enorme que ninguém pediu.
+function qtdFullSugerida(p) {
+    const disponivel = Math.max(0, Number(p.estoque) - (window.transitoMap[p.sku] || 0));
+    return Math.max(0, Math.min(Number(p.reposicao) || 0, disponivel));
+}
 window.transitoMap = {};
 window.custosMap   = {};
 // Seleção por "chave" (identificador único), não pelo SKU: assim ela sobrevive
@@ -288,7 +298,7 @@ function renderPagina(lista, pagina) {
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
             <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
-            <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
+            <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`).join('');
 
     renderControles(lista.length, pagina);
@@ -329,7 +339,8 @@ function sincronizarSelecaoUI() {
     let unidades = 0;
     window.selecionados.forEach(c => {
         const p = porChave[c];
-        if (p) unidades += Number(window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : 0)) || 0;
+        // indexado por chave (o input grava por chave; usar item_id ignorava as edições)
+        if (p) unidades += Number(window.qtdsFull[c] ?? qtdFullSugerida(p)) || 0;
     });
 
     painel.innerHTML = `
@@ -549,7 +560,7 @@ if (btnGerarPlanilha) {
             .filter(p => !temSelecao || window.selecionados.has(chaveDe(p)))
             .map(p => {
                 const c = chaveDe(p);
-                const qtd = window.qtdsFull[c] ?? (p.reposicao > 0 ? p.reposicao : 0);
+                const qtd = window.qtdsFull[c] ?? qtdFullSugerida(p);
                 return { chave: c, item_id: p.item_id, sku: p.sku, qtdFull: Number(qtd) || 0 };
             })
             .filter(p => p.qtdFull > 0);
