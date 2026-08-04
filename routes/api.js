@@ -371,9 +371,9 @@ router.post('/atualizar', auth, async (req, res) => {
             const vdm = vendas30 / 30;
             const mediaDia = +vdm.toFixed(2);   // só para exibição
             const cobertura = d.estoque === 0 ? 0 : (mediaDia > 0 ? +(d.estoque / mediaDia).toFixed(1) : 999);
-            // Buffer de dias de coleta só se aplica a anúncios ativos (vendendo agora).
-            // Anúncio pausado não corre risco de ruptura durante a coleta, então usa só o alvo base.
-            const diasTotal = d.status === 'active' ? (diasAlvo + diasColeta) : diasAlvo;
+            // Dias de venda até a mercadoria chegar. Só vale para anúncio ativo: pausado
+            // não vende durante a espera, então não consome estoque nesse período.
+            const diasAteChegar = d.status === 'active' ? diasColeta : 0;
             // estoque alvo − estoque projetado no fim da coleta (já descontado o que
             // vende nesse período), com o que está a caminho contando como disponível
             // o trânsito é indexado pelo SKU do envio, sem o sufixo interno da chave
@@ -389,7 +389,12 @@ router.post('/atualizar', auth, async (req, res) => {
             if (transitoLocal > 0 && jaContadoNoEstoque > 0) {
                 duplicidadesEvitadas.push({ sku: skuBase, transitoLocal, jaContadoNoEstoque, usado: emTransito });
             }
-            const rep = Math.max(0, Math.ceil(vdm * diasTotal - d.estoque - emTransito));
+            // Só sobra do estoque atual o que não for vendido durante a espera — e ele não
+            // pode ficar negativo. A conta antiga (vdm × (alvo+coleta) − estoque) creditava
+            // consumo de estoque que não existe, e inflava a compra em quem está com pouco
+            // estoque: 4412, com estoque 0, pedia 98 em vez de 66.
+            const estoqueNaChegada = Math.max(0, d.estoque - vdm * diasAteChegar);
+            const rep = Math.max(0, Math.ceil(vdm * diasAlvo - estoqueNaChegada - emTransito));
             const { _itemIds, ...rest } = d;   // não persistir metadata interna
             // "sku" é só rótulo e pode repetir entre produtos diferentes (ex: 010TB em
             // Nivus, Polo e Tera). "chave" é o identificador único — sem ela o frontend

@@ -457,11 +457,12 @@ function calcularReposicaoMagis5(vendas30d, diasColeta, diasAlvo, estoqueAtualFu
     itensPorKit   = itensPorKit   || 1;
     // precisão total: arredondar o vdm antes de multiplicar errava até 1 unidade
     const vdm = vendas30d / 30;
-    // Buffer de coleta só se aplica a anúncios ativos — pausado não tem risco de ruptura nesse período
-    const diasTotal = ativo ? (diasAlvo + diasColeta) : diasAlvo;
-    const coberturaNecessaria  = vdm * diasTotal;
-    const estoqueDisponivelTotal = estoqueAtualFull + transitoFull;
-    const necessidade = coberturaNecessaria - estoqueDisponivelTotal;
+    // Dias de venda até a mercadoria chegar — pausado não vende nesse período
+    const diasAteChegar = ativo ? diasColeta : 0;
+    const coberturaNecessaria  = vdm * diasAlvo;
+    // do estoque atual só sobra o que não for vendido durante a espera (nunca negativo)
+    const estoqueNaChegada = Math.max(0, estoqueAtualFull - vdm * diasAteChegar);
+    const necessidade = coberturaNecessaria - estoqueNaChegada - transitoFull;
     if (necessidade <= 0) return 0;
     let sugestao = Math.ceil(necessidade);
     if (itensPorKit > 1) {
