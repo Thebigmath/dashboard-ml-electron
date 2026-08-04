@@ -670,15 +670,16 @@ router.post('/gerar_planilha', auth, (req, res) => {
         const wb = XLSX.utils.book_new();
         const ws = {};
         itens.forEach(({ item_id, qtdFull }, i) => {
-            const row = 1 + i; // dados a partir da linha 1
-            ws[`A${row}`] = { v: '', t: 's' };
-            ws[`B${row}`] = { v: '', t: 's' };
-            ws[`C${row}`] = { v: '', t: 's' };
+            // O template do ML tem 5 linhas de cabeçalho em branco: os dados começam na
+            // linha 6. Conferido contra o arquivo que o ML aceitou (CORDEIRO_CAR, 13 itens
+            // de L6 a L18).
+            const row = 6 + i;
+            // Só D e F. No template do ML as colunas A, B, C e E não têm célula alguma —
+            // criar célula de texto vazio ali fazia o arquivo divergir do modelo aceito.
             ws[`D${row}`] = { v: item_id, t: 's' };
-            ws[`E${row}`] = { v: '', t: 's' };
             ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
         });
-        ws['!ref'] = `A1:F${itens.length}`;
+        ws['!ref'] = `A1:F${5 + itens.length}`;
         // Template do ML tem duas sheets: "Planilha 1" (vazia) e "Dados Mercado Livre"
         const wsVazia = { 'A1': { v: '', t: 's' }, '!ref': 'A1' };
         XLSX.utils.book_append_sheet(wb, wsVazia, 'Planilha 1');
