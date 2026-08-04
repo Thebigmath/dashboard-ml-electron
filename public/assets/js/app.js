@@ -277,7 +277,7 @@ function renderPagina(lista, pagina) {
         <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' class="linha-sel"' : ''}>
             <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
             <td>${badgeUrgencia(p.cobertura)}</td>
-            <td>${p.titulo}</td>
+            <td>${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}</td>
             <td>${p.sku}</td>
             <td>${Math.max(0, Number(p.estoque) - (window.transitoMap[p.sku] || 0))}</td>
             <td>${p.vendas30}</td>
