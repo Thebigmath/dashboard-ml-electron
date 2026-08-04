@@ -329,7 +329,9 @@ function sincronizarSelecaoUI() {
     let unidades = 0;
     window.selecionados.forEach(c => {
         const p = porChave[c];
-        if (p) unidades += Number(window.qtdsFull[p.item_id] ?? (p.reposicao > 0 ? p.reposicao : 0)) || 0;
+        // indexado por chave: o input grava por chave, e buscar por item_id fazia o
+        // contador ignorar as quantidades editadas à mão
+        if (p) unidades += Number(window.qtdsFull[c] ?? (p.reposicao > 0 ? p.reposicao : 0)) || 0;
     });
 
     painel.innerHTML = `
