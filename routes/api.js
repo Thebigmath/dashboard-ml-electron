@@ -137,15 +137,21 @@ router.post('/atualizar', auth, async (req, res) => {
         escrever('Carregando anúncios...');
         let anunciosIds = [];
         for (const status of ['', 'closed']) {
-            offset = 0; total = null;
+            // search_type=scan pagina por cursor (scroll_id) em vez de offset. O offset é
+            // rejeitado acima de 1000 ("Invalid limit and offset values", 400), o que
+            // travaria o motor por completo assim que o catálogo passasse de ~1050
+            // anúncios. O scan não tem esse teto.
+            let scrollId = null;
             do {
-                const params = { limit: LIMIT, offset };
-                if (status) params.status = status;
+                const params = { search_type: 'scan', limit: 100 };
+                if (status)   params.status    = status;
+                if (scrollId) params.scroll_id = scrollId;
                 const { data } = await axios.get(`https://api.mercadolibre.com/users/${user_id}/items/search`, { headers, params });
-                if (total === null) total = data.paging?.total || 0;
-                anunciosIds = anunciosIds.concat(data.results || []);
-                offset += LIMIT;
-            } while (offset < total);
+                const res = data.results || [];
+                if (!res.length) break;
+                anunciosIds = anunciosIds.concat(res);
+                scrollId = data.scroll_id;
+            } while (scrollId);
         }
         anunciosIds = [...new Set(anunciosIds)];
         escrever(`Anúncios: ${anunciosIds.length}`);
