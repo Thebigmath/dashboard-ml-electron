@@ -610,7 +610,11 @@ router.post('/gerar_planilha', auth, (req, res) => {
         let maxRow = 5;
         itens.forEach(({ item_id, qtdFull }, i) => {
             const row = 6 + i; // linha 6 em diante (1-indexed)
+            ws[`A${row}`] = { v: '', t: 's' };
+            ws[`B${row}`] = { v: '', t: 's' };
+            ws[`C${row}`] = { v: '', t: 's' };
             ws[`D${row}`] = { v: item_id, t: 's' };
+            ws[`E${row}`] = { v: '', t: 's' };
             ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
             maxRow = row;
         });
