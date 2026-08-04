@@ -279,7 +279,10 @@ function renderPagina(lista, pagina) {
             <td>${badgeUrgencia(p.cobertura)}</td>
             <td>${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}</td>
             <td>${p.sku}</td>
-            <td>${Math.max(0, Number(p.estoque) - (window.transitoMap[p.sku] || 0))}</td>
+            <!-- estoque cru: o que está em trânsito tem coluna própria e ainda não chegou
+                 ao FULL, então não pode ser subtraído daqui (subtrair mostrava 0 em produto
+                 com estoque real, ex. 35063d com 48 un e 86 em trânsito) -->
+            <td>${Number(p.estoque)}</td>
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
