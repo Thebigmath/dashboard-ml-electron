@@ -39,6 +39,21 @@ router.get('/dados', auth, (req, res) => {
         }
     }
 
+    // Mesmo desconto que o motor aplica: unidades que o ML já recebeu e move entre
+    // galpões já estão dentro de "estoque". Sem tirá-las daqui, o botão Recalcular e
+    // o estoque exibido voltariam a contar a mesma unidade duas vezes.
+    const transferenciaPorSku = {};
+    for (const p of reposicao) {
+        if (!p.transferenciaMl) continue;
+        const k = (p.sku || '').toLowerCase();
+        // max (e não soma): SKUs iguais podem ser produtos distintos, e cada um
+        // desconta só a própria transferência — igual ao que o motor faz por entrada
+        transferenciaPorSku[k] = Math.max(transferenciaPorSku[k] || 0, p.transferenciaMl);
+    }
+    for (const k of Object.keys(transito)) {
+        if (transferenciaPorSku[k]) transito[k] = Math.max(0, transito[k] - transferenciaPorSku[k]);
+    }
+
     res.json({ produtos: reposicao, transito, ultima_atualizacao: ultima });
 });
 
@@ -164,24 +179,26 @@ router.post('/atualizar', auth, async (req, res) => {
         }
         const inventoryIds = [...inventoryIdsSet];
         const estoqueFullPorInventory = {};
-        const LOTE_INV = 15;
-        for (let i = 0; i < inventoryIds.length; i += LOTE_INV) {
-            const lote = inventoryIds.slice(i, i + LOTE_INV);
-            await Promise.all(lote.map(async (invId) => {
-                try {
-                    const { data } = await axios.get(`https://api.mercadolibre.com/inventories/${invId}/stock/fulfillment`, { headers });
-                    // "total" também soma unidades perdidas, em processamento interno e em
-                    // retirada, que não voltam a vender. Só o que está em transferência entre
-                    // galpões continua sendo estoque — é o mesmo critério que o Magico usa.
-                    if (typeof data.available_quantity === 'number') {
-                        const emTransferencia = (data.not_available_detail || [])
-                            .filter(x => x.status === 'transfer')
-                            .reduce((soma, x) => soma + (x.quantity || 0), 0);
-                        estoqueFullPorInventory[invId] = data.available_quantity + emTransferencia;
-                    }
-                } catch { /* item sem estoque FULL detalhado, mantém fallback */ }
-            }));
-        }
+        // Quanto do estoque acima é unidade que o ML já recebeu e está movendo entre
+        // galpões. Guardado à parte porque o envio local que originou essas unidades
+        // pode ainda constar como "em trânsito" em envios_full.json — sem descontar,
+        // a mesma unidade entraria duas vezes na conta da reposição.
+        const transferenciaPorInventory = {};
+        await Promise.all(inventoryIds.map(async (invId) => {
+            try {
+                const { data } = await axios.get(`https://api.mercadolibre.com/inventories/${invId}/stock/fulfillment`, { headers });
+                // Não usar "total": ele soma unidades perdidas ("lost"), em processamento
+                // interno ("internalProcess") e em retirada, que não voltam a vender. Só o
+                // que está em transferência entre galpões volta a ficar disponível.
+                if (typeof data.available_quantity === 'number') {
+                    const emTransferencia = (data.not_available_detail || [])
+                        .filter(x => x.status === 'transfer')
+                        .reduce((soma, x) => soma + (x.quantity || 0), 0);
+                    estoqueFullPorInventory[invId] = data.available_quantity + emTransferencia;
+                    transferenciaPorInventory[invId] = emTransferencia;
+                }
+            } catch { /* item sem estoque FULL detalhado, mantém fallback */ }
+        }));
         escrever(`Estoque FULL obtido para ${Object.keys(estoqueFullPorInventory).length} de ${inventoryIds.length} inventories.`);
 
         // 5. Montar reposição
@@ -240,16 +257,18 @@ router.post('/atualizar', auth, async (req, res) => {
                     const vEst   = (v.inventory_id && estoqueFullPorInventory[v.inventory_id] !== undefined)
                         ? estoqueFullPorInventory[v.inventory_id]
                         : (v.available_quantity || 0);
+                    // parcela de vEst que o ML já contabiliza como transferência entre galpões
+                    const vTransf = (v.inventory_id && transferenciaPorInventory[v.inventory_id]) || 0;
                     // variation_id só armazenado quando não tem sku próprio (para cruzar com vendasPorVariacao)
                     const vVarId = vSku ? undefined : v.id;
 
                     if (!porSku[vKey]) {
-                        porSku[vKey] = { item_id: itemId, variation_id: vVarId, sku: vKey, titulo: vTitulo, estoque: vEst, status };
+                        porSku[vKey] = { item_id: itemId, variation_id: vVarId, sku: vKey, titulo: vTitulo, estoque: vEst, transferenciaMl: vTransf, status };
                     } else {
                         const jaAtivo   = porSku[vKey].status === 'active';
                         const novoAtivo = status === 'active';
                         if ((!jaAtivo && novoAtivo) || (novoAtivo && vEst > porSku[vKey].estoque)) {
-                            porSku[vKey] = { ...porSku[vKey], estoque: vEst, item_id: itemId, status };
+                            porSku[vKey] = { ...porSku[vKey], estoque: vEst, transferenciaMl: vTransf, item_id: itemId, status };
                         }
                     }
                 }
@@ -265,9 +284,11 @@ router.post('/atualizar', auth, async (req, res) => {
                 const estoque = (p.inventory_id && estoqueFullPorInventory[p.inventory_id] !== undefined)
                     ? estoqueFullPorInventory[p.inventory_id]
                     : (p.available_quantity || 0);
+                // parcela de "estoque" que o ML já contabiliza como transferência entre galpões
+                const transferenciaMl = (p.inventory_id && transferenciaPorInventory[p.inventory_id]) || 0;
 
                 if (!porSku[sku]) {
-                    porSku[sku] = { item_id: itemId, sku, titulo: tituloBase, estoque, status };
+                    porSku[sku] = { item_id: itemId, sku, titulo: tituloBase, estoque, transferenciaMl, status };
                 } else {
                     const novoEPar      = ePar(tituloBase, sku);
                     const existenteEPar = ePar(porSku[sku].titulo, porSku[sku].sku);
@@ -276,10 +297,10 @@ router.post('/atualizar', auth, async (req, res) => {
                         // Par colidindo com individual → separa
                         const skuPar = novoEPar ? sku + '#par' : porSku[sku].sku + '#par';
                         if (novoEPar) {
-                            porSku[skuPar] = { item_id: itemId, sku: skuPar, titulo: tituloBase, estoque, status };
+                            porSku[skuPar] = { item_id: itemId, sku: skuPar, titulo: tituloBase, estoque, transferenciaMl, status };
                         } else {
                             porSku[skuPar] = { ...porSku[sku], sku: skuPar };
-                            porSku[sku]    = { item_id: itemId, sku, titulo: tituloBase, estoque, status };
+                            porSku[sku]    = { item_id: itemId, sku, titulo: tituloBase, estoque, transferenciaMl, status };
                         }
                         escrever(`[AVISO] SKU "${sku}" colide entre PAR e INDIVIDUAL — separados automaticamente`);
                     } else {
@@ -292,12 +313,12 @@ router.post('/atualizar', auth, async (req, res) => {
                             const jaAtivo   = e.status === 'active';
                             const novoAtivo = status === 'active';
                             if ((!jaAtivo && novoAtivo) || (novoAtivo && estoque > e.estoque)) {
-                                porSku[entradaExistente] = { ...e, estoque, item_id: itemId, status };
+                                porSku[entradaExistente] = { ...e, estoque, transferenciaMl, item_id: itemId, status };
                             }
                         } else {
                             // Produto diferente com mesmo SKU → entrada alternativa com chave sku~itemId
                             const skuAlt = sku + '~' + itemId.toLowerCase();
-                            porSku[skuAlt] = { item_id: itemId, sku: skuAlt, titulo: tituloBase, estoque, status };
+                            porSku[skuAlt] = { item_id: itemId, sku: skuAlt, titulo: tituloBase, estoque, transferenciaMl, status };
                             if (!porSku[sku]._itemIds) porSku[sku]._itemIds = [porSku[sku].item_id.toLowerCase()];
                             escrever(`[AVISO] SKU "${sku}" usado em produtos diferentes: "${tituloBase.substring(0, 40)}"`);
                         }
@@ -318,6 +339,7 @@ router.post('/atualizar', auth, async (req, res) => {
             }
         }
 
+        const duplicidadesEvitadas = [];
         const reposicao = Object.values(porSku).map(d => {
             let vendas30      = 0;
             let faturamento30 = 0;
@@ -356,7 +378,17 @@ router.post('/atualizar', auth, async (req, res) => {
             // vende nesse período), com o que está a caminho contando como disponível
             // o trânsito é indexado pelo SKU do envio, sem o sufixo interno da chave
             const skuBase = d.sku.includes('~') ? d.sku.split('~')[0] : d.sku;
-            const emTransito = transitoPorSku[skuBase] || 0;
+            // Unidades que o ML já recebeu e move entre galpões já estão dentro de
+            // d.estoque. Se o envio que as originou ainda consta aberto em
+            // envios_full.json, elas apareceriam de novo no trânsito local e a
+            // reposição sairia menor do que o necessário. Só conta o trânsito que o
+            // ML ainda não enxerga.
+            const transitoLocal = transitoPorSku[skuBase] || 0;
+            const jaContadoNoEstoque = d.transferenciaMl || 0;
+            const emTransito = Math.max(0, transitoLocal - jaContadoNoEstoque);
+            if (transitoLocal > 0 && jaContadoNoEstoque > 0) {
+                duplicidadesEvitadas.push({ sku: skuBase, transitoLocal, jaContadoNoEstoque, usado: emTransito });
+            }
             const rep = Math.max(0, Math.ceil(vdm * diasTotal - d.estoque - emTransito));
             const { _itemIds, ...rest } = d;   // não persistir metadata interna
             // "sku" é só rótulo e pode repetir entre produtos diferentes (ex: 010TB em
@@ -366,6 +398,25 @@ router.post('/atualizar', auth, async (req, res) => {
             const skuLimpo = chave.includes('~') ? chave.split('~')[0] : chave;
             return { ...rest, sku: skuLimpo, chave, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
         }).sort((a, b) => b.reposicao - a.reposicao);
+
+        if (duplicidadesEvitadas.length) {
+            escrever(`[TRÂNSITO] ${duplicidadesEvitadas.length} SKU(s) já tinham unidades contadas pelo ML como transferência — desconto aplicado para não somar duas vezes:`);
+            for (const d of duplicidadesEvitadas.slice(0, 15)) {
+                escrever(`   ${d.sku}: envio local ${d.transitoLocal} un, ML já conta ${d.jaContadoNoEstoque} un → usado ${d.usado} un`);
+            }
+        }
+
+        // Curva ABC por faturamento30 (critério: receita acumulada)
+        const totalFat = reposicao.reduce((s, p) => s + p.faturamento30, 0);
+        if (totalFat > 0) {
+            const ordenados = [...reposicao].sort((a, b) => b.faturamento30 - a.faturamento30);
+            let acum = 0;
+            for (const p of ordenados) {
+                acum += p.faturamento30;
+                const pct = acum / totalFat * 100;
+                p.curvaAbc = pct <= 82.5 ? 'A' : pct <= 96.5 ? 'B' : 'C';
+            }
+        }
 
         salvarJson('reposicao.json', reposicao);
         fs.writeFileSync(path.join(STORAGE, 'ultima_atualizacao.txt'), new Date().toLocaleString('pt-BR'));
@@ -607,18 +658,16 @@ router.post('/gerar_planilha', auth, (req, res) => {
 
         const wb = XLSX.utils.book_new();
         const ws = {};
-        let maxRow = 5;
         itens.forEach(({ item_id, qtdFull }, i) => {
-            const row = 6 + i; // linha 6 em diante (1-indexed)
+            const row = 1 + i; // dados a partir da linha 1
             ws[`A${row}`] = { v: '', t: 's' };
             ws[`B${row}`] = { v: '', t: 's' };
             ws[`C${row}`] = { v: '', t: 's' };
             ws[`D${row}`] = { v: item_id, t: 's' };
             ws[`E${row}`] = { v: '', t: 's' };
             ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
-            maxRow = row;
         });
-        ws['!ref'] = `A1:F${maxRow}`;
+        ws['!ref'] = `A1:F${itens.length}`;
         // Template do ML tem duas sheets: "Planilha 1" (vazia) e "Dados Mercado Livre"
         const wsVazia = { 'A1': { v: '', t: 's' }, '!ref': 'A1' };
         XLSX.utils.book_append_sheet(wb, wsVazia, 'Planilha 1');
