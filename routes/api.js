@@ -267,14 +267,22 @@ router.post('/atualizar', auth, async (req, res) => {
                     const vTransf = (v.inventory_id && transferenciaPorInventory[v.inventory_id]) || 0;
                     // variation_id só armazenado quando não tem sku próprio (para cruzar com vendasPorVariacao)
                     const vVarId = vSku ? undefined : v.id;
+                    // Só é FULL quem tem inventory_id. Sem ele, "estoque" é a quantidade
+                    // declarada no anúncio, que é outra coisa e não pode virar envio.
+                    const vEFull = !!v.inventory_id;
 
                     if (!porSku[vKey]) {
-                        porSku[vKey] = { item_id: itemId, variation_id: vVarId, sku: vKey, titulo: vTitulo, estoque: vEst, transferenciaMl: vTransf, status };
+                        porSku[vKey] = { item_id: itemId, variation_id: vVarId, sku: vKey, titulo: vTitulo, estoque: vEst, transferenciaMl: vTransf, status, eFull: vEFull };
                     } else {
                         const jaAtivo   = porSku[vKey].status === 'active';
                         const novoAtivo = status === 'active';
-                        if ((!jaAtivo && novoAtivo) || (novoAtivo && vEst > porSku[vKey].estoque)) {
-                            porSku[vKey] = { ...porSku[vKey], estoque: vEst, transferenciaMl: vTransf, item_id: itemId, status };
+                        // Listagem FULL sempre ganha da não-FULL, mesmo pausada ou com menos
+                        // estoque: é ela que define o que existe no galpão.
+                        const substituir = (vEFull !== !!porSku[vKey].eFull)
+                            ? vEFull
+                            : ((!jaAtivo && novoAtivo) || (novoAtivo && vEst > porSku[vKey].estoque));
+                        if (substituir) {
+                            porSku[vKey] = { ...porSku[vKey], estoque: vEst, transferenciaMl: vTransf, item_id: itemId, status, eFull: vEFull };
                         }
                     }
                 }
@@ -292,9 +300,12 @@ router.post('/atualizar', auth, async (req, res) => {
                     : (p.available_quantity || 0);
                 // parcela de "estoque" que o ML já contabiliza como transferência entre galpões
                 const transferenciaMl = (p.inventory_id && transferenciaPorInventory[p.inventory_id]) || 0;
+                // Só é FULL quem tem inventory_id. Sem ele, "estoque" é a quantidade
+                // declarada no anúncio, que é outra coisa e não pode virar envio.
+                const eFull = !!p.inventory_id;
 
                 if (!porSku[sku]) {
-                    porSku[sku] = { item_id: itemId, sku, titulo: tituloBase, estoque, transferenciaMl, status };
+                    porSku[sku] = { item_id: itemId, sku, titulo: tituloBase, estoque, transferenciaMl, status, eFull };
                 } else {
                     const novoEPar      = ePar(tituloBase, sku);
                     const existenteEPar = ePar(porSku[sku].titulo, porSku[sku].sku);
@@ -303,10 +314,10 @@ router.post('/atualizar', auth, async (req, res) => {
                         // Par colidindo com individual → separa
                         const skuPar = novoEPar ? sku + '#par' : porSku[sku].sku + '#par';
                         if (novoEPar) {
-                            porSku[skuPar] = { item_id: itemId, sku: skuPar, titulo: tituloBase, estoque, transferenciaMl, status };
+                            porSku[skuPar] = { item_id: itemId, sku: skuPar, titulo: tituloBase, estoque, transferenciaMl, status, eFull };
                         } else {
                             porSku[skuPar] = { ...porSku[sku], sku: skuPar };
-                            porSku[sku]    = { item_id: itemId, sku, titulo: tituloBase, estoque, transferenciaMl, status };
+                            porSku[sku]    = { item_id: itemId, sku, titulo: tituloBase, estoque, transferenciaMl, status, eFull };
                         }
                         escrever(`[AVISO] SKU "${sku}" colide entre PAR e INDIVIDUAL — separados automaticamente`);
                     } else {
@@ -318,13 +329,18 @@ router.post('/atualizar', auth, async (req, res) => {
                             e._itemIds.push(itemId.toLowerCase());
                             const jaAtivo   = e.status === 'active';
                             const novoAtivo = status === 'active';
-                            if ((!jaAtivo && novoAtivo) || (novoAtivo && estoque > e.estoque)) {
-                                porSku[entradaExistente] = { ...e, estoque, transferenciaMl, item_id: itemId, status };
+                            // Listagem FULL sempre ganha da não-FULL, mesmo pausada ou com
+                            // menos estoque: é ela que define o que existe no galpão.
+                            const substituir = (eFull !== !!e.eFull)
+                                ? eFull
+                                : ((!jaAtivo && novoAtivo) || (novoAtivo && estoque > e.estoque));
+                            if (substituir) {
+                                porSku[entradaExistente] = { ...e, estoque, transferenciaMl, item_id: itemId, status, eFull };
                             }
                         } else {
                             // Produto diferente com mesmo SKU → entrada alternativa com chave sku~itemId
                             const skuAlt = sku + '~' + itemId.toLowerCase();
-                            porSku[skuAlt] = { item_id: itemId, sku: skuAlt, titulo: tituloBase, estoque, transferenciaMl, status };
+                            porSku[skuAlt] = { item_id: itemId, sku: skuAlt, titulo: tituloBase, estoque, transferenciaMl, status, eFull };
                             if (!porSku[sku]._itemIds) porSku[sku]._itemIds = [porSku[sku].item_id.toLowerCase()];
                             escrever(`[AVISO] SKU "${sku}" usado em produtos diferentes: "${tituloBase.substring(0, 40)}"`);
                         }
@@ -345,12 +361,26 @@ router.post('/atualizar', auth, async (req, res) => {
             }
         }
 
+        // Só trabalhamos com FULL. Anúncio sem inventory_id não tem estoque em galpão
+        // do ML — o "estoque" dele é quantidade declarada no anúncio, que não pode ser
+        // reposta nem enviada. Manter esses produtos na base só polui a tela e faz o
+        // usuário planejar envio de algo que não existe no FULL.
+        const totalAntesFiltro = Object.keys(porSku).length;
+        for (const [k, d] of Object.entries(porSku)) {
+            if (!d.eFull) delete porSku[k];
+        }
+        escrever(`Somente FULL: ${Object.keys(porSku).length} de ${totalAntesFiltro} produtos (${totalAntesFiltro - Object.keys(porSku).length} sem inventory_id descartados)`);
+
         const duplicidadesEvitadas = [];
         const reposicao = Object.values(porSku).map(d => {
             let vendas30      = 0;
             let faturamento30 = 0;
 
-            if (d.sku.includes('~') || d._itemIds) {
+            // Inclui a entrada "base" (sem ~) quando há irmãos com ~ — sem isso ela
+            // soma as vendas de todos os produtos que compartilham o mesmo seller_sku.
+            const ehColisao = d.sku.includes('~') || d._itemIds ||
+                Object.keys(porSku).some(k => k !== d.sku && k.startsWith(d.sku + '~'));
+            if (ehColisao) {
                 // Entrada alternativa (produto diferente com mesmo SKU) ou com duplicatas
                 // → atribuir por item_id para cada listagem
                 const ids = d._itemIds || [d.item_id.toLowerCase()];
@@ -376,7 +406,6 @@ router.post('/atualizar', auth, async (req, res) => {
             // introduzia erro de até 1 unidade na reposição.
             const vdm = vendas30 / 30;
             const mediaDia = +vdm.toFixed(2);   // só para exibição
-            const cobertura = d.estoque === 0 ? 0 : (mediaDia > 0 ? +(d.estoque / mediaDia).toFixed(1) : 999);
             // Dias de venda até a mercadoria chegar. Só vale para anúncio ativo: pausado
             // não vende durante a espera, então não consome estoque nesse período.
             const diasAteChegar = d.status === 'active' ? diasColeta : 0;
@@ -392,6 +421,13 @@ router.post('/atualizar', auth, async (req, res) => {
             const transitoLocal = transitoPorSku[skuBase] || 0;
             const jaContadoNoEstoque = d.transferenciaMl || 0;
             const emTransito = Math.max(0, transitoLocal - jaContadoNoEstoque);
+            // Cobertura conta o que já está a caminho — a reposição trata o trânsito como
+            // disponível, e sem isso as duas colunas se contradiziam: o tb01001 aparecia
+            // com cobertura 0 (alarme de ruptura) tendo 45 unidades a caminho.
+            // Usa vdm em precisão total, não mediaDia: o arredondamento em 2 casas errava
+            // a cobertura em até 11% em quem vende pouco (1 venda/mês → 0,03 vs 0,0333).
+            const estoqueCoberto = d.estoque + emTransito;
+            const cobertura = estoqueCoberto === 0 ? 0 : (vdm > 0 ? +(estoqueCoberto / vdm).toFixed(1) : 999);
             if (transitoLocal > 0 && jaContadoNoEstoque > 0) {
                 duplicidadesEvitadas.push({ sku: skuBase, transitoLocal, jaContadoNoEstoque, usado: emTransito });
             }
@@ -406,7 +442,24 @@ router.post('/atualizar', auth, async (req, res) => {
             // Nivus, Polo e Tera). "chave" é o identificador único — sem ela o frontend
             // reagrupa esses produtos e volta a somar vendas de itens distintos.
             const chave = rest.sku;
-            const skuLimpo = chave.includes('~') ? chave.split('~')[0] : chave;
+            let skuLimpo = chave.includes('~') ? chave.split('~')[0] : chave;
+            // Colisão de SKU (ex: 010TB em Polo/Nivus/Tera): extrai palavra do título
+            // para gerar um rótulo legível ("010tb-polo", "010tb-nivus", "010tb-tera").
+            // Também desambigua o primeiro registro (sem ~) quando há irmãos com ~.
+            const temColisao = chave.includes('~') ||
+                Object.keys(porSku).some(k => k !== chave && k.startsWith(skuLimpo + '~'));
+            if (temColisao) {
+                const titulo = (rest.titulo || '').toLowerCase();
+                const base   = skuLimpo.toLowerCase();
+                const stop   = new Set(['kit','tapete','bandeja','vw','volkswagen','fiat','gm','chevrolet',
+                                        'ford','jeep','ram','toyota','honda','hyundai','nissan','renault',
+                                        'para','com','pcs','pçs','premium','original','novo','nova','de',
+                                        'do','da','pça','peça','jogo','carro','veículo','veiculos',
+                                        'anos','ano','modelo','versao','versão','line','set']);
+                const extra  = titulo.split(/[\s\-\/\\()+]+/)
+                    .find(w => w.length >= 3 && !/^\d/.test(w) && !stop.has(w) && !base.includes(w));
+                if (extra) skuLimpo = skuLimpo + '-' + extra;
+            }
             return { ...rest, sku: skuLimpo, chave, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
         }).sort((a, b) => b.reposicao - a.reposicao);
 

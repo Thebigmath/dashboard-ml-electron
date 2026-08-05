@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "numero": "TRANSIT-MAGIIC-05082026-STRADA",
+    "data": "2026-08-05",
+    "skus": { "35063d": 90, "35063e": 95 },
+    "unidades": 185,
+    "recebido": 0,
+    "inativo": false,
+    "obs": "Trânsito detectado via Magiic em 05/08/2026 — confirmar NF real e substituir este registro"
+  },
+  {
+    "numero": "TRANSIT-MAGIIC-05082026-PARATI",
+    "data": "2026-08-05",
+    "skus": { "33078d-33078e-par": 35 },
+    "unidades": 35,
+    "recebido": 0,
+    "inativo": false,
+    "obs": "Trânsito detectado via Magiic em 05/08/2026 — confirmar NF real e substituir este registro"
+  },
+  {
+    "numero": "TRANSIT-MAGIIC-05082026-PRISMA",
+    "data": "2026-08-05",
+    "skus": { "36035e": 25 },
+    "unidades": 25,
+    "recebido": 0,
+    "inativo": false,
+    "obs": "Trânsito detectado via Magiic em 05/08/2026 — confirmar NF real e substituir este registro"
+  },
+  {
+    "numero": "TRANSIT-MAGIIC-05082026-RANGER",
+    "data": "2026-08-05",
+    "skus": { "31173e": 12 },
+    "unidades": 12,
+    "recebido": 0,
+    "inativo": false,
+    "obs": "Trânsito detectado via Magiic em 05/08/2026 — confirmar NF real e substituir este registro"
+  },
+  {
+    "numero": "TRANSIT-MAGIIC-05082026-ETIOS",
+    "data": "2026-08-05",
+    "skus": { "37036e": 6 },
+    "unidades": 6,
+    "recebido": 0,
+    "inativo": false,
+    "obs": "Trânsito detectado via Magiic em 05/08/2026 — confirmar NF real e substituir este registro"
+  }
+]
