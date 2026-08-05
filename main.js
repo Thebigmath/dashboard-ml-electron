@@ -10,12 +10,26 @@ const storagePath = path.join(userDataPath, 'storage');
 if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
 
 const appStorage = path.join(__dirname, 'storage');
-for (const file of ['config.json', 'usuarios.json', 'custos.json']) {
+for (const file of ['config.json', 'usuarios.json', 'custos.json', 'envios_full.json']) {
     const dest = path.join(storagePath, file);
     const src  = path.join(appStorage, file);
     if (!fs.existsSync(src)) continue;
     if (!fs.existsSync(dest)) {
         fs.copyFileSync(src, dest);
+    } else if (file === 'envios_full.json') {
+        try {
+            const existing = JSON.parse(fs.readFileSync(dest, 'utf8'));
+            const defaults = JSON.parse(fs.readFileSync(src,  'utf8'));
+            const numeros  = new Set(existing.map(e => e.numero));
+            const skusExistentes = new Set(existing.flatMap(e => Object.keys(e.skus || {})));
+            const novas = defaults.filter(e =>
+                !numeros.has(e.numero) &&
+                !Object.keys(e.skus || {}).some(sku => skusExistentes.has(sku))
+            );
+            if (novas.length > 0) {
+                fs.writeFileSync(dest, JSON.stringify([...existing, ...novas], null, 2), 'utf8');
+            }
+        } catch {}
     } else if (file === 'config.json') {
         try {
             const existing = JSON.parse(fs.readFileSync(dest, 'utf8'));
