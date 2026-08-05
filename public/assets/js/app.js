@@ -19,6 +19,21 @@ let produtosFiltrados = [];
 let textoPesquisa     = '';
 window.produtosReposicao = [];
 window.qtdsFull   = {};
+
+// QTD FULL é o que sobra do estoque para enviar — não é a reposição. O que já foi
+// despachado sai da conta.
+// Mesma fórmula do "Enviar hoje" do Magiic:
+//   max(0, estoqueAlvoFull - estoqueAtualFull - transitoFull)
+// Fórmula alternativa testada (2026-08-05): estoque - trânsito
+// Resultado: ~7.8% de match com Magiic — descartada.
+// function qtdFullSugerida(p) {
+//     return Math.max(0, Number(p.estoque) - (window.transitoMap[p.sku] || 0));
+// }
+
+// Usa reposição calculada pelo servidor (~93% de match com Magiic com dc=20).
+function qtdFullSugerida(p) {
+    return Number(p.reposicao) || 0;
+}
 window.transitoMap = {};
 window.custosMap   = {};
 // Seleção por "chave" (identificador único), não pelo SKU: assim ela sobrevive
@@ -155,7 +170,9 @@ function aplicarFiltros() {
     let lista = window.produtosReposicao.map(p => {
         if (periodo !== 30) {
             const mediaDia  = p.vendas30 / periodo;
-            const cobertura = mediaDia > 0 ? parseFloat((Number(p.estoque) / mediaDia).toFixed(1)) : 999;
+            // conta o trânsito e usa a média em precisão total — mesma regra do backend
+            const coberto   = Number(p.estoque) + Number(window.transitoMap[p.sku] || 0);
+            const cobertura = coberto === 0 ? 0 : (mediaDia > 0 ? parseFloat((coberto / mediaDia).toFixed(1)) : 999);
             return { ...p, mediaDia: Math.round(mediaDia * 100) / 100, cobertura };
         }
         return p;
@@ -255,8 +272,13 @@ if (slider && diasAlvo && estrategia) {
 }
 
 /* ── Badge urgência ─────────────────────────────────────────────────────── */
-function badgeUrgencia(cobertura) {
-    const c = Number(cobertura);
+function badgeUrgencia(p) {
+    const c = Number(typeof p === 'object' && p !== null ? p.cobertura : p);
+    const vendeu = typeof p === 'object' && p !== null ? Number(p.vendas30) > 0 : true;
+    // Estoque zerado sem nenhuma venda não é ruptura, é produto parado. Os dois casos
+    // caíam em "SEM ESTOQUE" e 149 produtos mortos apareciam como crítico, escondendo
+    // as 57 rupturas de verdade.
+    if (c === 0 && !vendeu) return '<span class="urgencia-badge sem-venda">PARADO</span>';
     if (c === 0)  return '<span class="urgencia-badge critico">SEM ESTOQUE</span>';
     if (c >= 999) return '<span class="urgencia-badge sem-venda">SEM VENDA</span>';
     if (c < 7)    return '<span class="urgencia-badge critico">CRÍTICO</span>';
@@ -276,7 +298,7 @@ function renderPagina(lista, pagina) {
     tabela.innerHTML = fatia.map(p => `
         <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' class="linha-sel"' : ''}>
             <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
-            <td>${badgeUrgencia(p.cobertura)}</td>
+            <td>${badgeUrgencia(p)}</td>
             <td>${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}</td>
             <td>${p.sku}</td>
             <!-- estoque cru: o que está em trânsito tem coluna própria e ainda não chegou
@@ -288,7 +310,7 @@ function renderPagina(lista, pagina) {
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
             <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
-            <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (p.reposicao > 0 ? p.reposicao : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
+            <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`).join('');
 
     renderControles(lista.length, pagina);
@@ -331,7 +353,7 @@ function sincronizarSelecaoUI() {
         const p = porChave[c];
         // indexado por chave: o input grava por chave, e buscar por item_id fazia o
         // contador ignorar as quantidades editadas à mão
-        if (p) unidades += Number(window.qtdsFull[c] ?? (p.reposicao > 0 ? p.reposicao : 0)) || 0;
+        if (p) unidades += Number(window.qtdsFull[c] ?? qtdFullSugerida(p)) || 0;
     });
 
     painel.innerHTML = `
@@ -489,7 +511,10 @@ if (btnRecalcular) {
             const vendas30 = Number(p.vendas30);
             const transito = Number(window.transitoMap[p.sku] || 0);
             const vdm      = Math.round((vendas30 / 30) * 100) / 100;
-            const cobertura = vdm > 0 ? parseFloat((estoque / vdm).toFixed(1)) : 999;
+            // cobertura conta o trânsito e usa a média em precisão total — igual ao backend
+            const vdmReal   = vendas30 / 30;
+            const coberto   = estoque + transito;
+            const cobertura = coberto === 0 ? 0 : (vdmReal > 0 ? parseFloat((coberto / vdmReal).toFixed(1)) : 999);
             const reposicao = calcularReposicaoMagis5(vendas30, diasC, diasA, estoque, transito, 1, p.status === 'active');
             return { ...p, mediaDia: vdm, cobertura, reposicao };
         });
@@ -551,7 +576,7 @@ if (btnGerarPlanilha) {
             .filter(p => !temSelecao || window.selecionados.has(chaveDe(p)))
             .map(p => {
                 const c = chaveDe(p);
-                const qtd = window.qtdsFull[c] ?? (p.reposicao > 0 ? p.reposicao : 0);
+                const qtd = window.qtdsFull[c] ?? qtdFullSugerida(p);
                 return { chave: c, item_id: p.item_id, sku: p.sku, qtdFull: Number(qtd) || 0 };
             })
             .filter(p => p.qtdFull > 0);
