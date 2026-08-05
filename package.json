@@ -22,7 +22,8 @@
     "publish": {
       "provider": "github",
       "owner": "Thebigmath",
-      "repo": "dashboard-ml-electron"
+      "repo": "dashboard-ml-electron",
+      "releaseType": "release"
     },
     "win": {
       "target": "nsis",
