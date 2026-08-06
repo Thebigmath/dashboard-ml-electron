@@ -24,7 +24,11 @@ function salvarJson(file, data) {
 // ── Dados do dashboard ──────────────────────────────────────────────────────
 router.get('/dados', auth, (req, res) => {
     const reposicao = lerJson('reposicao.json', []);
-    const transito  = lerJson('transito_local.json', {});
+    const transitoRaw = lerJson('transito_local.json', {});
+    const transito = {};
+    for (const [k, v] of Object.entries(transitoRaw)) {
+        transito[k.toLowerCase()] = typeof v === 'object' ? (v.quantidade ?? 0) : (Number(v) || 0);
+    }
     const ultima    = fs.existsSync(path.join(STORAGE, 'ultima_atualizacao.txt'))
         ? fs.readFileSync(path.join(STORAGE, 'ultima_atualizacao.txt'), 'utf8') : null;
 
@@ -378,7 +382,11 @@ router.post('/atualizar', auth, async (req, res) => {
 
         // Unidades já enviadas ao FULL e ainda não recebidas — mesma regra do /dados.
         // Contam como estoque a caminho e abatem a reposição.
-        const transitoPorSku = { ...lerJson('transito_local.json', {}) };
+        const transitoRaw2 = lerJson('transito_local.json', {});
+        const transitoPorSku = {};
+        for (const [k, v] of Object.entries(transitoRaw2)) {
+            transitoPorSku[k.toLowerCase()] = typeof v === 'object' ? (v.quantidade ?? 0) : (Number(v) || 0);
+        }
         for (const e of lerJson('envios_full.json', [])) {
             if (e.inativo || !e.skus) continue;
             if ((e.recebido || 0) >= (e.unidades || 0) && (e.unidades || 0) > 0) continue;
