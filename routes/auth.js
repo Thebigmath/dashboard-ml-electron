@@ -11,7 +11,7 @@ const REDIRECT_URI = 'https://claude.ai/new';
 
 // Página de gerar token
 router.get('/gerar_token', (req, res) => {
-    const authUrl = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${config.client_id}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+    const authUrl = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${config.client_id}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=offline_access%20supply_chain`;
     res.send(`<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><title>Gerar Token</title>
