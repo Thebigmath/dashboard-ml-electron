@@ -461,10 +461,27 @@ function carregarProdutos() {
 }
 
 if (tabela) {
-    fetch('/api/transito').then(r => r.json()).catch(() => ({}))
-        .then(transito => {
-            window.transitoMap = transito || {};
-            carregarProdutos();
+    fetch('/api/app_info')
+        .then(r => r.json())
+        .then(info => {
+            if (info.dias_coleta) {
+                const el = document.getElementById('diasColeta');
+                if (el) el.value = info.dias_coleta;
+            }
+            if (info.dias_alvo) {
+                const el = document.getElementById('diasAlvo');
+                if (el) el.value = info.dias_alvo;
+                const slider = document.getElementById('sliderReposicao');
+                if (slider) slider.value = info.dias_alvo;
+            }
+        })
+        .catch(() => {})
+        .finally(() => {
+            fetch('/api/transito').then(r => r.json()).catch(() => ({}))
+                .then(transito => {
+                    window.transitoMap = transito || {};
+                    carregarProdutos();
+                });
         });
 }
 
@@ -610,7 +627,9 @@ if (btnGerarPlanilha) {
 /* ── Enviar para Full ───────────────────────────────────────────────────── */
 if (btnEnviarFull) {
     btnEnviarFull.addEventListener('click', () => {
-        window.open('https://myaccount.mercadolivre.com.br/shipping/import/excel/upload', '_blank');
+        const url = 'https://myaccount.mercadolivre.com.br/shipping/import/excel/upload';
+        if (window.electronAPI?.openExternal) window.electronAPI.openExternal(url);
+        else window.open(url, '_blank');
     });
 }
 

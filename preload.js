@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', ()    => cb()),
     onUpdateStatus:     (cb) => ipcRenderer.on('update-status',     (_, m) => cb(m)),
     installUpdate:      ()   => ipcRenderer.send('install-update'),
+    openExternal:       (url) => ipcRenderer.send('open-external', url),
 });
