@@ -74,6 +74,33 @@ router.post('/atualizar', auth, async (req, res) => {
         const diasAlvo  = config.dias_alvo   || 35;
         const diasColeta = config.dias_coleta || 17;
 
+        // 0. Auto-verificar envios Full já recebidos pelo ML
+        const enviosList = lerJson('envios_full.json', []);
+        let enviosAlterados = false;
+        for (const envio of enviosList) {
+            if (envio.inativo === true || envio.ativo === false) continue;
+            if (!envio.numero) continue;
+            if ((envio.recebido || 0) >= (envio.unidades || 0) && (envio.unidades || 0) > 0) continue;
+            try {
+                const { data: ship } = await axios.get(
+                    `https://api.mercadolibre.com/shipments/${envio.numero}`,
+                    { headers }
+                );
+                if (['delivered', 'closed'].includes(ship.status)) {
+                    const qtd = ship.received_quantity ?? envio.unidades;
+                    escrever(`[ENVIO] #${envio.numero} recebido pelo ML (status=${ship.status}, ${qtd} un) → fechado automaticamente`);
+                    envio.recebido = qtd;
+                    envio.status   = ship.status;
+                    enviosAlterados = true;
+                } else {
+                    escrever(`[ENVIO] #${envio.numero} ainda em trânsito (status=${ship.status})`);
+                }
+            } catch (e) {
+                escrever(`[ENVIO] #${envio.numero} não verificável via API (${(e.message || '').substring(0, 60)})`);
+            }
+        }
+        if (enviosAlterados) salvarJson('envios_full.json', enviosList);
+
         // 1. Pedidos últimos 30 dias (excluindo apenas cancelados)
         const dataInicio = new Date(Date.now() - 30 * 86400000).toISOString();
         const dataFim    = new Date().toISOString();
@@ -722,19 +749,17 @@ router.post('/gerar_planilha', auth, (req, res) => {
 
         const wb = XLSX.utils.book_new();
         const ws = {};
+        const totalRows = 5 + itens.length;
         itens.forEach(({ item_id, qtdFull }, i) => {
-            // O template do ML tem 5 linhas de cabeçalho em branco: os dados começam na
-            // linha 6. Conferido contra o arquivo que o ML aceitou (CORDEIRO_CAR, 13 itens
-            // de L6 a L18).
             const row = 6 + i;
-            // Só D e F. No template do ML as colunas A, B, C e E não têm célula alguma —
-            // criar célula de texto vazio ali fazia o arquivo divergir do modelo aceito.
             ws[`D${row}`] = { v: item_id, t: 's' };
             ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
         });
-        ws['!ref'] = `A1:F${5 + itens.length}`;
+        ws['!ref'] = `A1:F${totalRows}`;
+        // Altura de linha comprimida igual ao template do ML (~12.75pt)
+        ws['!rows'] = Array.from({ length: totalRows }, () => ({ hpt: 12.75, hpx: 17 }));
         // Template do ML tem duas sheets: "Planilha 1" (vazia) e "Dados Mercado Livre"
-        const wsVazia = { 'A1': { v: '', t: 's' }, '!ref': 'A1' };
+        const wsVazia = { '!ref': 'A1:A1' };
         XLSX.utils.book_append_sheet(wb, wsVazia, 'Planilha 1');
         XLSX.utils.book_append_sheet(wb, ws, 'Dados Mercado Livre');
 
@@ -758,10 +783,12 @@ router.get('/app_info', auth, (req, res) => {
     const pkg    = require('../package.json');
     const config = lerJson('config.json', {});
     res.json({
-        nome:      config.app_nome  || pkg.productName || pkg.name,
-        porta:     config.app_porta || 3001,
-        versao:    pkg.version,
-        outro_app: config.outro_app || null,
+        nome:        config.app_nome    || pkg.productName || pkg.name,
+        porta:       config.app_porta   || 3001,
+        versao:      pkg.version,
+        outro_app:   config.outro_app   || null,
+        dias_coleta: config.dias_coleta || 17,
+        dias_alvo:   config.dias_alvo   || 35,
     });
 });
 

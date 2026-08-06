@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -78,6 +78,10 @@ autoUpdater.on('update-downloaded', () => {
 
 ipcMain.on('install-update', () => {
     autoUpdater.quitAndInstall();
+});
+
+ipcMain.on('open-external', (_, url) => {
+    shell.openExternal(url);
 });
 
 app.whenReady().then(() => {
