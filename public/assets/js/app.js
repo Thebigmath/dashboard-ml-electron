@@ -546,6 +546,16 @@ if (btnRecalcular) {
         recalcularComTransito();
         paginaAtual = 1;
         aplicarFiltros();
+        // grava os dias para valerem também na próxima coleta do motor. Sem isso a
+        // tela recalculava, mas o /atualizar seguia usando o config antigo.
+        fetch('/api/config_motor', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                dias_coleta: parseInt(diasColeta?.value) || 0,
+                dias_alvo:   parseInt(diasAlvo?.value)   || 35,
+            }),
+        }).catch(() => {});
     });
 }
 
