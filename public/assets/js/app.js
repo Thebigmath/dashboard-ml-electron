@@ -305,7 +305,7 @@ function renderPagina(lista, pagina) {
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
-            <td><strong>${Number(p.reposicao) > 0 ? p.reposicao : '—'}</strong></td>
+            <td><strong>${Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—'}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${(window.transitoMap[p.sku]||0)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${window.transitoMap[p.sku] || 0}</span></td>
             <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`).join('');
@@ -533,7 +533,11 @@ function recalcularComTransito() {
         const coberto   = estoque + transito;
         const cobertura = coberto === 0 ? 0 : (vdmReal > 0 ? parseFloat((coberto / vdmReal).toFixed(1)) : 999);
         const reposicao = calcularReposicaoMagis5(vendas30, diasC, diasA, estoque, transito, 1, p.status === 'active');
-        return { ...p, mediaDia: vdm, cobertura, reposicao };
+        // A coluna REPOSIÇÃO mostra a necessidade cheia; QTD FULL é ela menos o trânsito.
+        // Antes a tela exibia o valor já líquido nas duas, e a conta "29 − 6 = 23" ficava
+        // invisível — parecia que o trânsito não tinha sido descontado em lugar nenhum.
+        const reposicaoBruta = calcularReposicaoMagis5(vendas30, diasC, diasA, estoque, 0, 1, p.status === 'active');
+        return { ...p, mediaDia: vdm, cobertura, reposicao, reposicaoBruta };
     });
 }
 
