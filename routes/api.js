@@ -396,6 +396,59 @@ router.post('/atualizar', auth, async (req, res) => {
             }
         }
 
+        // Relatório de SKUs em risco — gerado ANTES do filtro FULL de propósito: os
+        // casos mais perigosos são produtos que ainda não entraram no FULL e por isso
+        // sumiriam daqui (ex: dois tapetes diferentes dividindo tap-050). O motor já
+        // separava esses produtos, mas o aviso só saía no log, que ninguém lê.
+        {
+            // Agrupa pelo seller_sku base: "tap-004" e "tap-004~mlb739..." são o mesmo SKU
+            const porBase = {};
+            for (const [k, d] of Object.entries(porSku)) {
+                const base = k.split('~')[0].replace(/#par$/, '');
+                (porBase[base] = porBase[base] || []).push(d);
+            }
+            const skuCompartilhado = [];
+            for (const [base, lista] of Object.entries(porBase)) {
+                if (lista.length < 2) continue;
+                skuCompartilhado.push({
+                    sku: base,
+                    produtos: lista.map(d => ({
+                        titulo:    d.titulo,
+                        item_ids:  (d._itemIds || [d.item_id]).map(x => String(x).toUpperCase()),
+                        status:    d.status,
+                        estoque:   d.estoque,
+                        eFull:     !!d.eFull,
+                    })),
+                });
+            }
+
+            // SKUs que só diferem por zero à esquerda ou pontuação (tap-50 vs tap-050).
+            // Para o sistema são distintos; para quem cadastrou, quase sempre é digitação.
+            const normSku = s => String(s || '').toLowerCase()
+                .replace(/[^a-z0-9]+/g, '')
+                .replace(/\d+/g, n => String(parseInt(n, 10)));
+            const porNorm = {};
+            for (const k of Object.keys(porSku)) {
+                const bruto = k.split('~')[0].replace(/#par$/, '');
+                const n = normSku(bruto);
+                if (!n) continue;
+                (porNorm[n] = porNorm[n] || new Set()).add(bruto);
+            }
+            const skusParecidos = Object.values(porNorm)
+                .map(s => [...s])
+                .filter(a => a.length > 1)
+                .map(skus => ({ skus }));
+
+            salvarJson('avisos_sku.json', {
+                gerado_em: new Date().toISOString(),
+                sku_compartilhado: skuCompartilhado,
+                skus_parecidos: skusParecidos,
+            });
+            if (skuCompartilhado.length || skusParecidos.length) {
+                escrever(`[AVISO] ${skuCompartilhado.length} SKU(s) usados por produtos diferentes, ${skusParecidos.length} grupo(s) de SKU parecido`);
+            }
+        }
+
         // Só trabalhamos com FULL. Anúncio sem inventory_id não tem estoque em galpão
         // do ML — o "estoque" dele é quantidade declarada no anúncio, que não pode ser
         // reposta nem enviada. Manter esses produtos na base só polui a tela e faz o
@@ -803,6 +856,11 @@ router.get('/app_info', auth, (req, res) => {
         dias_coleta: config.dias_coleta || 17,
         dias_alvo:   config.dias_alvo   || 35,
     });
+});
+
+// ── Avisos de SKU (colisões detectadas na última coleta) ────────────────────
+router.get('/avisos_sku', auth, (req, res) => {
+    res.json(lerJson('avisos_sku.json', { sku_compartilhado: [], skus_parecidos: [] }));
 });
 
 // ── Dias do motor (persistidos para a próxima coleta) ───────────────────────
