@@ -31,9 +31,7 @@ window.qtdsFull   = {};
 // }
 
 function qtdFullSugerida(p) {
-    const transito = Number(window.transitoMap[p.sku] || 0);
-    if (transito <= 0) return 0;
-    return Math.max(0, transito - (Number(p.reposicao) || 0));
+    return Number(p.reposicao) || 0;
 }
 window.transitoMap = {};
 window.custosMap   = {};
