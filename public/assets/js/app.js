@@ -30,9 +30,10 @@ window.qtdsFull   = {};
 //     return Math.max(0, Number(p.estoque) - (window.transitoMap[p.sku] || 0));
 // }
 
-// Usa reposição calculada pelo servidor (~93% de match com Magiic com dc=20).
 function qtdFullSugerida(p) {
-    return Number(p.reposicao) || 0;
+    const transito = Number(window.transitoMap[p.sku] || 0);
+    if (transito <= 0) return 0;
+    return Math.max(0, transito - (Number(p.reposicao) || 0));
 }
 window.transitoMap = {};
 window.custosMap   = {};

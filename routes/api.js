@@ -624,7 +624,12 @@ router.post('/upload_pdf', auth, upload.single('pdf'), async (req, res) => {
         if (tabelaIdx >= 0) {
             for (let i = tabelaIdx + 1; i < linhas.length; i++) {
                 const m = linhas[i].match(/^(\d+)(\s|•|$)/);
-                if (m) qtds.push(parseInt(m[1]));
+                if (m) {
+                    const n = parseInt(m[1]);
+                    // anos do nome do produto (ex: "2008 2009 2010") não são quantidades
+                    if (n >= 1990 && n <= 2040) continue;
+                    qtds.push(n);
+                }
                 if (qtds.length >= skusOrdem.length) break;
             }
         }
