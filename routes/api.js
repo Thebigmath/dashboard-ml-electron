@@ -805,6 +805,20 @@ router.get('/app_info', auth, (req, res) => {
     });
 });
 
+// ── Dias do motor (persistidos para a próxima coleta) ───────────────────────
+// Sem isso o valor digitado na tela valia só até o reload: /app_info devolvia o
+// config antigo e o motor calculava com ele, ignorando o que estava na tela.
+router.post('/config_motor', auth, (req, res) => {
+    const config = lerJson('config.json', {});
+    const dc = parseInt(req.body.dias_coleta);
+    const da = parseInt(req.body.dias_alvo);
+    // limites sãos — fora disso é erro de digitação, não estratégia
+    if (Number.isFinite(dc) && dc >= 0   && dc <= 120) config.dias_coleta = dc;
+    if (Number.isFinite(da) && da >= 1   && da <= 365) config.dias_alvo   = da;
+    salvarJson('config.json', config);
+    res.json({ ok: true, dias_coleta: config.dias_coleta, dias_alvo: config.dias_alvo });
+});
+
 // ── Trocar de conta (lança outro app se offline) ─────────────────────────────
 router.post('/switch', auth, (req, res) => {
     const { porta, exe, nome } = req.body;
