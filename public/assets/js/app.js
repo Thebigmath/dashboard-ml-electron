@@ -416,6 +416,65 @@ window.irPagina = function(p) {
     document.getElementById('paginacaoReposicaoTopo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
+/* ── Avisos de SKU ──────────────────────────────────────────────────────── */
+// O motor já detectava produtos diferentes dividindo o mesmo seller_sku, mas só
+// escrevia no log da coleta. Aqui isso vira painel: sem enxergar a colisão, um
+// produto novo com SKU repetido pode acabar mesclado a um existente.
+function renderAvisosSku(d) {
+    const box = document.getElementById('avisoSku');
+    if (!box) return;
+    const comp = d?.sku_compartilhado || [];
+    const par  = d?.skus_parecidos    || [];
+    if (!comp.length && !par.length) { box.style.display = 'none'; return; }
+
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const tag = (txt, cor) => `<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;background:${cor}22;color:${cor};margin-left:6px;white-space:nowrap">${esc(txt)}</span>`;
+
+    const blocosComp = comp.map(c => `
+        <div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+            <div style="font-size:12px;font-weight:700;color:#ff9500;margin-bottom:4px">${esc(c.sku)}</div>
+            ${c.produtos.map(p => `
+                <div style="padding:3px 0 3px 14px">
+                    <div style="font-size:12px;color:var(--l1);line-height:1.35">${esc(p.titulo)}${p.eFull ? tag('FULL', '#00ff99') : tag('sem FULL', '#8ca0b3')}${p.status === 'active' ? '' : tag(p.status, '#8ca0b3')}</div>
+                    <div style="font-size:10px;color:var(--l3);margin-top:1px">estoque ${esc(p.estoque)} · ${esc((p.item_ids || []).join(', '))}</div>
+                </div>`).join('')}
+        </div>`).join('');
+
+    const blocosPar = par.map(g => `
+        <div style="padding:5px 0 5px 14px">
+            ${g.skus.map(s => `<code style="background:var(--s2);padding:1px 7px;border-radius:4px;margin-right:6px;font-size:11px;color:var(--l1)">${esc(s)}</code>`).join('')}
+        </div>`).join('');
+
+    const titulo = [
+        comp.length ? `${comp.length} SKU${comp.length > 1 ? 's' : ''} em produtos diferentes` : '',
+        par.length  ? `${par.length} grupo${par.length > 1 ? 's' : ''} de SKU parecido`        : '',
+    ].filter(Boolean).join(' · ');
+
+    box.innerHTML = `
+        <div style="padding:13px 18px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="window.toggleAvisoSku()">
+            <i class="bi bi-exclamation-triangle" style="color:#ff9500;font-size:15px"></i>
+            <div style="flex:1">
+                <div style="font-size:13px;font-weight:600">Atenção nos SKUs</div>
+                <div style="font-size:11px;color:var(--l3)">${titulo}</div>
+            </div>
+            <i class="bi bi-chevron-down" id="avisoSkuIcon" style="color:var(--l3)"></i>
+        </div>
+        <div id="avisoSkuCorpo" style="display:none;padding:0 18px 14px;border-top:1px solid var(--sep)">
+            ${comp.length ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--l3);margin:12px 0 2px">Mesmo SKU, produtos diferentes</div>${blocosComp}` : ''}
+            ${par.length  ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--l3);margin:14px 0 2px">SKUs quase iguais — provável digitação</div>${blocosPar}` : ''}
+        </div>`;
+    box.style.display = 'block';
+}
+
+window.toggleAvisoSku = function () {
+    const c = document.getElementById('avisoSkuCorpo');
+    const i = document.getElementById('avisoSkuIcon');
+    if (!c) return;
+    const visivel = c.style.display !== 'none';
+    c.style.display = visivel ? 'none' : 'block';
+    if (i) i.className = visivel ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+};
+
 /* ── Carregar JSON ──────────────────────────────────────────────────────── */
 function carregarProdutos() {
     // deduplica por SKU somando estoque e vendas30
@@ -455,6 +514,7 @@ function carregarProdutos() {
             recalcularComTransito();
             renderizarGraficoFaturamento();
             aplicarFiltros();
+            fetch('/api/avisos_sku').then(r => r.json()).then(renderAvisosSku).catch(() => {});
         })
         .catch(() => {
             if (tabela) tabela.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
