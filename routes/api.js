@@ -810,15 +810,23 @@ router.post('/importar_custos', auth, upload.single('planilha'), (req, res) => {
 router.post('/gerar_planilha', auth, (req, res) => {
     try {
         const XLSX = require('xlsx');
-        const itens = req.body; // [{ item_id, sku, qtdFull, chave }]
+        const itens = req.body; // [{ item_id, sku, variation_id, qtdFull, chave }]
         if (!Array.isArray(itens) || !itens.length) return res.status(400).json({ erro: 'Sem itens' });
 
         const wb = XLSX.utils.book_new();
         const ws = {};
         const totalRows = 5 + itens.length;
-        itens.forEach(({ item_id, qtdFull }, i) => {
+        // Colunas do template do ML: A=SKU, B=cod. universal, C=código ML,
+        // D=nº do anúncio, E=nº da variação, F=quantidade.
+        // Só D e F eram preenchidas. Em anúncio com variações as duas linhas saíam com
+        // o mesmo nº de anúncio, e o ML rejeitava com "Adicione mais um código para que
+        // possamos identificar o produto" — não dava para saber qual variação era qual.
+        itens.forEach(({ item_id, sku, variation_id, qtdFull }, i) => {
             const row = 6 + i;
+            // SKU no ML é maiúsculo (31173D, TAP-004); o motor guarda tudo minúsculo
+            if (sku) ws[`A${row}`] = { v: String(sku).toUpperCase(), t: 's' };
             ws[`D${row}`] = { v: item_id, t: 's' };
+            if (variation_id) ws[`E${row}`] = { v: String(variation_id), t: 's' };
             ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
         });
         ws['!ref'] = `A1:F${totalRows}`;
