@@ -672,7 +672,9 @@ if (btnGerarPlanilha) {
             .map(p => {
                 const c = chaveDe(p);
                 const qtd = window.qtdsFull[c] ?? qtdFullSugerida(p);
-                return { chave: c, item_id: p.item_id, sku: p.sku, qtdFull: Number(qtd) || 0 };
+                // sku e variation_id vão para as colunas A e E da planilha do ML: sem um
+                // segundo código, anúncio com variações sobe com linhas idênticas
+                return { chave: c, item_id: p.item_id, sku: p.sku, variation_id: p.variation_id, qtdFull: Number(qtd) || 0 };
             })
             .filter(p => p.qtdFull > 0);
 
