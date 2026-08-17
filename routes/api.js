@@ -36,23 +36,32 @@ router.get('/dados', auth, (req, res) => {
     // Mesma regra do motor: quando o envio traz o "Código ML" (inventory_id), só ele
     // conta — é único por produto. Sem código, cai no seller_sku, que não distingue
     // produtos que o compartilham.
+    // Três mapas, porque o produto pode ou não ter o Código ML gravado ainda:
+    //   porInv      — envios novos, que trazem o código (único por produto)
+    //   skuLegado   — envios antigos, só com SKU, + o transito_local.json
+    //   skuTotal    — todos, usado quando o produto ainda não tem inventory_id na base
+    // Sem o skuTotal, um envio novo sumia da tela até o motor rodar e gravar o código.
     const transitoPorInv = {};
+    const skuLegado = { ...transito };
+    const skuTotal  = { ...transito };
     const envios = lerJson('envios_full.json', []);
     for (const e of envios) {
         if (e.inativo) continue;
         if ((e.recebido || 0) >= (e.unidades || 0) && (e.unidades || 0) > 0) continue;
-        if (e.codigos && Object.keys(e.codigos).length) {
+        const temCodigos = e.codigos && Object.keys(e.codigos).length > 0;
+        if (temCodigos) {
             for (const [cod, qty] of Object.entries(e.codigos)) {
                 const k = String(cod).toUpperCase();
                 transitoPorInv[k] = (transitoPorInv[k] || 0) + qty;
             }
-        } else if (e.skus) {
-            for (const [sku, qty] of Object.entries(e.skus)) {
-                const k = sku.toLowerCase();
-                transito[k] = (transito[k] || 0) + qty;
-            }
+        }
+        for (const [sku, qty] of Object.entries(e.skus || {})) {
+            const k = sku.toLowerCase();
+            skuTotal[k] = (skuTotal[k] || 0) + qty;
+            if (!temCodigos) skuLegado[k] = (skuLegado[k] || 0) + qty;
         }
     }
+    Object.assign(transito, skuTotal);   // mapa por SKU exposto continua sendo o total
 
     // Trânsito resolvido POR PRODUTO, com a mesma conta do motor. A tela não conseguia
     // refazer isso: o rótulo que ela exibe ("010tb-polo") não é a chave do mapa por SKU
@@ -63,8 +72,9 @@ router.get('/dados', auth, (req, res) => {
     for (const p of reposicao) {
         const chave = p.chave || p.sku;
         const base  = String(chave).split('~')[0].toLowerCase();
-        const porCodigo = p.inventory_id ? (transitoPorInv[String(p.inventory_id).toUpperCase()] || 0) : 0;
-        const bruto = porCodigo || (transito[base] || 0);
+        const bruto = p.inventory_id
+            ? (transitoPorInv[String(p.inventory_id).toUpperCase()] || 0) + (skuLegado[base] || 0)
+            : (skuTotal[base] || 0);
         transitoPorChave[chave] = Math.max(0, bruto - (p.transferenciaMl || 0));
     }
 
@@ -419,22 +429,23 @@ router.post('/atualizar', auth, async (req, res) => {
         // mesmas unidades acabavam creditadas a todos eles. O código do galpão é único
         // por produto, então quando o envio o traz, ele manda.
         const transitoPorInv = {};
+        const transitoSkuTotal = { ...transitoPorSku };
         for (const e of lerJson('envios_full.json', [])) {
             if (e.inativo) continue;
             if ((e.recebido || 0) >= (e.unidades || 0) && (e.unidades || 0) > 0) continue;
             const temCodigos = e.codigos && Object.keys(e.codigos).length > 0;
             if (temCodigos) {
-                // Envio novo: só o código conta, senão as mesmas unidades entrariam duas vezes
                 for (const [cod, qty] of Object.entries(e.codigos)) {
                     const k = String(cod).toUpperCase();
                     transitoPorInv[k] = (transitoPorInv[k] || 0) + qty;
                 }
-            } else if (e.skus) {
-                // Envio antigo, cadastrado antes do código: mantém o caminho por SKU
-                for (const [s, qty] of Object.entries(e.skus)) {
-                    const k = s.toLowerCase();
-                    transitoPorSku[k] = (transitoPorSku[k] || 0) + qty;
-                }
+            }
+            for (const [s, qty] of Object.entries(e.skus || {})) {
+                const k = s.toLowerCase();
+                transitoSkuTotal[k] = (transitoSkuTotal[k] || 0) + qty;
+                // transitoPorSku fica só com o legado: envio sem código. Somar os dois
+                // contaria as mesmas unidades duas vezes em quem tem inventory_id.
+                if (!temCodigos) transitoPorSku[k] = (transitoPorSku[k] || 0) + qty;
             }
         }
 
@@ -552,7 +563,9 @@ router.post('/atualizar', auth, async (req, res) => {
             // envios_full.json, elas apareceriam de novo no trânsito local e a
             // reposição sairia menor do que o necessário. Só conta o trânsito que o
             // ML ainda não enxerga.
-            const transitoLocal = transitoPorCodigo || (transitoPorSku[skuBase] || 0);
+            const transitoLocal = d.inventory_id
+                ? transitoPorCodigo + (transitoPorSku[skuBase] || 0)
+                : (transitoSkuTotal[skuBase] || 0);
             const jaContadoNoEstoque = d.transferenciaMl || 0;
             const emTransito = Math.max(0, transitoLocal - jaContadoNoEstoque);
             // Cobertura conta o que já está a caminho — a reposição trata o trânsito como
