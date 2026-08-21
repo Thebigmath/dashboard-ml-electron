@@ -52,9 +52,82 @@ function transitoDe(p) {
     if (Object.prototype.hasOwnProperty.call(window.transitoPorChave, chave)) {
         return Number(window.transitoPorChave[chave]) || 0;
     }
+
     const base = String(chave).split('~')[0];
     return Number(window.transitoMap[base] ?? window.transitoMap[p.sku] ?? 0) || 0;
 }
+
+/* ── TXT de separação ───────────────────────────────────────────────────── */
+// Decompõe um SKU de par nos dois individuais. Convenção da base: "31178e-31178d-par".
+// Exige o sufixo exato "-par": "580052512-nacional-reparo" termina em "reparo" e não é
+// par. Exige exatamente duas partes, senão SKUs com hífen próprio ("tap-004") seriam
+// quebrados indevidamente.
+function decompoePar(sku) {
+    const s = String(sku || '').toLowerCase().replace(/#par$/, '');
+    if (!s.endsWith('-par')) return null;
+    const partes = s.slice(0, -4).split('-');
+    return (partes.length === 2 && partes[0] && partes[1]) ? partes : null;
+}
+
+// Gera o TXT de separação dos selecionados: SKU + quantidade, um por linha.
+// Pares não entram: quem separa no estoque pega peça solta, e um par de lanterna são
+// duas peças distintas (esquerda e direita). Então 3 pares viram +3 em cada individual,
+// somados ao que já foi pedido solto.
+window.gerarTxtSelecionados = function () {
+    const porChave = {};
+    window.produtosReposicao.forEach(p => { porChave[chaveDe(p)] = p; });
+
+    const total = {};
+    const convertidos = [];
+    window.selecionados.forEach(c => {
+        const p = porChave[c];
+        if (!p) return;
+        const qtd = Number(window.qtdsFull[c] ?? qtdFullSugerida(p)) || 0;
+        if (qtd <= 0) return;
+        // O SKU real vem da chave, não de p.sku: em colisão o sku vira rótulo
+        // ("010tb-polo"), que não existe no Mercado Livre nem na prateleira.
+        const real = String(chaveDe(p)).split('~')[0].toLowerCase();
+        const partes = decompoePar(real);
+        if (partes) {
+            convertidos.push(real + ' (' + qtd + ') -> ' + partes[0] + ' +' + qtd + ', ' + partes[1] + ' +' + qtd);
+            for (const ind of partes) total[ind] = (total[ind] || 0) + qtd;
+        } else {
+            total[real] = (total[real] || 0) + qtd;
+        }
+    });
+
+    const linhas = Object.entries(total)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([sku, q]) => sku.toUpperCase() + '\t' + q);
+
+    if (!linhas.length) {
+        alert('Nenhum produto selecionado com quantidade maior que zero.');
+        return;
+    }
+
+    if (convertidos.length) console.log('Pares convertidos em peças soltas:\n  ' + convertidos.join('\n  '));
+
+    const blob = new Blob([linhas.join('\r\n') + '\r\n'], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const agora = new Date();
+    const ts = String(agora.getDate()).padStart(2, '0') + String(agora.getMonth() + 1).padStart(2, '0') +
+               agora.getFullYear() + '-' + String(agora.getHours()).padStart(2, '0') + String(agora.getMinutes()).padStart(2, '0');
+    a.href = url;
+    a.download = 'separacao-full-' + ts + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const topo = document.querySelector('#painel-selecao .ps-topo');
+    if (topo) {
+        const original = topo.innerHTML;
+        topo.innerHTML = '<i class="bi bi-check-circle"></i> TXT gerado: ' + linhas.length + ' SKUs' +
+            (convertidos.length ? ' (' + convertidos.length + ' par(es) convertido(s))' : '');
+        setTimeout(() => { topo.innerHTML = original; }, 4000);
+    }
+};
 
 const KEYWORDS_EMPILHADEIRA = ['empilhadeira','hyster','yale','bobcat','forklift','trator'];
 let filtroCategoria = 'todos';
@@ -190,7 +263,15 @@ function aplicarFiltros() {
         return p;
     });
 
-    lista = lista.filter(p => !isEmpilhadeira(p));
+    // Full x fora do Full. A tela é de reposição do Full; os de fora entram só quando
+    // pedidos, senão os ~500 anúncios sem galpão poluiriam o uso diário. Produtos de
+    // base antiga não têm o campo eFull — o "!== false" os mantém visíveis.
+    if (filtroCategoria === 'forafull') {
+        lista = lista.filter(p => p.eFull === false);
+    } else {
+        lista = lista.filter(p => p.eFull !== false);
+        lista = lista.filter(p => !isEmpilhadeira(p));
+    }
 
     if (textoPesquisa) lista = lista.filter(p =>
         p.titulo.toLowerCase().includes(textoPesquisa) || (p.sku||'').toLowerCase().includes(textoPesquisa));
@@ -319,9 +400,9 @@ function renderPagina(lista, pagina) {
             <td>${p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
-            <td><strong>${Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—'}</strong></td>
+            <td><strong>${p.eFull === false ? '<span style="color:var(--l3,#8ca0b3);font-weight:400">n/a</span>' : (Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—')}</strong></td>
             <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}</span></td>
-            <td><input type="number" class="qtd-full" data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
+            <td><input type="number" class="qtd-full" ${p.eFull === false ? 'disabled title="Produto fora do Full — não há envio a fazer"' : ''} data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`).join('');
 
     renderControles(lista.length, pagina);
@@ -352,6 +433,7 @@ function sincronizarSelecaoUI() {
             const acao = e.target.closest('[data-acao]')?.dataset.acao;
             if (acao === 'filtrar') { apenasSelecionados = !apenasSelecionados; paginaAtual = 1; aplicarFiltros(); }
             if (acao === 'limpar')  { window.selecionados.clear(); apenasSelecionados = false; paginaAtual = 1; aplicarFiltros(); }
+            if (acao === 'txt') gerarTxtSelecionados();
             if (acao === 'planilha') document.getElementById('btnGerarPlanilhaFull')?.click();
         });
     }
@@ -374,6 +456,7 @@ function sincronizarSelecaoUI() {
             <i class="bi bi-funnel"></i> ${apenasSelecionados ? 'Mostrar todos' : 'Mostrar apenas selecionados'}
         </button>
         <button class="ps-btn" data-acao="planilha"><i class="bi bi-file-earmark-arrow-down"></i> Gerar planilha dos selecionados</button>
+        <button class="ps-btn" data-acao="txt"><i class="bi bi-filetype-txt"></i> Gerar txt</button>
         <button class="ps-btn ps-limpar" data-acao="limpar"><i class="bi bi-x-circle"></i> Limpar seleção</button>`;
 }
 
