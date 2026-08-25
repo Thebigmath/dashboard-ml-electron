@@ -780,7 +780,7 @@ router.post('/upload_pdf', auth, upload.single('pdf'), async (req, res) => {
         const qtds = [];
         if (tabelaIdx >= 0) {
             for (let i = tabelaIdx + 1; i < linhas.length; i++) {
-                const m = linhas[i].match(/^(\d+)(\s|•|$)/);
+                const m = linhas[i].match(/^(\d+)(•|$)/);
                 if (m) {
                     const n = parseInt(m[1]);
                     // anos do nome do produto (ex: "2008 2009 2010") não são quantidades
@@ -804,6 +804,18 @@ router.post('/upload_pdf', auth, upload.single('pdf'), async (req, res) => {
         // nada: o cálculo usa código quando existe e ignoraria os itens sem ele.
         const todosComCodigo = skusOrdem.length > 0 &&
             codigosOrdem.slice(0, skusOrdem.length).every(Boolean);
+
+        // Confere contra o proprio PDF antes de entregar. Sem isso um erro de leitura
+        // entra calado no envio: o #74910211 registrou 844 unidades num PDF de 98,
+        // porque a instrucao "260 cm." virou quantidade.
+        const somaLida = Object.values(skus).reduce((a, b) => a + b, 0);
+        if (totalUnidades > 0 && somaLida !== totalUnidades) {
+            return res.status(400).json({
+                erro: `Leitura inconsistente: o PDF declara ${totalUnidades} unidades, mas os itens ` +
+                      `somam ${somaLida}. Envio nao cadastrado — confira o PDF ou cadastre a mao.`,
+                declarado: totalUnidades, somado: somaLida, skus,
+            });
+        }
 
         res.json({
             numero,
