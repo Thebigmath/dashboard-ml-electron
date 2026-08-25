@@ -509,6 +509,15 @@ router.post('/atualizar', auth, async (req, res) => {
         const qtdForaDoFull = Object.values(porSku).filter(d => !d.eFull).length;
         escrever(`FULL: ${totalAntesFiltro - qtdForaDoFull} produtos | fora do FULL: ${qtdForaDoFull} (na base, sem reposição)`);
 
+        // Titulos por SKU base, para o rotulo escolher uma palavra que DISTINGA os
+        // irmaos. Pegar a primeira palavra fora da stoplist dava "36036d-pisca" quatro
+        // vezes seguidas, porque "pisca" esta no titulo dos quatro produtos.
+        const titulosPorBase = {};
+        for (const [k, d] of Object.entries(porSku)) {
+            const b = k.split('~')[0].replace(/#par$/, '');
+            (titulosPorBase[b] = titulosPorBase[b] || []).push((d.titulo || '').toLowerCase());
+        }
+
         const duplicidadesEvitadas = [];
         const reposicao = Object.values(porSku).map(d => {
             let vendas30      = 0;
@@ -603,8 +612,15 @@ router.post('/atualizar', auth, async (req, res) => {
                                         'para','com','pcs','pçs','premium','original','novo','nova','de',
                                         'do','da','pça','peça','jogo','carro','veículo','veiculos',
                                         'anos','ano','modelo','versao','versão','line','set']);
-                const extra  = titulo.split(/[\s\-\/\\()+]+/)
-                    .find(w => w.length >= 3 && !/^\d/.test(w) && !stop.has(w) && !base.includes(w));
+                const candidatas = titulo.split(/[\s\-\/\()+]+/)
+                    .filter(w => w.length >= 3 && !/^\d/.test(w) && !stop.has(w) && !base.includes(w));
+                const irmaos = (titulosPorBase[base] || []).filter(t => t !== titulo);
+                // primeira palavra que nenhum irmão tenha ("onix", "montana"); se todas
+                // forem comuns cai na primeira, e o desempate por item_id resolve depois
+                let extra = irmaos.length
+                    ? candidatas.find(w => !irmaos.some(t => t.includes(w)))
+                    : null;
+                if (!extra) extra = candidatas[0];
                 if (extra) skuLimpo = skuLimpo + '-' + extra;
             }
             return { ...rest, sku: skuLimpo, chave, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
@@ -618,6 +634,16 @@ router.post('/atualizar', auth, async (req, res) => {
         }
 
         // Curva ABC por faturamento30 (critério: receita acumulada)
+        // Garantia final: se dois produtos do mesmo SKU ficaram com o mesmo rotulo, na
+        // tela viram linhas identicas e nao da para saber qual e qual. Desempata com o
+        // fim do item_id. "sku" aqui e so rotulo — a chave e o transito nao dependem dele.
+        const porRotulo = {};
+        for (const p of reposicao) (porRotulo[p.sku] = porRotulo[p.sku] || []).push(p);
+        for (const [rot, lst] of Object.entries(porRotulo)) {
+            if (lst.length < 2) continue;
+            for (const p of lst) p.sku = rot + '-' + String(p.item_id).slice(-4).toLowerCase();
+        }
+
         // Só os do FULL entram na curva: incluir os de fora deslocaria os limites A/B/C
         // e reclassificaria produtos que não mudaram em nada.
         const paraAbc = reposicao.filter(p => p.eFull);
