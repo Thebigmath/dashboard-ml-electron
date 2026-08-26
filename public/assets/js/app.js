@@ -772,7 +772,11 @@ if (btnGerarPlanilha) {
                 const qtd = window.qtdsFull[c] ?? qtdFullSugerida(p);
                 // sku e variation_id vão para as colunas A e E da planilha do ML: sem um
                 // segundo código, anúncio com variações sobe com linhas idênticas
-                return { chave: c, item_id: p.item_id, sku: p.sku, variation_id: p.variation_id, qtdFull: Number(qtd) || 0 };
+                // "sku" na tela e rotulo de exibicao ("010tb-polo"), que NAO existe no Mercado
+                                // Livre — mandava-lo na planilha dava erro de produto nao encontrado. O
+                                // seller_sku real esta na chave, sem o sufixo interno "~itemid".
+                                const skuReal = String(c).split('~')[0];
+                                return { chave: c, item_id: p.item_id, sku: skuReal, inventory_id: p.inventory_id, variation_id: p.variation_id, qtdFull: Number(qtd) || 0 };
             })
             .filter(p => p.qtdFull > 0);
 
