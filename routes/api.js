@@ -948,10 +948,14 @@ router.post('/gerar_planilha', auth, (req, res) => {
         // Só D e F eram preenchidas. Em anúncio com variações as duas linhas saíam com
         // o mesmo nº de anúncio, e o ML rejeitava com "Adicione mais um código para que
         // possamos identificar o produto" — não dava para saber qual variação era qual.
-        itens.forEach(({ item_id, sku, variation_id, qtdFull }, i) => {
+        itens.forEach(({ item_id, sku, inventory_id, variation_id, qtdFull }, i) => {
             const row = 6 + i;
             // SKU no ML é maiúsculo (31173D, TAP-004); o motor guarda tudo minúsculo
             if (sku) ws[`A${row}`] = { v: String(sku).toUpperCase(), t: 's' };
+            // C = "Codigo ML" (inventory_id): unico por produto. E ele que separa
+            // 010tb-polo de 010tb-tera, que dividem o mesmo seller_sku e por isso
+            // ficariam indistinguiveis so com as colunas A e D.
+            if (inventory_id) ws[`C${row}`] = { v: String(inventory_id).toUpperCase(), t: 's' };
             ws[`D${row}`] = { v: item_id, t: 's' };
             if (variation_id) ws[`E${row}`] = { v: String(variation_id), t: 's' };
             ws[`F${row}`] = { v: Number(qtdFull) || 0, t: 'n' };
