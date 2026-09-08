@@ -149,8 +149,46 @@ window.setFiltroCategoria = function(cat) {
     document.querySelectorAll('.cat-filter-btn').forEach(b => {
         b.classList.toggle('cat-filter-ativo', b.dataset.cat === cat);
     });
+    sincronizarRotuloCategoria();
     aplicarFiltros();
 };
+/* ── Fila de categorias no menu de tres pontinhos ─────────────────── */
+// Recolhida por padrao. O botao guarda o rotulo da categoria ativa, senao
+// nao daria para saber o que esta filtrado sem abrir.
+const CHAVE_MENU_CAT = 'menuCategoriasAberto';
+
+window.toggleMenuCategorias = function() {
+    const barra = document.getElementById('catBarra');
+    if (!barra) return;
+    const aberta = barra.classList.toggle('aberta');
+    document.getElementById('btnCatMenu')?.setAttribute('aria-expanded', String(aberta));
+    try { localStorage.setItem(CHAVE_MENU_CAT, aberta ? '1' : '0'); } catch {}
+};
+
+// Mantem o rotulo do botao igual ao da categoria ativa.
+function sincronizarRotuloCategoria() {
+    const alvo = document.getElementById('catAtualRotulo');
+    if (!alvo) return;
+    const ativo = document.querySelector('.cat-filter-btn.cat-filter-ativo');
+    // textContent traz junto o contador da Estrela; fica so a primeira palavra util
+    const txt = (ativo?.textContent || 'Todos').replace(/\s*\d+\s*$/, '').trim();
+    alvo.textContent = txt || 'Todos';
+}
+
+(function iniciarMenuCategorias() {
+    const aplicar = () => {
+        const barra = document.getElementById('catBarra');
+        if (!barra) return;
+        let aberta = false;
+        try { aberta = localStorage.getItem(CHAVE_MENU_CAT) === '1'; } catch {}
+        barra.classList.toggle('aberta', aberta);
+        document.getElementById('btnCatMenu')?.setAttribute('aria-expanded', String(aberta));
+        sincronizarRotuloCategoria();
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicar);
+    else aplicar();
+})();
+
 
 function detectarFornecedor(p) {
     const t = (p.titulo || '').toLowerCase();
@@ -239,6 +277,16 @@ function contarFiltrosAtivos() {
     return n;
 }
 
+// Espelha no ponto do botao de pontinhos se ha filtro ligado — recolhida, a
+// fila esconderia o badge de "Filtros" e o usuario nao veria mais o aviso.
+function marcarPontoFiltros() {
+    const badge = document.getElementById('badgeFiltros');
+    const barra = document.getElementById('catBarra');
+    if (!badge || !barra) return;
+    const ativo = badge.style.display !== 'none' && (parseInt(badge.textContent) || 0) > 0;
+    barra.classList.toggle('tem-filtro', ativo);
+}
+
 function atualizarBadgeFiltros() {
     const n = contarFiltrosAtivos();
     const badge = document.getElementById('badgeFiltros');
@@ -313,6 +361,7 @@ function aplicarFiltros() {
     paginaAtual = 1;
     renderPagina(produtosFiltrados, paginaAtual);
     atualizarBadgeFiltros();
+    marcarPontoFiltros();
 }
 
 window.aplicarFiltros = aplicarFiltros;
