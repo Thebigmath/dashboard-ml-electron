@@ -5,6 +5,7 @@ const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
 const TokenManager = require('../lib/tokenManager');
+const { mapaLimitado, comBackoff, paginarEmParalelo } = require('../lib/paralelo');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -107,21 +108,93 @@ router.post('/atualizar', auth, async (req, res) => {
         const headers = { Authorization: `Bearer ${access_token}` };
         const LIMIT = 50;
         const config   = lerJson('config.json', {});
+
+        // Toda chamada do motor passa por aqui. Se o ML responder 429, o backoff
+        // espera e tenta de novo — mas isso precisa aparecer, senao vira "o motor
+        // demorou hoje" sem explicacao.
+        let repeticoes = 0;
+        const tentar = (fn) => comBackoff(fn, {
+            aoRepetir: (tentativa, status, esperaMs) => {
+                repeticoes++;
+                if (repeticoes <= 3 || repeticoes % 25 === 0) {
+                    escrever(`[LIMITE] ML respondeu ${status} — nova tentativa em ${Math.round(esperaMs)}ms (${repeticoes}a espera)`);
+                }
+            },
+        });
         const diasAlvo  = config.dias_alvo   || 35;
         const diasColeta = config.dias_coleta || 17;
+
+        // As tres primeiras fases (envios, pedidos, varredura de anuncios) nao
+        // dependem umas das outras: o que as punha em fila era so a ordem no
+        // arquivo. Disparadas aqui, correm ao mesmo tempo, e cada uma e colhida
+        // no ponto em que o resultado passa a ser necessario.
+        const dataInicio = new Date(Date.now() - 30 * 86400000).toISOString();
+        const dataFim    = new Date().toISOString();
+
+        escrever('Carregando pedidos...');
+        const promPedidos = paginarEmParalelo({
+            limite: LIMIT,
+            concorrencia: 12,
+            buscarPagina: (offset) => axios.get(`https://api.mercadolibre.com/orders/search`, {
+                headers,
+                params: {
+                    seller: user_id,
+                    'order.date_created.from': dataInicio,
+                    'order.date_created.to':   dataFim,
+                    limit: LIMIT,
+                    offset
+                }
+            }).then(r => r.data),
+            extrair: (data) => data.results || [],
+            aoProgredir: (lidos, tot) => escrever(`[PROGRESSO] pedidos ${Math.min(lidos, tot)}/${tot}`),
+        });
+
+        // search_type=scan pagina por cursor (scroll_id) em vez de offset. O offset é
+        // rejeitado acima de 1000 ("Invalid limit and offset values", 400), o que
+        // travaria o motor por completo assim que o catálogo passasse de ~1050
+        // anúncios. O scan não tem esse teto.
+        //
+        // O cursor obriga a pedir uma pagina por vez DENTRO de cada scan, mas os dois
+        // scans (ativos e encerrados) nao dependem um do outro — entao correm juntos.
+        escrever('Carregando anúncios...');
+        const varrer = async (status) => {
+            const achados = [];
+            let scrollId = null;
+            do {
+                const params = { search_type: 'scan', limit: 100 };
+                if (status)   params.status    = status;
+                if (scrollId) params.scroll_id = scrollId;
+                const { data } = await tentar(() => axios.get(`https://api.mercadolibre.com/users/${user_id}/items/search`, { headers, params }));
+                const res = data.results || [];
+                if (!res.length) break;
+                achados.push(...res);
+                scrollId = data.scroll_id;
+            } while (scrollId);
+            return achados;
+        };
+        const promAnuncios = Promise.all([varrer(''), varrer('closed')]);
+
+        // Sem isto, uma falha antes do await correspondente viraria
+        // "unhandled rejection" e derrubaria o processo. O erro real continua
+        // subindo no await la embaixo.
+        promPedidos.catch(() => {});
+        promAnuncios.catch(() => {});
 
         // 0. Auto-verificar envios Full já recebidos pelo ML
         const enviosList = lerJson('envios_full.json', []);
         let enviosAlterados = false;
-        for (const envio of enviosList) {
-            if (envio.inativo === true || envio.ativo === false) continue;
-            if (!envio.numero) continue;
-            if ((envio.recebido || 0) >= (envio.unidades || 0) && (envio.unidades || 0) > 0) continue;
+        // Um /shipments por envio aberto. Iam em fila, e a maioria responde 404
+        // (numero de envio inbound nao resolve nessa rota) — ou seja, era tempo
+        // gasto esperando erro. Agora vao juntos.
+        const enviosAbertos = enviosList.filter(e =>
+            e.inativo !== true && e.ativo !== false && e.numero &&
+            !((e.recebido || 0) >= (e.unidades || 0) && (e.unidades || 0) > 0));
+        await mapaLimitado(enviosAbertos, 8, async (envio) => {
             try {
-                const { data: ship } = await axios.get(
+                const { data: ship } = await tentar(() => axios.get(
                     `https://api.mercadolibre.com/shipments/${envio.numero}`,
                     { headers }
-                );
+                ));
                 if (['delivered', 'closed'].includes(ship.status)) {
                     const qtd = ship.received_quantity ?? envio.unidades;
                     escrever(`[ENVIO] #${envio.numero} recebido pelo ML (status=${ship.status}, ${qtd} un) → fechado automaticamente`);
@@ -134,31 +207,14 @@ router.post('/atualizar', auth, async (req, res) => {
             } catch (e) {
                 escrever(`[ENVIO] #${envio.numero} não verificável via API (${(e.message || '').substring(0, 60)})`);
             }
-        }
+        });
         if (enviosAlterados) salvarJson('envios_full.json', enviosList);
 
-        // 1. Pedidos últimos 30 dias (excluindo apenas cancelados)
-        const dataInicio = new Date(Date.now() - 30 * 86400000).toISOString();
-        const dataFim    = new Date().toISOString();
-
-        escrever('Carregando pedidos...');
-        let pedidos = [], offset = 0, total = null;
-        do {
-            const { data } = await axios.get(`https://api.mercadolibre.com/orders/search`, {
-                headers,
-                params: {
-                    seller: user_id,
-                    'order.date_created.from': dataInicio,
-                    'order.date_created.to':   dataFim,
-                    limit: LIMIT,
-                    offset
-                }
-            });
-            if (total === null) total = data.paging?.total || 0;
-            pedidos = pedidos.concat((data.results || []).filter(p => p.status !== 'cancelled'));
-            offset += LIMIT;
-        } while (offset < total);
-        escrever(`Pedidos: ${pedidos.length}`);
+        // 1. Pedidos dos ultimos 30 dias (excluindo apenas cancelados).
+        // A busca ja esta rodando desde o inicio; aqui so se colhe.
+        const { itens: pedidosBrutos, total: totalPedidos } = await promPedidos;
+        const pedidos = pedidosBrutos.filter(p => p.status !== 'cancelled');
+        escrever(`Pedidos: ${pedidos.length} (de ${totalPedidos} no periodo)`);
 
         // 2. Vendas e faturamento por SKU / item_id / variação
         const vendasPorSku      = {};
@@ -196,27 +252,9 @@ router.post('/atualizar', auth, async (req, res) => {
             }
         }
 
-        // 3. Anúncios ativos
-        escrever('Carregando anúncios...');
-        let anunciosIds = [];
-        for (const status of ['', 'closed']) {
-            // search_type=scan pagina por cursor (scroll_id) em vez de offset. O offset é
-            // rejeitado acima de 1000 ("Invalid limit and offset values", 400), o que
-            // travaria o motor por completo assim que o catálogo passasse de ~1050
-            // anúncios. O scan não tem esse teto.
-            let scrollId = null;
-            do {
-                const params = { search_type: 'scan', limit: 100 };
-                if (status)   params.status    = status;
-                if (scrollId) params.scroll_id = scrollId;
-                const { data } = await axios.get(`https://api.mercadolibre.com/users/${user_id}/items/search`, { headers, params });
-                const res = data.results || [];
-                if (!res.length) break;
-                anunciosIds = anunciosIds.concat(res);
-                scrollId = data.scroll_id;
-            } while (scrollId);
-        }
-        anunciosIds = [...new Set(anunciosIds)];
+        // 3. Anuncios — a varredura tambem ja esta rodando desde o inicio.
+        const varreduras = await promAnuncios;
+        let anunciosIds = [...new Set([].concat(...varreduras))];
         escrever(`Anúncios: ${anunciosIds.length}`);
 
         // 4. Detalhes em lote (paralelo)
@@ -225,15 +263,24 @@ router.post('/atualizar', auth, async (req, res) => {
         for (let i = 0; i < anunciosIds.length; i += 20) lotes.push(anunciosIds.slice(i, i + 20));
 
         const produtos = {};
-        await Promise.all(lotes.map(async (lote) => {
-            const { data } = await axios.get(`https://api.mercadolibre.com/items`, {
-                headers,
-                params: { ids: lote.join(','), include_attributes: 'all' }
-            });
-            for (const entry of data || []) {
-                if (entry.body?.id) produtos[entry.body.id] = entry.body;
+        let lotesProntos = 0;
+        // multiget: 20 anuncios por chamada. O Promise.all solto abria os 46 lotes
+        // de uma vez; com teto + backoff nao ha rajada nem 429 em cascata.
+        await mapaLimitado(lotes, 24, async (lote) => {
+            try {
+                const { data } = await tentar(() => axios.get(`https://api.mercadolibre.com/items`, {
+                    headers,
+                    params: { ids: lote.join(','), include_attributes: 'all' }
+                }));
+                for (const entry of data || []) {
+                    if (entry.body?.id) produtos[entry.body.id] = entry.body;
+                }
+            } catch (e) {
+                escrever(`[ERRO] lote de detalhes falhou (${lote.length} anuncios): ${(e.message || '').substring(0, 60)}`);
             }
-        }));
+            lotesProntos++;
+            escrever(`[PROGRESSO] anuncios ${Math.min(lotesProntos * 20, anunciosIds.length)}/${anunciosIds.length}`);
+        });
         escrever(`Detalhes: ${Object.keys(produtos).length}`);
 
         // 4b. Estoque físico total no FULL via /inventories (inclui unidades em transferência,
@@ -253,9 +300,13 @@ router.post('/atualizar', auth, async (req, res) => {
         // pode ainda constar como "em trânsito" em envios_full.json — sem descontar,
         // a mesma unidade entraria duas vezes na conta da reposição.
         const transferenciaPorInventory = {};
-        await Promise.all(inventoryIds.map(async (invId) => {
+        // Estas chamadas iam todas de uma vez (340 conexoes) e o catch era mudo: uma
+        // que tomasse 429 caia calada no fallback available_quantity, ou seja, estoque
+        // errado sem aviso. Agora tem teto, backoff e contagem de falhas.
+        let invFalhados = 0, invProntos = 0;
+        await mapaLimitado(inventoryIds, 40, async (invId) => {
             try {
-                const { data } = await axios.get(`https://api.mercadolibre.com/inventories/${invId}/stock/fulfillment`, { headers });
+                const { data } = await tentar(() => axios.get(`https://api.mercadolibre.com/inventories/${invId}/stock/fulfillment`, { headers }));
                 // Não usar "total": ele soma unidades perdidas ("lost"), em processamento
                 // interno ("internalProcess") e em retirada, que não voltam a vender. Só o
                 // que está em transferência entre galpões volta a ficar disponível.
@@ -266,9 +317,13 @@ router.post('/atualizar', auth, async (req, res) => {
                     estoqueFullPorInventory[invId] = data.available_quantity + emTransferencia;
                     transferenciaPorInventory[invId] = emTransferencia;
                 }
-            } catch { /* item sem estoque FULL detalhado, mantém fallback */ }
-        }));
+            } catch { invFalhados++; /* item sem estoque FULL detalhado, mantém fallback */ }
+            invProntos++;
+            if (invProntos % 40 === 0 || invProntos === inventoryIds.length)
+                escrever(`[PROGRESSO] estoque ${invProntos}/${inventoryIds.length}`);
+        });
         escrever(`Estoque FULL obtido para ${Object.keys(estoqueFullPorInventory).length} de ${inventoryIds.length} inventories.`);
+        if (invFalhados) escrever(`[AVISO] ${invFalhados} inventories nao responderam — esses produtos ficaram com a quantidade do anuncio, nao a do galpao.`);
 
         // 5. Montar reposição
         function ePar(titulo, sku) {
@@ -661,6 +716,7 @@ router.post('/atualizar', auth, async (req, res) => {
         salvarJson('reposicao.json', reposicao);
         fs.writeFileSync(path.join(STORAGE, 'ultima_atualizacao.txt'), new Date().toLocaleString('pt-BR'));
 
+        if (repeticoes) escrever(`[LIMITE] ${repeticoes} espera(s) por rate limit do ML nesta coleta.`);
         escrever(`CONCLUÍDO. ${reposicao.length} SKUs processados.`);
         res.end();
 
@@ -674,42 +730,61 @@ router.post('/atualizar', auth, async (req, res) => {
 router.get('/faturamento_mensal', auth, async (req, res) => {
     const cacheFile = 'faturamento_mensal.json';
     const cached = lerJson(cacheFile, null);
-    if (cached && cached._atualizado) {
-        const idade = Date.now() - new Date(cached._atualizado).getTime();
-        if (idade < 6 * 3600 * 1000) return res.json(cached.dados);
-    }
+    // Cache por mes, nao do bloco inteiro. Mes fechado nao muda mais: so o mes
+    // corrente precisa ser relido. Antes, passadas 6 horas, os seis meses eram
+    // rebuscados do zero — ~180 paginas em fila, o que fazia o grafico ficar
+    // preso em "Carregando..." por bastante tempo.
+    const porMes = (cached && cached.porMes) || {};
     try {
         const { access_token, user_id } = await TokenManager.getToken();
         const headers = { Authorization: `Bearer ${access_token}` };
         const LIMIT = 50;
         const hoje = new Date();
-        const dados = [];
+
+        const meses = [];
         for (let m = 5; m >= 0; m--) {
             const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - m, 1);
             const fim    = new Date(hoje.getFullYear(), hoje.getMonth() - m + 1, 0, 23, 59, 59);
-            const label  = inicio.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-            let total = 0, offset = 0, paging = null;
-            do {
-                const { data } = await axios.get('https://api.mercadolibre.com/orders/search', {
+            meses.push({
+                chave:  inicio.getFullYear() + '-' + String(inicio.getMonth() + 1).padStart(2, '0'),
+                label:  inicio.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+                inicio, fim,
+                fechado: m > 0,
+            });
+        }
+
+        const valores = await mapaLimitado(meses, 3, async (mes) => {
+            // mes fechado ja calculado antes nao volta a ser buscado
+            if (mes.fechado && typeof porMes[mes.chave] === 'number') return porMes[mes.chave];
+            const { itens } = await paginarEmParalelo({
+                limite: LIMIT,
+                concorrencia: 4,
+                buscarPagina: (offset) => axios.get('https://api.mercadolibre.com/orders/search', {
                     headers,
                     params: {
                         seller: user_id,
-                        'order.date_created.from': inicio.toISOString(),
-                        'order.date_created.to':   fim.toISOString(),
+                        'order.date_created.from': mes.inicio.toISOString(),
+                        'order.date_created.to':   mes.fim.toISOString(),
                         limit: LIMIT, offset,
                     },
-                });
-                if (paging === null) paging = data.paging?.total || 0;
-                for (const pedido of data.results || [])
-                    for (const item of pedido.order_items || [])
-                        total += (item.unit_price || 0) * item.quantity;
-                offset += LIMIT;
-            } while (offset < paging);
-            dados.push({ mes: label, valor: +total.toFixed(2) });
-        }
-        salvarJson(cacheFile, { _atualizado: new Date().toISOString(), dados });
+                }).then(r => r.data),
+                extrair: (data) => data.results || [],
+            });
+            let total = 0;
+            for (const pedido of itens)
+                for (const item of pedido.order_items || [])
+                    total += (item.unit_price || 0) * item.quantity;
+            return +total.toFixed(2);
+        });
+
+        const dados  = meses.map((m, i) => ({ mes: m.label, valor: valores[i] }));
+        const novoPorMes = {};
+        meses.forEach((m, i) => { novoPorMes[m.chave] = valores[i]; });
+        salvarJson(cacheFile, { _atualizado: new Date().toISOString(), porMes: novoPorMes, dados });
         res.json(dados);
     } catch (err) {
+        // sem rede, o que ja foi calculado antes ainda serve
+        if (cached && cached.dados) return res.json(cached.dados);
         res.status(500).json({ erro: err.message });
     }
 });
@@ -997,7 +1072,12 @@ router.post('/gerar_planilha', auth, (req, res) => {
 router.get('/app_info', auth, (req, res) => {
     const pkg    = require('../package.json');
     const config = lerJson('config.json', {});
+    // Quando a ultima coleta terminou. A tela de abertura usa isso para nao
+    // rodar o motor de novo em cima de dado que acabou de ser buscado.
+    const arqRep = path.join(STORAGE, 'reposicao.json');
+    const ultimaColetaMs = fs.existsSync(arqRep) ? fs.statSync(arqRep).mtimeMs : 0;
     res.json({
+        ultima_coleta_ms: ultimaColetaMs,
         nome:        config.app_nome    || pkg.productName || pkg.name,
         porta:       config.app_porta   || 3001,
         versao:      pkg.version,

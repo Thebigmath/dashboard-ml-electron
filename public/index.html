@@ -10,7 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
-        body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        /* Nada de transform no body. Qualquer transform aqui, ate translateY(0),
+           faz o body virar bloco-recipiente e position:fixed passa a se ancorar
+           nele em vez da janela — foi o que prendia o painel de selecao no rodape
+           e o que desalinhava a tela de carregamento. O fade sozinho ja resolve. */
         /* transform: none e obrigatorio aqui. Qualquer transform no body, ate
            translateY(0), faz o body virar bloco-recipiente e position:fixed
            passa a se ancorar nele em vez da janela — era o que prendia o
@@ -59,6 +63,28 @@
 
 <canvas id="canvas-bg"></canvas>
 <div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div id="carregandoApp" class="tela-carregando">
+    <div class="tc-caixa">
+        <div class="tc-marca"><i class="bi bi-box-seam"></i></div>
+        <div class="tc-titulo">Atualizando com o Mercado Livre</div>
+        <div class="tc-barra"><div class="tc-preenche" id="tcPreenche"></div></div>
+        <div class="tc-linha">
+            <span class="tc-fase" id="tcFase">Conectando…</span>
+            <span class="tc-pct" id="tcPct">0%</span>
+        </div>
+        <div class="tc-aviso" id="tcAviso" hidden></div>
+        <button type="button" class="tc-pular" id="tcPular">Ver dados anteriores</button>
+    </div>
+</div>
+<script>
+    // Esconde na hora se esta sessao ja coletou (voltar de outra pagina recarrega
+    // o index). Sincrono de proposito: evita o piscar da tela de carregamento.
+    try {
+        if (sessionStorage.getItem('coletaDaAbertura') === '1')
+            document.getElementById('carregandoApp').hidden = true;
+    } catch (e) {}
+</script>
 
 <svg class="deco-art" viewBox="0 0 520 520" fill="none">
   <circle cx="420" cy="80" r="180" stroke="rgba(10,132,255,0.06)" stroke-width="0.8"/>

@@ -691,6 +691,165 @@ window.toggleAvisoSku = function () {
     if (i) i.className = visivel ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
 };
 
+/* ── Coleta na abertura + barra de carregamento ─────────────────────────── */
+// Ao abrir o app a coleta comeca sozinha e a tela mostra o andamento. Antes o
+// dashboard abria com o resultado da ultima coleta e so atualizava se alguem
+// clicasse em "Atualizar Estoque" — quem esquecia trabalhava com numero velho.
+//
+// Duas travas para nao coletar a toa:
+//  - frescor: dado com menos de MINUTOS_FRESCOR minutos nao vale nova coleta;
+//  - sessao: voltar de "Envio Full" ou "Valor do Estoque" recarrega o index, e
+//    sem isso cada ida e volta dispararia o motor de novo.
+const MINUTOS_FRESCOR = 10;
+const CHAVE_SESSAO    = 'coletaDaAbertura';
+
+function elCarregando(id) { return document.getElementById(id); }
+
+function pintarProgresso(pct, fase) {
+    const barra = elCarregando('tcPreenche');
+    const num   = elCarregando('tcPct');
+    const txt   = elCarregando('tcFase');
+    if (barra) barra.style.width = Math.max(0, Math.min(100, pct)).toFixed(1) + '%';
+    if (num)   num.textContent   = Math.round(pct) + '%';
+    if (txt && fase) txt.textContent = fase;
+}
+
+function avisarNaTela(msg) {
+    const el = elCarregando('tcAviso');
+    if (!el) return;
+    el.textContent = msg;
+    el.hidden = false;
+}
+
+function fecharCarregando() {
+    const tela = elCarregando('carregandoApp');
+    if (!tela || tela.hidden) return;
+    tela.classList.add('saindo');
+    setTimeout(() => { tela.hidden = true; tela.classList.remove('saindo'); }, 260);
+}
+
+// Traduz o log do motor em porcentagem. Pedidos e anuncios agora correm ao mesmo
+// tempo, entao nao da para tratar como estagios em fila: o numero e a soma
+// ponderada das partes, e por isso a barra nunca anda para tras.
+function criarLeitorDeProgresso() {
+    const peso = { pedidos: 24, varredura: 16, detalhes: 18, estoque: 32, fim: 10 };
+    const frac = { pedidos: 0,  varredura: 0,  detalhes: 0,  estoque: 0,  fim: 0 };
+    let fase = 'Conectando ao Mercado Livre…';
+    let rastejo = null;
+
+    const total = () => Object.keys(peso).reduce((s, k) => s + peso[k] * frac[k], 0);
+    const pintar = () => pintarProgresso(total(), fase);
+
+    // A varredura de anuncios usa cursor e nao informa quantas paginas faltam.
+    // Sem sinal de progresso a barra ficaria parada, entao ela caminha sozinha
+    // em direcao ao teto — e trava la ate a fase terminar de verdade.
+    const iniciarRastejo = () => {
+        if (rastejo) return;
+        rastejo = setInterval(() => {
+            frac.varredura = Math.min(0.9, frac.varredura + (0.9 - frac.varredura) * 0.08 + 0.01);
+            pintar();
+        }, 220);
+    };
+    const pararRastejo = () => { clearInterval(rastejo); rastejo = null; };
+
+    return {
+        linha(l) {
+            let m;
+            if (l.startsWith('User ID:'))            { fase = 'Autenticado. Buscando pedidos e anúncios…'; }
+            else if (l.startsWith('Carregando anún')) { iniciarRastejo(); }
+            else if ((m = l.match(/^\[PROGRESSO\] pedidos (\d+)\/(\d+)/))) {
+                frac.pedidos = +m[2] ? Math.min(1, +m[1] / +m[2]) : 1;
+                fase = `Lendo pedidos… ${m[1]} de ${m[2]}`;
+            }
+            else if ((m = l.match(/^Pedidos: (\d+)/))) {
+                frac.pedidos = 1; fase = `${m[1]} pedidos lidos. Varrendo anúncios…`;
+            }
+            else if ((m = l.match(/^Anúncios: (\d+)/))) {
+                pararRastejo(); frac.varredura = 1; fase = `${m[1]} anúncios encontrados…`;
+            }
+            else if ((m = l.match(/^\[PROGRESSO\] anuncios (\d+)\/(\d+)/))) {
+                pararRastejo(); frac.varredura = 1;
+                frac.detalhes = +m[2] ? Math.min(1, +m[1] / +m[2]) : 1;
+                fase = `Detalhando anúncios… ${m[1]} de ${m[2]}`;
+            }
+            else if (l.startsWith('Detalhes:'))       { frac.detalhes = 1; fase = 'Lendo estoque do galpão…'; }
+            else if ((m = l.match(/^\[PROGRESSO\] estoque (\d+)\/(\d+)/))) {
+                frac.estoque = +m[2] ? Math.min(1, +m[1] / +m[2]) : 1;
+                fase = `Estoque do FULL… ${m[1]} de ${m[2]}`;
+            }
+            else if (l.startsWith('Estoque FULL obtido')) { frac.estoque = 1; fase = 'Calculando reposição…'; }
+            else if (l.startsWith('[LIMITE]'))        { avisarNaTela('O Mercado Livre pediu para desacelerar — aguardando e tentando de novo.'); }
+            else if (l.startsWith('CONCLUÍDO'))       { pararRastejo(); Object.keys(frac).forEach(k => frac[k] = 1); fase = 'Pronto!'; }
+            else if (l.startsWith('ERRO:'))           { avisarNaTela(l); }
+            pintar();
+        },
+        encerrar: pararRastejo,
+    };
+}
+
+// Roda o motor lendo o stream de log linha a linha.
+async function rodarColeta(aoLerLinha) {
+    const resp = await fetch('/api/atualizar', { method: 'POST' });
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let resto = '';
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        resto += decoder.decode(value, { stream: true });
+        const linhas = resto.split('\n');
+        resto = linhas.pop();
+        for (const l of linhas) if (l.trim()) aoLerLinha(l.trim());
+    }
+    if (resto.trim()) aoLerLinha(resto.trim());
+}
+
+// Decide se coleta, e resolve quando o dashboard pode ser desenhado.
+function coletaDeAbertura(info) {
+    const tela = elCarregando('carregandoApp');
+    if (!tela) return Promise.resolve();
+
+    const idadeMin = info && info.ultima_coleta_ms
+        ? (Date.now() - info.ultima_coleta_ms) / 60000
+        : Infinity;
+    const jaColetouNestaSessao = sessionStorage.getItem(CHAVE_SESSAO) === '1';
+
+    // Nada a coletar: a tela precisa sair de cena aqui. Sem esta linha ela ficava
+    // aberta em 0% para sempre justamente no caso mais comum — dado fresco.
+    if (jaColetouNestaSessao || idadeMin < MINUTOS_FRESCOR) {
+        tela.hidden = true;
+        return Promise.resolve();
+    }
+
+    try { sessionStorage.setItem(CHAVE_SESSAO, '1'); } catch {}
+
+    tela.hidden = false;
+    const leitor = criarLeitorDeProgresso();
+    pintarProgresso(2, 'Conectando ao Mercado Livre…');
+
+    return new Promise((resolve) => {
+        let jaSeguiu = false;
+        // "Ver dados anteriores": entra no dashboard com o que ja existe. A coleta
+        // continua no servidor e, quando terminar, a tabela se atualiza sozinha.
+        const pular = elCarregando('tcPular');
+        const seguir = () => { if (!jaSeguiu) { jaSeguiu = true; fecharCarregando(); resolve(); } };
+        if (pular) pular.addEventListener('click', () => { pular.disabled = true; seguir(); });
+
+        rodarColeta(l => leitor.linha(l))
+            .then(() => {
+                leitor.encerrar();
+                pintarProgresso(100, 'Pronto!');
+                if (jaSeguiu) carregarProdutos();   // usuario ja estava na tela
+                setTimeout(seguir, 320);
+            })
+            .catch(() => {
+                leitor.encerrar();
+                avisarNaTela('Não foi possível coletar agora. Abrindo com os dados da última coleta.');
+                setTimeout(seguir, 1400);
+            });
+    });
+}
+
 /* ── Carregar JSON ──────────────────────────────────────────────────────── */
 function carregarProdutos() {
     // deduplica por SKU somando estoque e vendas30
@@ -756,9 +915,11 @@ if (tabela) {
                 const slider = document.getElementById('sliderReposicao');
                 if (slider) slider.value = info.dias_alvo;
             }
+            return coletaDeAbertura(info);
         })
         .catch(() => {})
         .finally(() => {
+            fecharCarregando();   // aconteca o que acontecer, a tela sai
             fetch('/api/transito').then(r => r.json()).catch(() => ({}))
                 .then(transito => {
                     window.transitoMap = transito || {};
