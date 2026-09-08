@@ -180,13 +180,20 @@
                         <h4>Produtos para Reposição</h4>
                         <small>Resultado do motor de cálculo</small>
                     </div>
-                    <div style="display:flex;gap:6px;align-items:center">
-                        <button class="cat-filter-btn cat-filter-ativo" data-cat="todos"        onclick="setFiltroCategoria('todos')">Todos</button>
-                        <button class="cat-filter-btn"                  data-cat="outros"       onclick="setFiltroCategoria('outros')">Peças Auto</button>
-                        <button class="cat-filter-btn"                  data-cat="retrovisor"   onclick="setFiltroCategoria('retrovisor')">Retrovisores</button>
-                        <button class="cat-filter-btn"                  data-cat="forafull"     onclick="setFiltroCategoria('forafull')">Fora do Full</button>
-                        <button class="cat-filter-btn cat-btn-estrela"  data-cat="estrela"      onclick="setFiltroCategoria('estrela')"><i class="bi bi-star-fill"></i> Estrela <span class="cat-contador"></span></button>
-                        <button id="btnToggleFiltros" class="btn-filtro-toggle" onclick="toggleFiltros()"><i class="bi bi-sliders"></i> Filtros <span id="badgeFiltros" class="badge-filtros" style="display:none">0</span></button>
+                    <div class="cat-barra" id="catBarra">
+                        <button class="cat-pontinhos" id="btnCatMenu" onclick="window.toggleMenuCategorias()" title="Escolher categoria" aria-label="Escolher categoria" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                            <span class="cat-atual" id="catAtualRotulo">Todos</span>
+                            <span class="cat-ponto"></span>
+                        </button>
+                        <div class="cat-fila" id="catFila">
+                            <button class="cat-filter-btn cat-filter-ativo" data-cat="todos"        onclick="setFiltroCategoria('todos')">Todos</button>
+                            <button class="cat-filter-btn"                  data-cat="outros"       onclick="setFiltroCategoria('outros')">Peças Auto</button>
+                            <button class="cat-filter-btn"                  data-cat="retrovisor"   onclick="setFiltroCategoria('retrovisor')">Retrovisores</button>
+                            <button class="cat-filter-btn"                  data-cat="forafull"     onclick="setFiltroCategoria('forafull')">Fora do Full</button>
+                            <button class="cat-filter-btn cat-btn-estrela"  data-cat="estrela"      onclick="setFiltroCategoria('estrela')"><i class="bi bi-star-fill"></i> Estrela <span class="cat-contador"></span></button>
+                            <button id="btnToggleFiltros" class="btn-filtro-toggle" onclick="toggleFiltros()"><i class="bi bi-sliders"></i> Filtros <span id="badgeFiltros" class="badge-filtros" style="display:none">0</span></button>
+                        </div>
                     </div>
                 </div>
                 <div id="paginacaoReposicaoTopo" class="px-2 pt-2"></div>
