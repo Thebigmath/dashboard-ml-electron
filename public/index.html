@@ -11,10 +11,20 @@
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
         body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
-        body.page-ready { opacity:1; transform:translateY(0); }
+        /* transform: none e obrigatorio aqui. Qualquer transform no body, ate
+           translateY(0), faz o body virar bloco-recipiente e position:fixed
+           passa a se ancorar nele em vez da janela — era o que prendia o
+           painel de selecao no rodape da pagina em vez de deixa-lo flutuando. */
+        body.page-ready { opacity:1; transform:none; }
 
         .cat-filter-btn { background:rgba(255,255,255,.06); border:1px solid var(--sep,rgba(255,255,255,.1)); border-radius:8px; color:var(--l2,#8ca0b3); font-size:12px; font-weight:600; padding:6px 14px; cursor:pointer; transition:all .18s; }
         .cat-filter-btn:hover { background:rgba(255,255,255,.12); color:var(--l1,#fff); }
+        .cat-btn-estrela { display:inline-flex; align-items:center; gap:6px; }
+        .cat-btn-estrela i { color:#FFB300; font-size:11px; }
+        .cat-btn-estrela.cat-filter-ativo i { color:#fff; }
+        .cat-contador:empty { display:none; }
+        .cat-contador { background:color-mix(in srgb, var(--l1) 12%, transparent); border-radius:10px; padding:0 6px; font-size:10px; font-weight:700; }
+        .cat-filter-ativo .cat-contador { background:rgba(255,255,255,.22); }
         .cat-filter-btn.cat-filter-ativo { background:#0a84ff; border-color:#0a84ff; color:#fff; }
         /* ── Filter sidebar ── */
         .content-with-filter { display:flex; gap:0; align-items:flex-start; }
@@ -147,7 +157,9 @@
                     <div style="display:flex;gap:6px;align-items:center">
                         <button class="cat-filter-btn cat-filter-ativo" data-cat="todos"        onclick="setFiltroCategoria('todos')">Todos</button>
                         <button class="cat-filter-btn"                  data-cat="outros"       onclick="setFiltroCategoria('outros')">Peças Auto</button>
+                        <button class="cat-filter-btn"                  data-cat="retrovisor"   onclick="setFiltroCategoria('retrovisor')">Retrovisores</button>
                         <button class="cat-filter-btn"                  data-cat="forafull"     onclick="setFiltroCategoria('forafull')">Fora do Full</button>
+                        <button class="cat-filter-btn cat-btn-estrela"  data-cat="estrela"      onclick="setFiltroCategoria('estrela')"><i class="bi bi-star-fill"></i> Estrela <span class="cat-contador"></span></button>
                         <button id="btnToggleFiltros" class="btn-filtro-toggle" onclick="toggleFiltros()"><i class="bi bi-sliders"></i> Filtros <span id="badgeFiltros" class="badge-filtros" style="display:none">0</span></button>
                     </div>
                 </div>
@@ -157,6 +169,7 @@
                         <thead>
                             <tr>
                                 <th class="col-sel"><input type="checkbox" id="selTodos" class="sel-check" title="Selecionar todos os visíveis"></th>
+                                <th class="col-estrela" title="Produtos estrela"><i class="bi bi-star-fill"></i></th>
                                 <th>Urgência <i class="bi bi-info-circle th-info-icon" data-tip="Nível de risco de ruptura, baseado na cobertura em dias"></i></th>
                                 <th>Produto</th>
                                 <th>SKU</th>
@@ -170,7 +183,7 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaReposicao">
-                            <tr><td colspan="11" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
+                            <tr><td colspan="12" class="text-center py-5 text-secondary">Carregando produtos...</td></tr>
                         </tbody>
                     </table>
                 </div>

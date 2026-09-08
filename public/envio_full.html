@@ -9,7 +9,11 @@
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
         body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
-        body.page-ready { opacity:1; transform:translateY(0); }
+        /* transform: none e obrigatorio aqui. Qualquer transform no body, ate
+           translateY(0), faz o body virar bloco-recipiente e position:fixed
+           passa a se ancorar nele em vez da janela — era o que prendia o
+           painel de selecao no rodape da pagina em vez de deixa-lo flutuando. */
+        body.page-ready { opacity:1; transform:none; }
 
         .card-section { background:var(--s1); border:1px solid var(--sep); border-radius:16px; overflow:hidden; margin-bottom:20px; }
         .card-header-bar { padding:16px 20px; border-bottom:1px solid var(--sep); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
