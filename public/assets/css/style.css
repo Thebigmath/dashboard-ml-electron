@@ -766,6 +766,18 @@ body {
   accent-color: var(--blue);
   cursor: pointer; vertical-align: middle;
 }
+/* estrela: marcacao manual do usuario, independente da selecao para envio */
+.col-estrela { width: 30px; padding-left: 0 !important; padding-right: 0 !important; text-align: center; }
+.dashboard-table thead .col-estrela i { color: var(--l4); font-size: 11px; }
+.btn-estrela {
+  background: none; border: none; padding: 2px 3px; line-height: 1;
+  color: var(--l4); font-size: 13px; cursor: pointer;
+  transition: color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-spring);
+}
+.btn-estrela:hover  { color: #FFB300; transform: scale(1.2); }
+.btn-estrela:active { transform: scale(0.9); }
+.btn-estrela.ativo  { color: #FFB300; }
+
 .dashboard-table tbody tr.linha-sel td { background: color-mix(in srgb, var(--blue) 9%, transparent); }
 .dashboard-table tbody tr.linha-sel:hover td { background: color-mix(in srgb, var(--blue) 13%, transparent); }
 
@@ -790,6 +802,14 @@ body {
   border-bottom: 0.5px solid var(--sep2);
 }
 #painel-selecao .ps-topo i { color: var(--blue); font-size: 14px; }
+#painel-selecao .ps-topo { cursor: grab; user-select: none; touch-action: none; }
+#painel-selecao .ps-topo-txt { flex: 1; }
+#painel-selecao .ps-grip { color: var(--l4) !important; font-size: 13px !important; }
+#painel-selecao .ps-topo:hover .ps-grip { color: var(--l3) !important; }
+/* enquanto arrasta: sem animacao de entrada e sem transicao, senao o painel
+   "persegue" o ponteiro com atraso */
+#painel-selecao.arrastando { animation: none; transition: none; opacity: .96; }
+#painel-selecao.arrastando .ps-topo { cursor: grabbing; }
 #painel-selecao .ps-num {
   display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px;
 }

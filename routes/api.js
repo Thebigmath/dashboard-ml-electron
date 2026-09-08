@@ -858,6 +858,16 @@ router.post('/custos', auth, (req, res) => {
     res.json({ ok: true });
 });
 
+// ── Produtos estrela ─────────────────────────────────────────────────
+// Marcação manual do usuário. Fica em arquivo próprio porque o motor reescreve
+// reposicao.json inteiro a cada coleta — a estrela não pode viver junto do produto.
+router.get('/estrelas', auth, (req, res) => res.json(lerJson('estrelas.json', [])));
+router.post('/estrelas', auth, (req, res) => {
+    const chaves = Array.isArray(req.body && req.body.chaves) ? req.body.chaves.map(String) : [];
+    salvarJson('estrelas.json', chaves);
+    res.json({ ok: true, total: chaves.length });
+});
+
 // ── Importar custos do caminho configurado (GET) ────────────────────────────
 router.get('/importar_custos', auth, (req, res) => {
     try {
