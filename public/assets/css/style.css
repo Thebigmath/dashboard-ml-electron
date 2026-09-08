@@ -977,6 +977,68 @@ body {
 [data-theme="dark"] .btn-close { filter: invert(1) brightness(1.6); }
 
 /* ══════════════════════════════════════════════════════
+   TELA DE CARREGAMENTO (coleta na abertura)
+══════════════════════════════════════════════════════ */
+.tela-carregando {
+  position: fixed; inset: 0; z-index: 9999;
+  display: grid; place-items: center;
+  background: var(--bg);
+  transition: opacity .26s var(--ease);
+}
+.tela-carregando.saindo { opacity: 0; pointer-events: none; }
+.tc-caixa {
+  width: min(420px, calc(100vw - 48px));
+  background: var(--s1);
+  border: 0.5px solid var(--sep);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-3);
+  padding: 30px 28px 20px;
+  text-align: center;
+}
+.tc-marca {
+  width: 46px; height: 46px; margin: 0 auto 16px;
+  border-radius: 13px; display: grid; place-items: center;
+  background: var(--blue); color: #fff; font-size: 20px;
+  box-shadow: var(--sh-key);
+}
+.tc-titulo {
+  font-size: 14px; font-weight: 600; color: var(--l1);
+  margin-bottom: 18px; letter-spacing: -0.2px;
+}
+.tc-barra {
+  height: 6px; border-radius: 99px; overflow: hidden;
+  background: color-mix(in srgb, var(--l1) 9%, transparent);
+}
+.tc-preenche {
+  height: 100%; width: 0; border-radius: 99px;
+  background: var(--blue);
+  transition: width .32s var(--ease-out);
+}
+.tc-linha {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px; margin-top: 10px;
+}
+.tc-fase { font-size: 11.5px; color: var(--l2); text-align: left; }
+.tc-pct  { font-size: 11.5px; font-weight: 600; color: var(--l1); font-variant-numeric: tabular-nums; }
+.tc-aviso {
+  margin-top: 12px; padding: 8px 11px; border-radius: 9px;
+  background: color-mix(in srgb, var(--orange) 13%, transparent);
+  color: var(--orange); font-size: 11.5px; line-height: 1.4; text-align: left;
+}
+.tc-pular {
+  margin-top: 14px; background: none; border: none;
+  color: var(--l3); font-size: 11.5px; font-family: inherit; cursor: pointer;
+  padding: 5px 9px; border-radius: 7px;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.tc-pular:hover:not(:disabled) { color: var(--l1); background: color-mix(in srgb, var(--l1) 6%, transparent); }
+.tc-pular:disabled { opacity: .45; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tc-preenche, .tela-carregando { transition: none; }
+}
+
+/* ══════════════════════════════════════════════════════
    SPINNER
 ══════════════════════════════════════════════════════ */
 @keyframes spin { to { transform: rotate(360deg); } }

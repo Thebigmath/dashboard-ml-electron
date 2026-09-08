@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
-        body { opacity:0; transform:translateY(10px); transition:opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1); }
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        /* Nada de transform no body. Qualquer transform aqui, ate translateY(0),
+           faz o body virar bloco-recipiente e position:fixed passa a se ancorar
+           nele em vez da janela — foi o que prendia o painel de selecao no rodape
+           e o que desalinhava a tela de carregamento. O fade sozinho ja resolve. */
         /* transform: none e obrigatorio aqui. Qualquer transform no body, ate
            translateY(0), faz o body virar bloco-recipiente e position:fixed
            passa a se ancorar nele em vez da janela — era o que prendia o
