@@ -39,6 +39,7 @@
       "main.js",
       "preload.js",
       "server.js",
+      "novidades.json",
       "routes/**",
       "lib/**",
       "public/**",

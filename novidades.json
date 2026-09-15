@@ -1,0 +1,42 @@
+[
+  {
+    "versao": "1.9.36",
+    "data": "2026-09-14",
+    "titulo": "Tela de Novidades",
+    "texto": "Esta tela. A cada versão nova o app avisa no Windows e mostra aqui o que mudou — com vídeo e imagens quando houver.\n\n- O item Novidades no menu ganha um contador enquanto houver versão que você ainda não viu.\n- \"Marcar tudo como visto\" zera o contador.",
+    "video": "",
+    "imagens": []
+  },
+  {
+    "versao": "1.9.35",
+    "data": "2026-09-14",
+    "titulo": "Monitor de frete com avisos no Windows",
+    "texto": "O app passa a acompanhar quanto o Mercado Livre cobra de você pelo frete e avisa quando o valor muda — coisa que o ML não comunica.\n\n- Nova tela Frete: tabela por anúncio (custo e peso cobrado), custo real de cada venda e o log de mudanças.\n- Notificação nativa do Windows quando a tabela muda ou uma venda vem com frete diferente da anterior. Clicar abre a tela.\n- O app agora fica na bandeja (ao lado do relógio) e inicia junto com o Windows: o monitor roda mesmo sem abrir a janela. O X esconde; para sair, botão direito no ícone da bandeja.\n- Valor do Estoque: a importação de custos perdia a vírgula decimal (181,44 virava 18.144) e inflava o total 100×. Corrigido, e a tela avisa quando um custo muda mais de 50×.",
+    "video": "",
+    "imagens": []
+  },
+  {
+    "versao": "1.9.34",
+    "data": "2026-09-08",
+    "titulo": "Menu de categorias em três pontinhos",
+    "texto": "Os filtros de categoria (Todos, Peças Auto, Retrovisores, Fora do Full, Estrela, Filtros) ficam recolhidos num botão de três pontinhos e abrem na horizontal. O filtro escolhido aparece ao lado do botão.",
+    "video": "",
+    "imagens": []
+  },
+  {
+    "versao": "1.9.33",
+    "data": "2026-09-08",
+    "titulo": "Coleta mais rápida e barra de carregamento",
+    "texto": "A coleta da API roda em paralelo: de ~13 s para ~5 s, com os mesmos números. Ao abrir o app, uma barra de carregamento mostra a coleta acontecendo; se os dados têm menos de 10 minutos, o app abre direto.",
+    "video": "",
+    "imagens": []
+  },
+  {
+    "versao": "1.9.32",
+    "data": "2026-09-07",
+    "titulo": "Produtos estrela, filtro de retrovisores e caixa de seleção flutuante",
+    "texto": "- Estrela em cada produto para marcar os principais; categoria ★ Estrela lista só eles.\n- Categoria Retrovisores.\n- A caixa de seleção flutua sobre a tabela e pode ser arrastada pelo topo (duplo clique volta ao lugar).",
+    "video": "",
+    "imagens": []
+  }
+]
