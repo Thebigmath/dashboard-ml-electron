@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novidades — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:none; }
+        .nv-grid { display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; }
+        @media (max-width: 900px) { .nv-grid { grid-template-columns:1fr; } }
+        .nv-lista { display:flex; flex-direction:column; gap:8px; }
+        .nv-versao { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:12px 14px; cursor:pointer; transition:border-color .15s, background .15s; }
+        .nv-versao:hover { border-color:var(--sep2); }
+        .nv-versao.ativa { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 8%, var(--s1)); }
+        .nv-versao .v { font-size:13px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; }
+        .nv-versao .t { font-size:12px; color:var(--l3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .nv-novo { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; background:var(--blue); color:#fff; border-radius:999px; padding:1px 7px; }
+        .nv-atual { font-size:10px; color:var(--l3); border:1px solid var(--sep); border-radius:999px; padding:1px 7px; }
+        .nv-detalhe { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:24px; }
+        .nv-cab { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+        .nv-cab h5 { margin:0; font-size:18px; font-weight:600; color:var(--l1); }
+        .nv-cab small { color:var(--l3); font-size:12px; }
+        .nv-video { aspect-ratio:16/9; width:100%; max-width:860px; background:#000; border-radius:12px; overflow:hidden; margin-bottom:18px; }
+        .nv-video iframe, .nv-video video { width:100%; height:100%; border:0; display:block; }
+        .nv-texto { font-size:14px; line-height:1.65; color:var(--l1); max-width:860px; }
+        .nv-texto p { margin:0 0 10px; }
+        .nv-texto ul { margin:0 0 10px 18px; padding:0; }
+        .nv-texto li { margin-bottom:4px; }
+        .nv-imagens { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:16px; max-width:860px; }
+        .nv-imagens img { width:100%; border-radius:10px; border:1px solid var(--sep); cursor:zoom-in; background:var(--s2); }
+        .nv-vazio { text-align:center; padding:40px; color:var(--l3); font-size:13px; }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao:disabled { opacity:.5; cursor:default; }
+        .nv-zoom { position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:9999; cursor:zoom-out; }
+        .nv-zoom img { max-width:94vw; max-height:94vh; border-radius:8px; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
+            <li class="active"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Novidades</h4>
+                <small class="text-secondary">O que mudou em cada versão do app</small>
+            </div>
+            <div class="topbar-right" style="gap:10px">
+                <button class="btn-acao" id="btnVisto" onclick="marcarVisto()"><i class="bi bi-check2-all"></i> Marcar tudo como visto</button>
+            </div>
+        </nav>
+
+        <div style="padding:24px">
+            <div class="nv-grid">
+                <div class="nv-lista" id="lista"></div>
+                <div class="nv-detalhe" id="detalhe"><div class="nv-vazio">Carregando...</div></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+let dados = null;
+let selecionada = null;
+
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dataBr = (s) => { if (!s) return ''; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : esc(s); };
+const maisNova = (a, b) => { const pa = a.split('.').map(Number), pb = b.split('.').map(Number); for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; } return 0; };
+
+// YouTube (watch, youtu.be, shorts) vira embed; qualquer outra coisa é tratada como arquivo de vídeo
+function videoHtml(url) {
+    if (!url) return '';
+    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+    if (yt) return `<div class="nv-video"><iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+    return `<div class="nv-video"><video controls preload="metadata" src="${esc(url)}"></video></div>`;
+}
+
+// Parágrafos separados por linha em branco; linhas começando com "- " viram lista.
+function textoHtml(texto) {
+    const blocos = String(texto || '').replace(/\r/g, '').split(/\n\s*\n/);
+    return blocos.map(b => {
+        const linhas = b.split('\n').filter(l => l.trim());
+        if (!linhas.length) return '';
+        if (linhas.every(l => /^\s*-\s+/.test(l))) return '<ul>' + linhas.map(l => '<li>' + esc(l.replace(/^\s*-\s+/, '')) + '</li>').join('') + '</ul>';
+        return '<p>' + linhas.map(esc).join('<br>') + '</p>';
+    }).join('');
+}
+
+function renderLista() {
+    const el = document.getElementById('lista');
+    if (!dados.itens.length) { el.innerHTML = ''; return; }
+    el.innerHTML = dados.itens.map(n => {
+        const nova = maisNova(n.versao, dados.vista_ate || '0') > 0;
+        const atual = n.versao === dados.versao_atual;
+        return `<div class="nv-versao ${n.versao === selecionada ? 'ativa' : ''}" onclick="selecionar('${esc(n.versao)}')">
+            <div class="v">v${esc(n.versao)} ${nova ? '<span class="nv-novo">novo</span>' : ''} ${atual ? '<span class="nv-atual">instalada</span>' : ''}</div>
+            <div class="t" title="${esc(n.titulo)}">${esc(n.titulo)}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderDetalhe() {
+    const el = document.getElementById('detalhe');
+    const n = dados.itens.find(x => x.versao === selecionada);
+    if (!n) { el.innerHTML = '<div class="nv-vazio">Nenhuma novidade registrada ainda. As notas de cada versão aparecem aqui quando o app atualizar.</div>'; return; }
+    el.innerHTML = `
+        <div class="nv-cab"><h5>${esc(n.titulo)}</h5><small>${dataBr(n.data)}${n.data ? ' · ' : ''}v${esc(n.versao)}</small></div>
+        ${videoHtml(n.video)}
+        <div class="nv-texto">${textoHtml(n.texto)}</div>
+        ${n.imagens.length ? '<div class="nv-imagens">' + n.imagens.map(u => `<img src="${esc(u)}" alt="" loading="lazy" onclick="ampliar('${esc(u)}')">`).join('') + '</div>' : ''}
+    `;
+}
+
+function selecionar(v) { selecionada = v; renderLista(); renderDetalhe(); }
+
+function ampliar(url) {
+    const z = document.createElement('div');
+    z.className = 'nv-zoom';
+    z.innerHTML = `<img src="${esc(url)}" alt="">`;
+    z.onclick = () => z.remove();
+    document.body.appendChild(z);
+}
+
+async function marcarVisto() {
+    const r = await fetch('/api/novidades/visto', { method: 'POST' });
+    dados = await r.json();
+    renderLista();
+    document.getElementById('btnVisto').disabled = true;
+    document.dispatchEvent(new CustomEvent('novidades-vistas'));
+}
+
+async function init() {
+    const r = await fetch('/api/novidades');
+    dados = await r.json();
+    selecionada = dados.itens.length ? dados.itens[0].versao : null;
+    renderLista();
+    renderDetalhe();
+    if (!dados.nao_vistas) document.getElementById('btnVisto').disabled = true;
+    document.body.classList.add('page-ready');
+}
+init().catch(e => {
+    document.getElementById('detalhe').innerHTML = `<div class="nv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
+    document.body.classList.add('page-ready');
+});
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

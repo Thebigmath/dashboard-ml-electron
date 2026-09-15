@@ -7,6 +7,7 @@ const multer = require('multer');
 const TokenManager = require('../lib/tokenManager');
 const { mapaLimitado, comBackoff, paginarEmParalelo } = require('../lib/paralelo');
 const frete = require('../lib/frete');
+const novidades = require('../lib/novidades');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -1051,6 +1052,10 @@ router.post('/frete/verificar', auth, (req, res) => {
 });
 router.post('/frete/config', auth, (req, res) => res.json(frete.salvarConfiguracao(req.body || {})));
 router.post('/frete/testar_notificacao', auth, (req, res) => { frete.notificarTeste(); res.json({ ok: true }); });
+
+// ── Novidades por versão ────────────────────────────────────────────────────
+router.get('/novidades', auth, (req, res) => res.json(novidades.listar()));
+router.post('/novidades/visto', auth, (req, res) => res.json(novidades.marcarVisto()));
 
 // ── Gerar planilha Full ─────────────────────────────────────────────────────
 // Formato exigido pelo ML: sheet "Dados Mercado Livre", coluna D = item_id,

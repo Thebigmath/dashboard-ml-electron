@@ -46,6 +46,21 @@
         document.getElementById('switchBtn').addEventListener('mouseleave', e => e.currentTarget.style.background = 'rgba(255,255,255,.06)');
     }
 
+    // ── Contador de novidades não vistas ─────────────────────────────────────
+    const liNovidades = [...document.querySelectorAll('.sidebar .menu li')].find(li => li.querySelector('span')?.textContent.trim() === 'Novidades');
+    if (liNovidades) {
+        const pintar = (n) => {
+            liNovidades.querySelector('.menu-badge')?.remove();
+            if (!n) return;
+            const b = document.createElement('span');
+            b.className = 'menu-badge';
+            b.textContent = n;
+            liNovidades.appendChild(b);
+        };
+        try { pintar((await fetch('/api/novidades').then(r => r.json())).nao_vistas); } catch {}
+        document.addEventListener('novidades-vistas', () => pintar(0));
+    }
+
     // ── Versão no rodapé ─────────────────────────────────────────────────────
     const footer = document.querySelector('.sidebar-footer');
     if (footer && appInfo.versao) footer.textContent = `v${appInfo.versao}`;

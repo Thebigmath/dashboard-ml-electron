@@ -75,7 +75,7 @@ const server = require('./server');
 
 // Avisos do monitor de frete viram notificação nativa do Windows; clicar
 // traz o app pra frente já na tela de frete.
-require('./lib/frete').usarNotificador((titulo, corpo, rota) => {
+require('./lib/notificar').usarNotificador((titulo, corpo, rota) => {
     if (!Notification.isSupported()) return;
     const n = new Notification({ title: titulo, body: corpo });
     n.on('click', () => {
