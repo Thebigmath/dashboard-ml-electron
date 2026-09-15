@@ -108,12 +108,32 @@ autoUpdater.on('error', (err) => {
     mainWindow?.webContents.send('update-status', `Erro update: ${err.message}`);
 });
 let updateReady = false;
-autoUpdater.on('update-downloaded', () => {
+let versaoBaixada = '';
+autoUpdater.on('update-downloaded', (info) => {
     updateReady = true;
+    versaoBaixada = (info && info.version) || '';
     mainWindow?.webContents.send('update-downloaded');
+    // Com o app na bandeja a janela pode estar escondida: o aviso da barra
+    // lateral ninguem ve. A notificacao do Windows chega de qualquer jeito.
+    if (Notification.isSupported()) {
+        const n = new Notification({ title: `Flavia Stock: atualização ${versaoBaixada} pronta`, body: 'Clique para instalar agora (o app reinicia).' });
+        n.on('click', () => { encerrando = true; autoUpdater.quitAndInstall(); });
+        n.show();
+    }
 });
 
+// O processo vive na bandeja e nao reinicia: sem isto, a verificacao so
+// rodava uma vez, na abertura, e nunca mais.
+let ultimaVerificacaoUpdate = 0;
+function verificarUpdate(minIntervaloMs = 0) {
+    if (Date.now() - ultimaVerificacaoUpdate < minIntervaloMs) return;
+    ultimaVerificacaoUpdate = Date.now();
+    autoUpdater.checkForUpdates().catch(() => {});
+}
+setInterval(() => verificarUpdate(), 30 * 60 * 1000);
+
 ipcMain.on('install-update', () => {
+    encerrando = true; // senao o 'close' da janela so esconde e a instalacao nao acontece
     autoUpdater.quitAndInstall();
 });
 
@@ -142,8 +162,9 @@ app.whenReady().then(() => {
         mainWindow.loadURL(startUrl);
         mainWindow.once('ready-to-show', () => {
             if (!SEGUNDO_PLANO) mainWindow.show();
-            setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
+            setTimeout(() => verificarUpdate(), 5000);
         });
+        mainWindow.on('show', () => verificarUpdate(5 * 60 * 1000));
 
         // O X esconde: o servidor e o monitor de frete continuam na bandeja.
         // Sair de verdade só pelo menu da bandeja (ou ao instalar atualização).
@@ -182,6 +203,7 @@ function criarBandeja() {
             mainWindow?.loadURL('http://localhost:3001/frete');
         } },
         { type: 'separator' },
+        { label: 'Verificar atualização', click: () => { verificarUpdate(); mostrarJanela(); } },
         { label: 'Sair', click: () => { encerrando = true; server.stop(); app.quit(); } },
     ]));
     tray.on('double-click', () => mostrarJanela());
