@@ -289,8 +289,13 @@ router.post('/atualizar', auth, async (req, res) => {
         // 4b. Estoque físico total no FULL via /inventories (inclui unidades em transferência,
         // que "available_quantity" do /items não conta — é a mesma base que o Magico usa)
         escrever('Buscando estoque físico FULL (inventories)...');
+        // Anúncio que SAIU do Full continua com inventory_id no ML (e o /inventories
+        // responde 0). Só o logistic_type diz se está no Full hoje — e é ele que
+        // decide o que entra aqui e o que vira linha Full lá embaixo.
+        const noFull = (p) => ((p.shipping || {}).logistic_type === 'fulfillment');
         const inventoryIdsSet = new Set();
         for (const p of Object.values(produtos)) {
+            if (!noFull(p)) continue;
             if (p.inventory_id) inventoryIdsSet.add(p.inventory_id);
             for (const v of p.variations || []) {
                 if (v.inventory_id) inventoryIdsSet.add(v.inventory_id);
@@ -381,19 +386,20 @@ router.post('/atualizar', auth, async (req, res) => {
                     // Se não tem SELLER_SKU na variação, usa "itemid:variationId" como chave
                     const vKey   = vSku || (itemId.toLowerCase() + ':' + v.id);
                     // Estoque físico FULL (inclui unidades em transferência); cai para available_quantity se não achar
-                    const vEst   = (v.inventory_id && estoqueFullPorInventory[v.inventory_id] !== undefined)
+                    // Só é FULL quem está no Full hoje (logistic_type) E tem inventory_id.
+                    // Quem saiu do Full guarda o inventory_id, mas o galpão responde 0:
+                    // o estoque dele é o declarado no anúncio.
+                    const vEFull = noFull(p) && !!v.inventory_id;
+                    const vEst   = (vEFull && estoqueFullPorInventory[v.inventory_id] !== undefined)
                         ? estoqueFullPorInventory[v.inventory_id]
                         : (v.available_quantity || 0);
                     // parcela de vEst que o ML já contabiliza como transferência entre galpões
-                    const vTransf = (v.inventory_id && transferenciaPorInventory[v.inventory_id]) || 0;
+                    const vTransf = (vEFull && transferenciaPorInventory[v.inventory_id]) || 0;
                     // variation_id só armazenado quando não tem sku próprio (para cruzar com vendasPorVariacao)
                     const vVarId = vSku ? undefined : v.id;
-                    // Só é FULL quem tem inventory_id. Sem ele, "estoque" é a quantidade
-                    // declarada no anúncio, que é outra coisa e não pode virar envio.
-                    const vEFull = !!v.inventory_id;
 
                     if (!porSku[vKey]) {
-                        porSku[vKey] = { item_id: itemId, variation_id: vVarId, inventory_id: v.inventory_id || null, sku: vKey, titulo: vTitulo, estoque: vEst, transferenciaMl: vTransf, status, eFull: vEFull };
+                        porSku[vKey] = { item_id: itemId, variation_id: vVarId, inventory_id: vEFull ? v.inventory_id : null, sku: vKey, titulo: vTitulo, estoque: vEst, transferenciaMl: vTransf, status, eFull: vEFull };
                     } else {
                         const jaAtivo   = porSku[vKey].status === 'active';
                         const novoAtivo = status === 'active';
@@ -403,7 +409,7 @@ router.post('/atualizar', auth, async (req, res) => {
                             ? vEFull
                             : ((!jaAtivo && novoAtivo) || (novoAtivo && vEst > porSku[vKey].estoque));
                         if (substituir) {
-                            porSku[vKey] = { ...porSku[vKey], estoque: vEst, transferenciaMl: vTransf, item_id: itemId, inventory_id: v.inventory_id || null, status, eFull: vEFull };
+                            porSku[vKey] = { ...porSku[vKey], estoque: vEst, transferenciaMl: vTransf, item_id: itemId, inventory_id: vEFull ? v.inventory_id : null, status, eFull: vEFull };
                         }
                     }
                 }
@@ -416,19 +422,21 @@ router.post('/atualizar', auth, async (req, res) => {
                 if (!sku) sku = itemId.toLowerCase();
 
                 // Estoque físico FULL (inclui unidades em transferência); cai para available_quantity se não achar
-                const estoque = (p.inventory_id && estoqueFullPorInventory[p.inventory_id] !== undefined)
+                // Só é FULL quem está no Full hoje (logistic_type) E tem inventory_id.
+                // Quem saiu do Full guarda o inventory_id, mas o galpão responde 0:
+                // o estoque dele é o declarado no anúncio.
+                const eFull = noFull(p) && !!p.inventory_id;
+                const estoque = (eFull && estoqueFullPorInventory[p.inventory_id] !== undefined)
                     ? estoqueFullPorInventory[p.inventory_id]
                     : (p.available_quantity || 0);
                 // parcela de "estoque" que o ML já contabiliza como transferência entre galpões
-                const transferenciaMl = (p.inventory_id && transferenciaPorInventory[p.inventory_id]) || 0;
-                // Só é FULL quem tem inventory_id. Sem ele, "estoque" é a quantidade
-                // declarada no anúncio, que é outra coisa e não pode virar envio.
-                const eFull = !!p.inventory_id;
+                const transferenciaMl = (eFull && transferenciaPorInventory[p.inventory_id]) || 0;
 
                 // inventory_id é o "Código ML" do galpão: único por produto, mesmo quando
                 // vários produtos dividem o seller_sku. É por ele que o trânsito consegue
-                // saber a qual produto pertence um envio.
-                const invId = p.inventory_id || null;
+                // saber a qual produto pertence um envio. Fora do Full ele não serve
+                // para nada (e confundiria o trânsito), então fica vazio.
+                const invId = eFull ? p.inventory_id : null;
 
                 if (!porSku[sku]) {
                     porSku[sku] = { item_id: itemId, inventory_id: invId, sku, titulo: tituloBase, estoque, transferenciaMl, status, eFull };
