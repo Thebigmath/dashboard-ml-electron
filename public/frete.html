@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frete — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:none; }
+        .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-bottom:24px; }
+        .stat-card { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:20px; }
+        .stat-label { font-size:11px; text-transform:uppercase; color:var(--l3); margin-bottom:6px; letter-spacing:.5px; }
+        .stat-value { font-size:22px; font-weight:600; color:var(--l1); }
+        .stat-sub { font-size:11px; color:var(--l3); margin-top:4px; }
+        .bloco { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:22px 24px; margin-bottom:20px; }
+        .bloco-cab { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+        .bloco-cab h5 { margin:0; font-size:15px; font-weight:600; color:var(--l1); }
+        .bloco-cab small { color:var(--l3); font-size:12px; }
+        .fr-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .fr-table th { text-align:left; padding:9px 12px; font-size:11px; text-transform:uppercase; color:var(--l3); letter-spacing:.5px; border-bottom:1px solid var(--sep); font-weight:500; white-space:nowrap; }
+        .fr-table td { padding:9px 12px; border-bottom:1px solid rgba(128,128,128,.10); color:var(--l1); vertical-align:middle; }
+        .fr-table tr:last-child td { border-bottom:none; }
+        .fr-table tr:hover td { background:rgba(128,128,128,.06); }
+        .num { text-align:right; font-variant-numeric:tabular-nums; }
+        .sku { color:var(--l3); font-size:11px; font-family:monospace; }
+        .tit { max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .sobe { color:#ff453a; font-weight:600; }
+        .cai  { color:#30D158; font-weight:600; }
+        .chip { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:color-mix(in srgb, var(--l1) 8%, transparent); color:var(--l2); }
+        .chip.full { background:color-mix(in srgb, #0A84FF 16%, transparent); color:#0A84FF; }
+        .chip.flex { background:color-mix(in srgb, #FF9F0A 18%, transparent); color:#FF9F0A; }
+        .pesq-input { width:100%; padding:10px 14px; background:var(--s2); border:1px solid var(--sep); border-radius:10px; color:var(--l1); font-size:13px; outline:none; margin-bottom:14px; }
+        .pesq-input:focus { border-color:var(--blue); }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao.primario { background:var(--blue); color:#fff; border-color:transparent; }
+        .btn-acao:disabled { opacity:.6; cursor:default; }
+        .opcoes { display:flex; flex-wrap:wrap; gap:10px 22px; font-size:13px; color:var(--l2); }
+        .opcoes label { display:flex; align-items:center; gap:8px; cursor:pointer; }
+        .opcoes input[type=checkbox] { width:16px; height:16px; accent-color:var(--blue); }
+        .opcoes input[type=number] { width:56px; padding:3px 6px; border:1px solid var(--sep); border-radius:6px; background:var(--s2); color:var(--l1); font-size:12px; }
+        .vazio { text-align:center; padding:28px; color:var(--l3); font-size:13px; }
+        .estado { font-size:12px; color:var(--l3); display:flex; align-items:center; gap:8px; }
+        .estado .pulso { width:8px; height:8px; border-radius:50%; background:#30D158; }
+        .estado.rodando .pulso { background:var(--blue); animation:pulsar 1s infinite; }
+        @keyframes pulsar { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .mud-linha { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(128,128,128,.10); font-size:13px; }
+        .mud-linha:last-child { border-bottom:none; }
+        .mud-quando { color:var(--l3); font-size:11px; width:84px; flex:none; }
+        .mud-item { flex:1; min-width:0; }
+        .mud-item .tit { max-width:100%; }
+        .mud-detalhe { flex:none; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li class="active"><i class="bi bi-truck"></i><span>Frete</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Frete do vendedor</h4>
+                <small class="text-secondary">Quanto o Mercado Livre cobra de você pelo frete — e aviso quando muda</small>
+            </div>
+            <div class="topbar-right" style="gap:10px">
+                <span class="estado" id="estado"><span class="pulso"></span><span id="estadoTexto">—</span></span>
+                <button class="btn-acao" onclick="testarNotificacao()" title="Mostra uma notificação de teste no Windows"><i class="bi bi-bell"></i> Testar aviso</button>
+                <button class="btn-acao primario" id="btnVerificar" onclick="verificarAgora()"><i class="bi bi-arrow-repeat"></i> Verificar agora</button>
+            </div>
+        </nav>
+
+        <div style="padding:24px">
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Anúncios monitorados</div>
+                    <div class="stat-value" id="cardAnuncios">—</div>
+                    <div class="stat-sub" id="cardAnunciosSub">tabela ainda não coletada</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mudanças de frete (30 dias)</div>
+                    <div class="stat-value" id="cardMudancas" style="color:#ff9500">—</div>
+                    <div class="stat-sub">anúncios em que o ML alterou a tabela</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Frete pago (7 dias)</div>
+                    <div class="stat-value" id="cardFrete7">—</div>
+                    <div class="stat-sub" id="cardFrete7Sub">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Frete pago (30 dias)</div>
+                    <div class="stat-value" id="cardFrete30">—</div>
+                    <div class="stat-sub" id="cardVendasSub">—</div>
+                </div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-bell" style="color:var(--blue)"></i> Avisos no Windows</h5>
+                    <small>verificação automática 90 s depois de abrir o app e a cada hora</small>
+                </div>
+                <div class="opcoes">
+                    <label><input type="checkbox" id="optTabela" onchange="salvarConfig()"> Tabela de frete mudou em algum anúncio</label>
+                    <label><input type="checkbox" id="optDiferenca" onchange="salvarConfig()"> Venda com frete diferente da anterior</label>
+                    <label><input type="checkbox" id="optVendas" onchange="salvarConfig()"> Toda venda nova (com o valor pago)</label>
+                    <label>Conferir a tabela a cada <input type="number" id="optHoras" min="1" max="72" onchange="salvarConfig()"> h</label>
+                </div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-activity" style="color:#ff9500"></i> Mudanças na tabela de frete</h5>
+                    <small id="mudancasSub"></small>
+                </div>
+                <div id="mudancas"><div class="vazio">Nenhuma mudança registrada ainda.</div></div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-receipt" style="color:#30D158"></i> Frete cobrado nas últimas vendas</h5>
+                    <small id="vendasSub"></small>
+                </div>
+                <div style="overflow-x:auto">
+                    <table class="fr-table">
+                        <thead><tr>
+                            <th>Data</th><th>Produto</th><th>Destino</th><th>Logística</th>
+                            <th class="num">Tabela cheia</th><th class="num">Desconto</th><th class="num">Você pagou</th><th class="num">Tabela hoje</th>
+                        </tr></thead>
+                        <tbody id="vendas"><tr><td colspan="8" class="vazio">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-table" style="color:var(--blue)"></i> Tabela por anúncio</h5>
+                    <small id="tabelaSub"></small>
+                </div>
+                <input class="pesq-input" type="text" id="pesquisa" placeholder="🔍  Pesquisar por SKU, título ou código ML..." oninput="renderTabela()">
+                <div style="overflow-x:auto">
+                    <table class="fr-table">
+                        <thead><tr>
+                            <th>Produto</th><th>SKU</th><th>Logística</th><th>Frete</th>
+                            <th class="num">Preço</th><th class="num">Custo p/ você</th><th class="num">Peso cobrado</th><th>Última mudança</th>
+                        </tr></thead>
+                        <tbody id="tabela"><tr><td colspan="8" class="vazio">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+let dados = null;
+let poll = null;
+
+const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dataHora = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+const dataCurta = (s) => s ? s.slice(8, 10) + '/' + s.slice(5, 7) : '—';
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const logistica = (t) => {
+    if (!t) return '<span class="chip">—</span>';
+    if (t === 'fulfillment') return '<span class="chip full">Full</span>';
+    if (t === 'self_service') return '<span class="chip flex">Flex</span>';
+    if (t === 'xd_drop_off' || t === 'drop_off') return '<span class="chip">Agência</span>';
+    if (t === 'cross_docking') return '<span class="chip">Coleta</span>';
+    return '<span class="chip">' + esc(t) + '</span>';
+};
+const fmtCampo = (campo, v) => {
+    if (v == null) return '?';
+    if (campo === 'list_cost') return brl(v);
+    if (campo === 'billable_weight') return v + ' g';
+    if (campo === 'free_shipping') return v ? 'grátis' : 'pago';
+    return esc(v);
+};
+
+function renderEstado() {
+    const e = dados.estado;
+    const el = document.getElementById('estado');
+    el.classList.toggle('rodando', !!e.rodando);
+    let txt;
+    if (e.rodando) txt = 'Verificando… ' + (e.fase || '');
+    else if (e.ultimo_erro) txt = 'Última verificação falhou: ' + e.ultimo_erro;
+    else txt = 'Última verificação: ' + dataHora(dados.vendas.verificado_em);
+    document.getElementById('estadoTexto').textContent = txt;
+    document.getElementById('btnVerificar').disabled = !!e.rodando;
+}
+
+function renderCards() {
+    const t = dados.tabela, v = dados.vendas;
+    document.getElementById('cardAnuncios').textContent = t.total || '—';
+    document.getElementById('cardAnunciosSub').textContent = t.coletado_em ? 'tabela conferida em ' + dataHora(t.coletado_em) : 'tabela ainda não coletada';
+    document.getElementById('cardMudancas').textContent = dados.mudancas_30d;
+    document.getElementById('cardFrete7').textContent = brl(v.frete_7d);
+    document.getElementById('cardFrete7Sub').textContent = v.vendas_7d + ' venda(s) com envio';
+    document.getElementById('cardFrete30').textContent = brl(v.frete_30d);
+    document.getElementById('cardVendasSub').textContent = v.total + ' vendas no histórico';
+    const c = dados.config;
+    document.getElementById('optTabela').checked = !!c.avisar_tabela;
+    document.getElementById('optDiferenca').checked = !!c.avisar_diferenca;
+    document.getElementById('optVendas').checked = !!c.avisar_vendas;
+    document.getElementById('optHoras').value = c.horas_tabela;
+}
+
+function renderMudancas() {
+    const lista = dados.mudancas || [];
+    document.getElementById('mudancasSub').textContent = lista.length ? lista.length + ' registro(s), mais recente primeiro' : '';
+    if (!lista.length) { document.getElementById('mudancas').innerHTML = '<div class="vazio">Nenhuma mudança registrada ainda. A primeira verificação cria a baseline; a partir dela, cada alteração do ML aparece aqui.</div>'; return; }
+    document.getElementById('mudancas').innerHTML = lista.slice(0, 100).map(m => {
+        const partes = Object.entries(m.mudancas).map(([campo, ad]) => {
+            let seta = '';
+            if (campo === 'list_cost' && ad.antes != null && ad.depois != null) seta = ad.depois > ad.antes ? ' <span class="sobe">▲</span>' : ' <span class="cai">▼</span>';
+            return fmtCampo(campo, ad.antes) + ' → <b>' + fmtCampo(campo, ad.depois) + '</b>' + seta;
+        });
+        return `<div class="mud-linha">
+            <div class="mud-quando">${dataHora(m.quando)}</div>
+            <div class="mud-item"><div class="tit" title="${esc(m.title)}">${esc(m.title)}</div><div class="sku">${esc(m.sku || m.item_id)}</div></div>
+            <div class="mud-detalhe">${partes.join(' &nbsp;|&nbsp; ')}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderVendas() {
+    const v = dados.vendas;
+    const lista = v.recentes || [];
+    document.getElementById('vendasSub').textContent = v.verificado_em ? 'últimas ' + lista.length + ' vendas com custo calculado pelo ML' : '';
+    if (!lista.length) { document.getElementById('vendas').innerHTML = '<tr><td colspan="8" class="vazio">Nenhuma venda com envio no histórico ainda.</td></tr>'; return; }
+    const tabela = dados.tabela.itens.reduce((o, it) => (o[it.item_id] = it, o), {});
+    document.getElementById('vendas').innerHTML = lista.map(l => {
+        const hoje = tabela[l.item_id] ? tabela[l.item_id].list_cost : null;
+        const dif = l.diferente;
+        const marca = dif ? ` <span class="${dif.depois > dif.antes ? 'sobe' : 'cai'}" title="venda anterior: ${brl(dif.antes)} (${dataCurta(dif.antes_data)} ${esc(dif.antes_uf)})">${dif.depois > dif.antes ? '▲' : '▼'}</span>` : '';
+        return `<tr>
+            <td style="white-space:nowrap">${dataCurta(l.date)} <span class="sku">${l.date.slice(11, 16)}</span></td>
+            <td><div class="tit" title="${esc(l.title)}">${esc(l.title)}${l.units > 1 ? ' <span class="chip">x' + l.units + '</span>' : ''}${l.itens_no_pedido > 1 ? ' <span class="chip" title="pedido com mais itens: o frete é do pedido inteiro">+itens</span>' : ''}</div><div class="sku">${esc(l.sku || l.item_id)}</div></td>
+            <td>${esc(l.uf_destino)} <span class="sku">${esc(l.cidade_destino)}</span></td>
+            <td>${logistica(l.logistic_type)}</td>
+            <td class="num" style="color:var(--l3)">${brl(l.tabela_cheia)}</td>
+            <td class="num" style="color:var(--l3)">${l.desconto_vendedor ? '− ' + brl(l.desconto_vendedor) : '—'}</td>
+            <td class="num" style="font-weight:600">${brl(l.custo_vendedor)}${l.flex ? ' <span class="chip flex">+' + brl(l.flex) + '</span>' : ''}${marca}</td>
+            <td class="num" style="color:var(--l3)">${brl(hoje)}</td>
+        </tr>`;
+    }).join('');
+}
+
+function renderTabela() {
+    const f = document.getElementById('pesquisa').value.trim().toLowerCase();
+    let lista = dados.tabela.itens || [];
+    document.getElementById('tabelaSub').textContent = lista.length ? lista.length + ' anúncios ativos · custo = cobertura "país inteiro" da tabela do ML' : '';
+    if (f) lista = lista.filter(it => (it.sku || '').toLowerCase().includes(f) || (it.title || '').toLowerCase().includes(f) || (it.item_id || '').toLowerCase().includes(f));
+    if (!lista.length) { document.getElementById('tabela').innerHTML = '<tr><td colspan="8" class="vazio">' + (dados.tabela.total ? 'Nenhum anúncio encontrado.' : 'Tabela ainda não coletada — clique em "Verificar agora".') + '</td></tr>'; return; }
+    lista = [...lista].sort((a, b) => (b.ultima_mudanca || '').localeCompare(a.ultima_mudanca || '') || (b.list_cost || 0) - (a.list_cost || 0));
+    document.getElementById('tabela').innerHTML = lista.slice(0, 600).map(it => `<tr>
+        <td><div class="tit" title="${esc(it.title)}">${esc(it.title)}</div><div class="sku">${esc(it.item_id)}</div></td>
+        <td class="sku">${esc(it.sku)}</td>
+        <td>${logistica(it.logistic_type)}</td>
+        <td>${it.free_shipping == null ? '—' : it.free_shipping ? 'grátis' : 'pago'}</td>
+        <td class="num" style="color:var(--l3)">${brl(it.price)}</td>
+        <td class="num" style="font-weight:600">${it.list_cost == null ? '<span class="sku" title="' + esc(it.erro || 'sem cobertura') + '">?</span>' : brl(it.list_cost)}</td>
+        <td class="num" style="color:var(--l3)">${it.billable_weight == null ? '—' : it.billable_weight.toLocaleString('pt-BR') + ' g'}</td>
+        <td style="color:var(--l3);white-space:nowrap">${it.ultima_mudanca ? dataHora(it.ultima_mudanca) : '—'}</td>
+    </tr>`).join('');
+}
+
+function renderTudo() { renderEstado(); renderCards(); renderMudancas(); renderVendas(); renderTabela(); }
+
+async function carregar() {
+    const r = await fetch('/api/frete');
+    dados = await r.json();
+    renderTudo();
+    if (dados.estado.rodando && !poll) poll = setInterval(carregar, 2000);
+    if (!dados.estado.rodando && poll) { clearInterval(poll); poll = null; }
+}
+
+async function verificarAgora() {
+    const btn = document.getElementById('btnVerificar');
+    btn.disabled = true;
+    const r = await fetch('/api/frete/verificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const d = await r.json();
+    if (!d.ok) { alert(d.motivo || d.erro || 'Não foi possível iniciar'); btn.disabled = false; return; }
+    await carregar();
+    if (!poll) poll = setInterval(carregar, 2000);
+}
+
+async function salvarConfig() {
+    const body = {
+        avisar_tabela: document.getElementById('optTabela').checked,
+        avisar_diferenca: document.getElementById('optDiferenca').checked,
+        avisar_vendas: document.getElementById('optVendas').checked,
+        horas_tabela: Number(document.getElementById('optHoras').value) || 12,
+    };
+    const r = await fetch('/api/frete/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    dados.config = await r.json();
+    document.getElementById('optHoras').value = dados.config.horas_tabela;
+}
+
+async function testarNotificacao() {
+    await fetch('/api/frete/testar_notificacao', { method: 'POST' });
+}
+
+carregar().then(() => document.body.classList.add('page-ready')).catch(e => {
+    document.getElementById('tabela').innerHTML = `<tr><td colspan="8" class="vazio" style="color:#ff453a">Erro: ${esc(e.message)}</td></tr>`;
+    document.body.classList.add('page-ready');
+});
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

@@ -56,6 +56,7 @@
             <li onclick="location.href='/'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
             <li class="active"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
             <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
             <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
         </ul>
         <div class="sidebar-footer">v5.0</div>
@@ -67,14 +68,14 @@
         <nav class="topbar">
             <div>
                 <h4 class="mb-0">Valor do Estoque</h4>
-                <small class="text-secondary">Informe o custo por produto ou importe de uma planilha Excel</small>
+                <small class="text-secondary">Informe o custo por produto ou importe uma planilha .xlsx/.csv com colunas SKU e CUSTO</small>
             </div>
             <div class="topbar-right" style="gap:10px">
                 <button id="btnSync" onclick="sincronizar()" title="Lê automaticamente do caminho configurado em config.json" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--sep);background:none;color:var(--l1);font-size:13px;font-weight:600;cursor:pointer;">
                     <i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha
                 </button>
                 <label id="btnImportar" title="Importar planilha Excel manualmente" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--sep);background:none;color:var(--l2);font-size:13px;font-weight:600;cursor:pointer;">
-                    <i class="bi bi-upload" style="color:var(--l3)"></i> Upload Manual
+                    <i class="bi bi-upload" style="color:var(--l3)"></i> <span id="btnImportarRotulo">Upload Manual</span>
                     <input type="file" id="inputXlsx" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarPlanilha(this)">
                 </label>
                 <button class="btn-salvar" onclick="salvarCustos()"><i class="bi bi-floppy"></i> Salvar Custos</button>
@@ -207,6 +208,21 @@ function filtrar() {
     renderizar();
 }
 
+function resumoImportacao(d) {
+    let s = `${d.importados} SKUs atualizados`;
+    if (d.semProduto) s += ` · ${d.semProduto} sem produto`;
+    return s;
+}
+
+// Custo que mudou 50x ou mais quase sempre é vírgula perdida na planilha
+// (181,44 gravado como 18144). Mostra pra conferir antes de confiar no total.
+function avisarSuspeitos(d) {
+    if (!d.suspeitos || !d.suspeitos.length) return;
+    const linhas = d.suspeitos.slice(0, 15).map(s => `${s.sku}: ${fmt(s.antes)} → ${fmt(s.depois)}`);
+    if (d.suspeitos.length > 15) linhas.push(`… e mais ${d.suspeitos.length - 15}`);
+    alert(`Atenção: ${d.suspeitos.length} custo(s) mudaram mais de 50× em relação ao valor anterior. Confira na planilha se a vírgula decimal foi perdida:\n\n` + linhas.join('\n'));
+}
+
 async function sincronizar() {
     const btn = document.getElementById('btnSync');
     btn.disabled = true;
@@ -219,7 +235,8 @@ async function sincronizar() {
         custos = await rc.json();
         recalcularTotal();
         renderizar();
-        btn.innerHTML = `<i class="bi bi-check-circle" style="color:#00ff99"></i> ${d.importados} SKUs atualizados`;
+        btn.innerHTML = `<i class="bi bi-check-circle" style="color:#00ff99"></i> ${resumoImportacao(d)}`;
+        avisarSuspeitos(d);
         setTimeout(() => {
             btn.innerHTML = '<i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha';
             btn.disabled = false;
@@ -238,7 +255,7 @@ async function importarPlanilha(input) {
     btn.style.opacity = '0.6';
     btn.style.pointerEvents = 'none';
     btn.querySelector('i').className = 'bi bi-hourglass-split';
-    btn.childNodes[btn.childNodes.length - 2].textContent = ' Importando...';
+    document.getElementById('btnImportarRotulo').textContent = 'Importando...';
 
     try {
         const fd = new FormData();
@@ -254,18 +271,19 @@ async function importarPlanilha(input) {
         renderizar();
 
         btn.querySelector('i').className = 'bi bi-check-circle';
-        btn.childNodes[btn.childNodes.length - 2].textContent = ` ${d.importados} SKUs importados`;
+        document.getElementById('btnImportarRotulo').textContent = resumoImportacao(d);
+        avisarSuspeitos(d);
         setTimeout(() => {
-            btn.querySelector('i').className = 'bi bi-file-earmark-excel';
-            btn.childNodes[btn.childNodes.length - 2].textContent = ' Importar Planilha';
+            btn.querySelector('i').className = 'bi bi-upload';
+            document.getElementById('btnImportarRotulo').textContent = 'Upload Manual';
             btn.style.opacity = '';
             btn.style.pointerEvents = '';
             input.value = '';
         }, 2500);
     } catch (e) {
         alert('Erro ao importar: ' + e.message);
-        btn.querySelector('i').className = 'bi bi-file-earmark-excel';
-        btn.childNodes[btn.childNodes.length - 2].textContent = ' Importar Planilha';
+        btn.querySelector('i').className = 'bi bi-upload';
+        document.getElementById('btnImportarRotulo').textContent = 'Upload Manual';
         btn.style.opacity = '';
         btn.style.pointerEvents = '';
         input.value = '';

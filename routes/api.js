@@ -6,6 +6,7 @@ const axios = require('axios');
 const multer = require('multer');
 const TokenManager = require('../lib/tokenManager');
 const { mapaLimitado, comBackoff, paginarEmParalelo } = require('../lib/paralelo');
+const frete = require('../lib/frete');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -101,6 +102,7 @@ router.post('/atualizar', auth, async (req, res) => {
 
     const escrever = (msg) => res.write(msg + '\n');
 
+    frete.estado.motorOcupado = true;
     try {
         const { access_token, user_id } = await TokenManager.getToken();
         escrever(`User ID: ${user_id}`);
@@ -723,6 +725,8 @@ router.post('/atualizar', auth, async (req, res) => {
     } catch (err) {
         escrever(`ERRO: ${err.response?.data?.message || err.message}`);
         res.end();
+    } finally {
+        frete.estado.motorOcupado = false;
     }
 });
 
@@ -943,6 +947,71 @@ router.post('/estrelas', auth, (req, res) => {
     res.json({ ok: true, total: chaves.length });
 });
 
+// ── Leitura de planilha de custos ───────────────────────────────────────────
+// raw:true é obrigatório: sem ele o SheetJS "converte" texto em número tirando
+// a vírgula — "181,44" virava 18144 e o valor do estoque explodia 100x.
+function lerNumeroBr(v) {
+    if (typeof v === 'number') return v;
+    let s = String(v == null ? '' : v).replace(/R\$|\s|\u00a0/g, '');
+    if (!s) return NaN;
+    const virg = s.lastIndexOf(','), ponto = s.lastIndexOf('.');
+    if (virg >= 0 && ponto >= 0) {
+        // os dois presentes: o último é o decimal, o outro é milhar
+        s = virg > ponto ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (virg >= 0) {
+        s = s.replace(/,/g, '.'); // só vírgula: decimal (pt-BR)
+    } else if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+        s = s.replace(/\./g, ''); // só ponto em grupos de 3 ("1.700"): milhar pt-BR
+    }
+    return parseFloat(s);
+}
+
+function lerPlanilhaCustos(caminho) {
+    const cabecalhoBin = fs.readFileSync(caminho).subarray(0, 4).toString('latin1');
+    if (cabecalhoBin === '%PDF') throw new Error('O arquivo enviado é um PDF, não uma planilha. Exporte em .xlsx ou .csv.');
+
+    const XLSX = require('xlsx');
+    const wb = XLSX.readFile(caminho, { raw: true });
+    const norm = (k) => String(k).trim().toUpperCase();
+    let rows = null, skuKey = null, custoKey = null, cabecalhos = [];
+    for (const nome of wb.SheetNames) {
+        const linhas = XLSX.utils.sheet_to_json(wb.Sheets[nome], { defval: '', raw: true });
+        const cab = Object.keys(linhas[0] || {});
+        const s = cab.find(k => norm(k) === 'SKU') || cab.find(k => norm(k).includes('SKU'));
+        const c = cab.find(k => norm(k) === 'CUSTO') || cab.find(k => norm(k).includes('CUSTO'));
+        if (s && c) { rows = linhas; skuKey = s; custoKey = c; break; }
+        if (!cabecalhos.length) cabecalhos = cab;
+    }
+    if (!rows) throw new Error('A planilha precisa ter as colunas SKU e CUSTO na primeira linha (encontradas: ' + (cabecalhos.join(', ') || 'nenhuma') + ').');
+
+    const custos = {};
+    let ignoradas = 0;
+    for (const row of rows) {
+        const sku = String(row[skuKey] || '').trim().toLowerCase();
+        const custo = lerNumeroBr(row[custoKey]);
+        if (sku && !isNaN(custo) && custo > 0) custos[sku] = Math.round(custo * 100) / 100;
+        else if (sku || String(row[custoKey]).trim()) ignoradas++;
+    }
+    return { custos, ignoradas };
+}
+
+// Mescla com os custos existentes (planilha tem prioridade) e conta quantos
+// SKUs da planilha batem com produto da reposição.
+function importarCustos(caminho) {
+    const { custos, ignoradas } = lerPlanilhaCustos(caminho);
+    const existentes = lerJson('custos.json', {});
+    const merged = { ...existentes, ...custos };
+    salvarJson('custos.json', merged);
+    const skusProd = new Set(lerJson('reposicao.json', []).map(p => String(p.sku || '').toLowerCase()));
+    const semProduto = Object.keys(custos).filter(k => !skusProd.has(k)).length;
+    // Um custo que muda 50x ou mais quase sempre é vírgula perdida (181,44 -> 18144)
+    // numa célula que o Excel já gravou como número; a tela mostra pra conferir.
+    const suspeitos = Object.keys(custos)
+        .filter(k => existentes[k] > 0 && (custos[k] / existentes[k] >= 50 || existentes[k] / custos[k] >= 50))
+        .map(k => ({ sku: k, antes: existentes[k], depois: custos[k] }));
+    return { ok: true, importados: Object.keys(custos).length, semProduto, ignoradas, suspeitos, total: Object.keys(merged).length };
+}
+
 // ── Importar custos do caminho configurado (GET) ────────────────────────────
 router.get('/importar_custos', auth, (req, res) => {
     try {
@@ -951,70 +1020,37 @@ router.get('/importar_custos', auth, (req, res) => {
         const dica = 'Use o botão de enviar planilha para importar o arquivo .xlsx.';
         if (!filePath) return res.status(400).json({ erro: `Nenhuma planilha fixa configurada. ${dica}` });
         if (!fs.existsSync(filePath)) return res.status(404).json({ erro: `A planilha configurada não existe mais neste computador. ${dica}` });
-
-        const XLSX = require('xlsx');
-        const wb = XLSX.readFile(filePath);
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-        const custos = {};
-        let importados = 0;
-        for (const row of rows) {
-            const keys = Object.keys(row);
-            const skuKey   = keys.find(k => k.trim().toUpperCase() === 'SKU');
-            const custoKey = keys.find(k => k.trim().toUpperCase() === 'CUSTO');
-            if (!skuKey || !custoKey) continue;
-            const sku   = String(row[skuKey] || '').trim().toLowerCase();
-            const custo = parseFloat(String(row[custoKey]).replace(',', '.'));
-            if (sku && !isNaN(custo) && custo > 0) { custos[sku] = custo; importados++; }
-        }
-
-        const existentes = lerJson('custos.json', {});
-        const merged = { ...existentes, ...custos };
-        salvarJson('custos.json', merged);
-
-        res.json({ ok: true, importados, total: Object.keys(merged).length, arquivo: path.basename(filePath) });
+        res.json({ ...importarCustos(filePath), arquivo: path.basename(filePath) });
     } catch (e) {
-        res.status(500).json({ erro: e.message });
+        res.status(400).json({ erro: e.message });
     }
 });
 
-// ── Importar custos de planilha Excel (upload) ───────────────────────────────
+// ── Importar custos de planilha Excel/CSV (upload) ──────────────────────────
 router.post('/importar_custos', auth, upload.single('planilha'), (req, res) => {
     if (!req.file) return res.status(400).json({ erro: 'Nenhum arquivo enviado' });
     try {
-        const XLSX = require('xlsx');
-        const wb = XLSX.readFile(req.file.path);
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-        fs.unlinkSync(req.file.path);
-
-        // Detecta colunas independente de maiúsculas/minúsculas
-        const custos = {};
-        let importados = 0;
-        for (const row of rows) {
-            const keys = Object.keys(row);
-            const skuKey  = keys.find(k => k.trim().toUpperCase() === 'SKU');
-            const custoKey = keys.find(k => k.trim().toUpperCase() === 'CUSTO');
-            if (!skuKey || !custoKey) continue;
-            const sku   = String(row[skuKey] || '').trim().toLowerCase();
-            const custo = parseFloat(String(row[custoKey]).replace(',', '.').trim());
-            if (sku && !isNaN(custo) && custo > 0) {
-                custos[sku] = custo;
-                importados++;
-            }
-        }
-
-        // Mescla com custos existentes (planilha tem prioridade)
-        const existentes = lerJson('custos.json', {});
-        const merged = { ...existentes, ...custos };
-        salvarJson('custos.json', merged);
-
-        res.json({ ok: true, importados, total: Object.keys(merged).length });
+        res.json(importarCustos(req.file.path));
     } catch (e) {
-        res.status(500).json({ erro: e.message });
+        res.status(400).json({ erro: e.message });
+    } finally {
+        // antes o arquivo só era apagado se a leitura desse certo; PDF enviado
+        // por engano ficava para sempre em storage/uploads
+        try { fs.unlinkSync(req.file.path); } catch {}
     }
 });
+
+// ── Frete do vendedor (monitor) ─────────────────────────────────────────────
+// A verificação demora (uma chamada por anúncio ativo); o POST só dispara e a
+// tela acompanha por GET /frete, que traz estado.rodando e a fase atual.
+router.get('/frete', auth, (req, res) => res.json(frete.resumo()));
+router.post('/frete/verificar', auth, (req, res) => {
+    if (frete.estado.rodando) return res.json({ ok: false, motivo: 'já está verificando' });
+    frete.verificar({ forcarTabela: req.body?.tabela !== false, origem: 'manual' }).catch(() => {});
+    res.json({ ok: true, iniciado: true });
+});
+router.post('/frete/config', auth, (req, res) => res.json(frete.salvarConfiguracao(req.body || {})));
+router.post('/frete/testar_notificacao', auth, (req, res) => { frete.notificarTeste(); res.json({ ok: true }); });
 
 // ── Gerar planilha Full ─────────────────────────────────────────────────────
 // Formato exigido pelo ML: sheet "Dados Mercado Livre", coluna D = item_id,
