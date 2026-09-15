@@ -1,9 +1,29 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
+let tray = null;
+let encerrando = false;
+
+// Só uma instância: o atalho do Start Menu, com o app já na bandeja, apenas
+// traz a janela de volta em vez de abrir um segundo servidor na porta 3001.
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+} else {
+    app.on('second-instance', () => mostrarJanela());
+}
+
+// Iniciado pelo Windows (login): fica só na bandeja, sem abrir a janela.
+const SEGUNDO_PLANO = process.argv.includes('--segundo-plano');
+
+function mostrarJanela() {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+}
 
 const userDataPath = app.getPath('userData');
 const storagePath = path.join(userDataPath, 'storage');
@@ -47,7 +67,24 @@ for (const file of ['config.json', 'usuarios.json', 'custos.json', 'envios_full.
 
 process.env.STORAGE_PATH = storagePath;
 
+// Sem AppUserModelId o Windows descarta a notificação (toast) do app. O
+// instalador registra o mesmo id no atalho; aqui vale também no npm start.
+app.setAppUserModelId('com.thebigmath.dashboard-ml');
+
 const server = require('./server');
+
+// Avisos do monitor de frete viram notificação nativa do Windows; clicar
+// traz o app pra frente já na tela de frete.
+require('./lib/frete').usarNotificador((titulo, corpo, rota) => {
+    if (!Notification.isSupported()) return;
+    const n = new Notification({ title: titulo, body: corpo });
+    n.on('click', () => {
+        if (!mainWindow) return;
+        mostrarJanela();
+        if (rota) mainWindow.loadURL('http://localhost:3001' + rota);
+    });
+    n.show();
+});
 
 // Auto-updater
 autoUpdater.autoDownload = true;
@@ -104,16 +141,54 @@ app.whenReady().then(() => {
 
         mainWindow.loadURL(startUrl);
         mainWindow.once('ready-to-show', () => {
-            mainWindow.show();
+            if (!SEGUNDO_PLANO) mainWindow.show();
             setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
         });
+
+        // O X esconde: o servidor e o monitor de frete continuam na bandeja.
+        // Sair de verdade só pelo menu da bandeja (ou ao instalar atualização).
+        let avisouBandeja = false;
+        mainWindow.on('close', (e) => {
+            if (encerrando) return;
+            e.preventDefault();
+            mainWindow.hide();
+            if (!avisouBandeja && tray) {
+                avisouBandeja = true;
+                tray.displayBalloon({ title: 'Flavia Stock continua rodando', content: 'O monitor de frete segue ativo aqui na bandeja. Clique duas vezes no ícone para abrir.', iconType: 'info' });
+            }
+        });
+
+        criarBandeja();
+        // Registra o app para abrir junto com o Windows, escondido. Só no
+        // instalado: no npm start isso registraria o electron de desenvolvimento.
+        if (app.isPackaged) {
+            app.setLoginItemSettings({ openAtLogin: true, args: ['--segundo-plano'] });
+        }
         mainWindow.webContents.on('did-finish-load', () => {
             if (updateReady) mainWindow.webContents.send('update-downloaded');
         });
     });
 });
 
+function criarBandeja() {
+    const icone = nativeImage.createFromPath(path.join(__dirname, 'public/assets/img/tray.png'));
+    tray = new Tray(icone);
+    tray.setToolTip('Flavia Stock — monitor de frete ativo');
+    tray.setContextMenu(Menu.buildFromTemplate([
+        { label: 'Abrir Flavia Stock', click: () => mostrarJanela() },
+        { label: 'Frete: verificar agora', click: () => {
+            require('./lib/frete').verificar({ forcarTabela: true, origem: 'bandeja' }).catch(() => {});
+            mostrarJanela();
+            mainWindow?.loadURL('http://localhost:3001/frete');
+        } },
+        { type: 'separator' },
+        { label: 'Sair', click: () => { encerrando = true; server.stop(); app.quit(); } },
+    ]));
+    tray.on('double-click', () => mostrarJanela());
+}
+
+// A janela escondida não conta como "fechada": o app só sai pelo menu da bandeja.
 app.on('window-all-closed', () => {
-    server.stop();
-    app.quit();
+    if (encerrando) { server.stop(); app.quit(); }
 });
+app.on('before-quit', () => { encerrando = true; });

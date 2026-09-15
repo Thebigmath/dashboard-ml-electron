@@ -18,6 +18,7 @@ app.use('/auth', require('./routes/auth'));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/envio_full.html')));
 app.get('/valor_estoque', (req, res) => res.sendFile(path.join(__dirname, 'public/valor_estoque.html')));
+app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.html')));
 
 // Arquivos estáticos
 // etag: true + maxAge 0 faz o navegador revalidar a cada carga em vez de
@@ -36,8 +37,11 @@ app.use(express.static(path.join(__dirname, 'public'), {
 module.exports = {
     start: (port, cb) => {
         httpServer = app.listen(port, '127.0.0.1', cb);
+        // monitor de frete: 90 s depois de abrir e de hora em hora
+        require('./lib/frete').iniciarAgendador();
     },
     stop: () => {
+        require('./lib/frete').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };
