@@ -143,6 +143,11 @@ function isEmpilhadeira(p) {
 function isRetrovisor(p) {
     return (p.titulo || '').toLowerCase().includes('retrovisor');
 }
+// Farol sai pelo titulo tambem ("Farol Dianteiro", "Par Farol", "Farol S10"...).
+// Farol de empilhadeira e outro fornecedor e fica de fora.
+function isFarol(p) {
+    return /\bfar(ol|óis|ois)\b/i.test(p.titulo || '') && !isEmpilhadeira(p);
+}
 
 window.setFiltroCategoria = function(cat) {
     filtroCategoria = cat;
@@ -329,6 +334,7 @@ function aplicarFiltros() {
         lista = lista.filter(p => p.eFull !== false);
         lista = lista.filter(p => !isEmpilhadeira(p));
         if (filtroCategoria === 'retrovisor') lista = lista.filter(p => isRetrovisor(p));
+        if (filtroCategoria === 'farol')      lista = lista.filter(p => isFarol(p));
     }
 
     if (textoPesquisa) lista = lista.filter(p =>
