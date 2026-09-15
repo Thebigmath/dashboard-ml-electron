@@ -729,6 +729,9 @@ body {
 }
 .th-info-icon:hover  { color: var(--blue); }
 .th-info-icon:active { transform: scale(.88); }
+.th-sort { cursor: pointer; font-size: 13px; color: var(--l3); margin-left: 2px; vertical-align: middle; transition: color var(--t-fast) var(--ease); }
+.th-sort:hover { color: var(--blue); }
+.th-sort.ativo { color: var(--blue); }
 
 #th-tooltip-popup {
   position: fixed;

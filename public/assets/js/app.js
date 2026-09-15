@@ -143,10 +143,10 @@ function isEmpilhadeira(p) {
 function isRetrovisor(p) {
     return (p.titulo || '').toLowerCase().includes('retrovisor');
 }
-// Farol sai pelo titulo tambem ("Farol Dianteiro", "Par Farol", "Farol S10"...).
+// Farol e pisca-seta saem pelo titulo ("Farol Dianteiro", "Par Farol", "Pisca Seta"...).
 // Farol de empilhadeira e outro fornecedor e fica de fora.
 function isFarol(p) {
-    return /\bfar(ol|óis|ois)\b/i.test(p.titulo || '') && !isEmpilhadeira(p);
+    return /\bfar(ol|óis|ois)\b|\bpisca\b/i.test(p.titulo || '') && !isEmpilhadeira(p);
 }
 
 window.setFiltroCategoria = function(cat) {
@@ -300,6 +300,19 @@ function atualizarBadgeFiltros() {
     badge.textContent = n;
 }
 
+
+/* ── Ordenar pela coluna Qtd Full ─────────────────────────────────────── */
+window.ordemQtdFull = null; // null -> 'desc' -> 'asc' -> null
+window.toggleOrdemQtdFull = function () {
+    window.ordemQtdFull = window.ordemQtdFull === null ? 'desc' : window.ordemQtdFull === 'desc' ? 'asc' : null;
+    const i = document.getElementById('ordQtdFull');
+    if (i) {
+        i.className = 'th-sort ' + (window.ordemQtdFull === 'desc' ? 'bi bi-sort-down ativo' : window.ordemQtdFull === 'asc' ? 'bi bi-sort-up ativo' : 'bi bi-arrow-down-up');
+        i.title = window.ordemQtdFull === 'desc' ? 'Maior → menor (clique: menor → maior)' : window.ordemQtdFull === 'asc' ? 'Menor → maior (clique: ordem normal)' : 'Ordenar do maior para o menor';
+    }
+    aplicarFiltros();
+};
+
 function aplicarFiltros() {
     const periodo      = parseInt(document.getElementById('f-periodo')?.value) || 30;
     const fRuptura     = document.getElementById('f-ruptura')?.checked;
@@ -362,6 +375,14 @@ function aplicarFiltros() {
         return 1;
     }
     lista.sort((a, b) => nivelPrioridade(a) - nivelPrioridade(b));
+
+    // Ordem manual pela coluna Qtd Full (setinha no cabecalho). Estavel: dentro do
+    // mesmo valor, a ordem de prioridade acima continua valendo.
+    if (window.ordemQtdFull) {
+        const qtdDe = (p) => Number(window.qtdsFull[chaveDe(p)] ?? qtdFullSugerida(p)) || 0;
+        const sinal = window.ordemQtdFull === 'desc' ? -1 : 1;
+        lista = lista.map((p, i) => [p, i]).sort((a, b) => sinal * (qtdDe(a[0]) - qtdDe(b[0])) || a[1] - b[1]).map(x => x[0]);
+    }
 
     produtosFiltrados = lista;
     paginaAtual = 1;
