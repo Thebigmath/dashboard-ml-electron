@@ -61,6 +61,25 @@
         document.addEventListener('novidades-vistas', () => pintar(0));
     }
 
+    // ── Contador de perguntas sem resposta ───────────────────────────────────
+    const liPerguntas = [...document.querySelectorAll('.sidebar .menu li')].find(li => li.querySelector('span')?.textContent.trim() === 'Perguntas');
+    if (liPerguntas) {
+        const pintarPerguntas = (n) => {
+            liPerguntas.querySelector('.menu-badge')?.remove();
+            if (!n) return;
+            const b = document.createElement('span');
+            b.className = 'menu-badge';
+            b.textContent = n;
+            liPerguntas.appendChild(b);
+        };
+        const atualizarPerguntas = async () => {
+            try { pintarPerguntas((await fetch('/api/perguntas/resumo').then(r => r.json())).nao_respondidas); } catch {}
+        };
+        atualizarPerguntas();
+        setInterval(atualizarPerguntas, 15000);
+        document.addEventListener('perguntas-mudaram', atualizarPerguntas);
+    }
+
     // ── Versão no rodapé ─────────────────────────────────────────────────────
     const footer = document.querySelector('.sidebar-footer');
     if (footer && appInfo.versao) footer.textContent = `v${appInfo.versao}`;
