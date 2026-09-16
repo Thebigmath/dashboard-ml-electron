@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.42",
+    "data": "2026-09-16",
+    "titulo": "Aba Perguntas com aviso no Windows",
+    "texto": "O app vigia as perguntas do Mercado Livre a cada 10 segundos, desde que o PC liga, e avisa na hora que chega uma nova (clique abre a tela).\n\n- Tela Perguntas: as sem resposta com caixa para responder direto pelo app, e as últimas respondidas.\n- Contador de perguntas pendentes no menu.\n- Ao abrir o app, lembrete do que ficou sem resposta.\n- Atualização automática passa a funcionar com o app na bandeja (verifica a cada 30 min e ao abrir a janela).",
+    "video": "",
+    "imagens": []
+  },
+  {
     "versao": "1.9.36",
     "data": "2026-09-14",
     "titulo": "Tela de Novidades",
