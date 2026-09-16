@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perguntas — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:none; }
+        .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-bottom:24px; }
+        .stat-card { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:20px; }
+        .stat-label { font-size:11px; text-transform:uppercase; color:var(--l3); margin-bottom:6px; letter-spacing:.5px; }
+        .stat-value { font-size:22px; font-weight:600; color:var(--l1); }
+        .stat-sub { font-size:11px; color:var(--l3); margin-top:4px; }
+        .bloco { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:22px 24px; margin-bottom:20px; }
+        .bloco-cab { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+        .bloco-cab h5 { margin:0; font-size:15px; font-weight:600; color:var(--l1); }
+        .bloco-cab small { color:var(--l3); font-size:12px; }
+        .pg { display:grid; grid-template-columns:64px minmax(0,1fr); gap:14px; padding:14px 0; border-bottom:1px solid rgba(128,128,128,.12); }
+        .pg:last-child { border-bottom:none; }
+        .pg img { width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--sep); background:var(--s2); }
+        .pg .semfoto { width:64px; height:64px; border-radius:10px; border:1px solid var(--sep); background:var(--s2); display:flex; align-items:center; justify-content:center; color:var(--l3); }
+        .pg-item { font-size:12px; color:var(--l3); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+        .pg-item a { color:var(--blue); text-decoration:none; cursor:pointer; }
+        .pg-texto { font-size:14px; color:var(--l1); margin:6px 0 8px; line-height:1.5; }
+        .pg-quando { font-size:11px; color:var(--l3); }
+        .pg-resp { display:flex; gap:8px; align-items:flex-start; margin-top:6px; }
+        .pg-resp textarea { flex:1; min-height:62px; padding:9px 12px; background:var(--s2); border:1px solid var(--sep); border-radius:10px; color:var(--l1); font-size:13px; outline:none; resize:vertical; }
+        .pg-resp textarea:focus { border-color:var(--blue); }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+        .btn-acao.primario { background:var(--blue); color:#fff; border-color:transparent; }
+        .btn-acao:disabled { opacity:.6; cursor:default; }
+        .resposta { margin-top:6px; padding:8px 12px; border-left:3px solid #30D158; background:color-mix(in srgb, #30D158 8%, transparent); border-radius:0 8px 8px 0; font-size:13px; color:var(--l2); }
+        .vazio { text-align:center; padding:28px; color:var(--l3); font-size:13px; }
+        .estado { font-size:12px; color:var(--l3); display:flex; align-items:center; gap:8px; }
+        .estado .pulso { width:8px; height:8px; border-radius:50%; background:#30D158; }
+        .erro { color:#ff453a; font-size:12px; margin-top:6px; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
+            <li class="active"><i class="bi bi-chat-dots"></i><span>Perguntas</span></li>
+            <li onclick="window.location.href='/novidades'"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Perguntas do Mercado Livre</h4>
+                <small class="text-secondary">Verificadas a cada 10 segundos — pergunta nova vira aviso no Windows</small>
+            </div>
+            <div class="topbar-right" style="gap:10px">
+                <span class="estado" id="estado"><span class="pulso"></span><span id="estadoTexto">—</span></span>
+                <button class="btn-acao primario" id="btnVerificar" onclick="verificarAgora()"><i class="bi bi-arrow-repeat"></i> Verificar agora</button>
+            </div>
+        </nav>
+
+        <div style="padding:24px">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Sem resposta</div>
+                    <div class="stat-value" id="cardAbertas" style="color:#ff9500">—</div>
+                    <div class="stat-sub">aguardando você</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mais antiga sem resposta</div>
+                    <div class="stat-value" id="cardAntiga">—</div>
+                    <div class="stat-sub" id="cardAntigaSub">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Perguntas no histórico</div>
+                    <div class="stat-value" id="cardTotal">—</div>
+                    <div class="stat-sub">recebidas nesta conta</div>
+                </div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-chat-left-dots" style="color:#ff9500"></i> Sem resposta</h5>
+                    <small id="abertasSub"></small>
+                </div>
+                <div id="abertas"><div class="vazio">Carregando...</div></div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-chat-left-text" style="color:#30D158"></i> Últimas respondidas</h5>
+                    <small id="respondidasSub"></small>
+                </div>
+                <div id="respondidas"><div class="vazio">Carregando...</div></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+let dados = null;
+let poll = null;
+
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dataHora = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+function haQuanto(iso) {
+    if (!iso) return '';
+    const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (min < 1) return 'agora';
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 48) return `há ${h} h`;
+    return `há ${Math.floor(h / 24)} dias`;
+}
+function abrir(url) {
+    if (!url) return;
+    if (window.electronAPI && window.electronAPI.openExternal) window.electronAPI.openExternal(url);
+    else window.open(url, '_blank');
+}
+
+function cartao(q, aberta) {
+    const foto = q.item.thumbnail ? `<img src="${esc(q.item.thumbnail)}" alt="">` : `<div class="semfoto"><i class="bi bi-image"></i></div>`;
+    const item = `<div class="pg-item"><a onclick="abrir('${esc(q.item.permalink)}')" title="Abrir anúncio no Mercado Livre">${esc(q.item.title)}</a><span>${esc(q.item_id)}</span>${q.item.price != null ? '<span>R$ ' + Number(q.item.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '</span>' : ''}</div>`;
+    const quando = `<div class="pg-quando">${dataHora(q.date_created)} · ${haQuanto(q.date_created)}${q.from_id ? ' · comprador ' + esc(q.from_id) : ''}</div>`;
+    const corpo = aberta
+        ? `<div class="pg-resp"><textarea id="resp-${q.id}" placeholder="Escreva a resposta…"></textarea><button class="btn-acao primario" id="btn-${q.id}" onclick="responder(${q.id})"><i class="bi bi-send"></i> Responder</button></div><div class="erro" id="erro-${q.id}"></div>`
+        : (q.answer ? `<div class="resposta">${esc(q.answer.text)}<div class="pg-quando" style="margin-top:4px">respondida ${dataHora(q.answer.date_created)}</div></div>` : `<div class="pg-quando">${esc(q.status)}</div>`);
+    return `<div class="pg" id="pg-${q.id}">${foto}<div>${item}<div class="pg-texto">${esc(q.text)}</div>${quando}${corpo}</div></div>`;
+}
+
+function render() {
+    const ab = dados.abertas || [], re = dados.respondidas || [];
+    document.getElementById('cardAbertas').textContent = ab.length;
+    const antiga = ab.length ? ab.reduce((m, q) => q.date_created < m.date_created ? q : m) : null;
+    document.getElementById('cardAntiga').textContent = antiga ? haQuanto(antiga.date_created) : '—';
+    document.getElementById('cardAntigaSub').textContent = antiga ? antiga.item.title.slice(0, 40) : 'nenhuma pendente';
+    document.getElementById('cardTotal').textContent = dados.total_historico ?? '—';
+    document.getElementById('abertasSub').textContent = ab.length ? `${ab.length} pergunta(s), mais recente primeiro` : '';
+    document.getElementById('abertas').innerHTML = ab.length ? ab.map(q => cartao(q, true)).join('') : '<div class="vazio">Nenhuma pergunta sem resposta. 🎉</div>';
+    document.getElementById('respondidasSub').textContent = re.length ? `últimas ${re.length}` : '';
+    document.getElementById('respondidas').innerHTML = re.length ? re.map(q => cartao(q, false)).join('') : '<div class="vazio">Nada por aqui ainda.</div>';
+    const e = dados.estado || {};
+    document.getElementById('estadoTexto').textContent = e.ultimo_erro ? 'Falha: ' + e.ultimo_erro : 'Última verificação: ' + dataHora(e.verificado_em);
+    document.getElementById('estado').querySelector('.pulso').style.background = e.ultimo_erro ? '#ff453a' : '#30D158';
+}
+
+async function carregar() {
+    const r = await fetch('/api/perguntas');
+    dados = await r.json();
+    if (dados.erro) throw new Error(dados.erro);
+    render();
+}
+
+async function verificarAgora() {
+    const btn = document.getElementById('btnVerificar');
+    btn.disabled = true;
+    try { await fetch('/api/perguntas/verificar', { method: 'POST' }); await carregar(); }
+    finally { btn.disabled = false; }
+}
+
+async function responder(id) {
+    const ta = document.getElementById('resp-' + id), btn = document.getElementById('btn-' + id), erro = document.getElementById('erro-' + id);
+    const texto = ta.value.trim();
+    if (!texto) { erro.textContent = 'Escreva a resposta antes de enviar.'; return; }
+    btn.disabled = true; erro.textContent = '';
+    try {
+        const r = await fetch('/api/perguntas/responder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, texto }) });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.erro || 'não foi possível responder');
+        await carregar();
+        document.dispatchEvent(new CustomEvent('perguntas-mudaram'));
+    } catch (e) {
+        erro.textContent = 'Erro: ' + e.message;
+        btn.disabled = false;
+    }
+}
+
+carregar().then(() => {
+    document.body.classList.add('page-ready');
+    // acompanha o monitor: a lista se atualiza sozinha enquanto a tela está aberta
+    poll = setInterval(() => carregar().catch(() => {}), 15000);
+}).catch(e => {
+    document.getElementById('abertas').innerHTML = `<div class="vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
+    document.body.classList.add('page-ready');
+});
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

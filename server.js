@@ -20,6 +20,7 @@ app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/e
 app.get('/valor_estoque', (req, res) => res.sendFile(path.join(__dirname, 'public/valor_estoque.html')));
 app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.html')));
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
+app.get('/perguntas', (req, res) => res.sendFile(path.join(__dirname, 'public/perguntas.html')));
 
 // Arquivos estáticos
 // etag: true + maxAge 0 faz o navegador revalidar a cada carga em vez de
@@ -40,12 +41,15 @@ module.exports = {
         httpServer = app.listen(port, '127.0.0.1', cb);
         // monitor de frete: 90 s depois de abrir e de hora em hora
         require('./lib/frete').iniciarAgendador();
+        // perguntas do ML: a cada 10 s, desde que o app sobe (com o PC)
+        require('./lib/perguntas').iniciarAgendador();
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
         setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
     },
     stop: () => {
         require('./lib/frete').pararAgendador();
+        require('./lib/perguntas').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };

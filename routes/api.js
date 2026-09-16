@@ -8,6 +8,7 @@ const TokenManager = require('../lib/tokenManager');
 const { mapaLimitado, comBackoff, paginarEmParalelo } = require('../lib/paralelo');
 const frete = require('../lib/frete');
 const novidades = require('../lib/novidades');
+const perguntas = require('../lib/perguntas');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -1060,6 +1061,18 @@ router.post('/frete/verificar', auth, (req, res) => {
 });
 router.post('/frete/config', auth, (req, res) => res.json(frete.salvarConfiguracao(req.body || {})));
 router.post('/frete/testar_notificacao', auth, (req, res) => { frete.notificarTeste(); res.json({ ok: true }); });
+
+// ── Perguntas do Mercado Livre ──────────────────────────────────────────────
+router.get('/perguntas', auth, async (req, res) => {
+    try { res.json(await perguntas.listar()); }
+    catch (e) { res.status(500).json({ erro: String(e.response?.data?.message || e.message) }); }
+});
+router.get('/perguntas/resumo', auth, (req, res) => res.json(perguntas.resumo()));
+router.post('/perguntas/verificar', auth, async (req, res) => res.json(await perguntas.verificar({ origem: 'manual' })));
+router.post('/perguntas/responder', auth, async (req, res) => {
+    try { await perguntas.responder(req.body?.id, req.body?.texto); res.json({ ok: true }); }
+    catch (e) { res.status(400).json({ ok: false, erro: String(e.response?.data?.message || e.message) }); }
+});
 
 // ── Novidades por versão ────────────────────────────────────────────────────
 router.get('/novidades', auth, (req, res) => res.json(novidades.listar()));
