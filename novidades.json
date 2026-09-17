@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.43",
+    "data": "2026-09-17",
+    "titulo": "Tela Parados: estoque que não vende",
+    "texto": "Nova tela Parados: todos os produtos com estoque e nenhuma venda nos últimos 15 dias, com SKU, nome, preço, última venda, visitas e margem de conversão (vendas ÷ visitas em 30 dias).\n\n- Abaixo da tabela, um gráfico por produto com as últimas 13 semanas: vendas (barras) e visitas (linha).\n- Clique na linha da tabela para ir ao gráfico do produto.\n- Filtros: incluir/excluir fora do Full e anúncios cujo estoque vende por outro anúncio.\n- Os dados vêm da API do ML (pedidos de 90 dias e visitas) e são refeitos a cada 6 h ou pelo botão Recalcular.",
+    "video": "",
+    "imagens": []
+  },
+  {
     "versao": "1.9.42",
     "data": "2026-09-16",
     "titulo": "Aba Perguntas com aviso no Windows",

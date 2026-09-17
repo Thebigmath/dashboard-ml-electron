@@ -9,6 +9,7 @@ const { mapaLimitado, comBackoff, paginarEmParalelo } = require('../lib/paralelo
 const frete = require('../lib/frete');
 const novidades = require('../lib/novidades');
 const perguntas = require('../lib/perguntas');
+const parados = require('../lib/parados');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -1072,6 +1073,17 @@ router.post('/perguntas/verificar', auth, async (req, res) => res.json(await per
 router.post('/perguntas/responder', auth, async (req, res) => {
     try { await perguntas.responder(req.body?.id, req.body?.texto); res.json({ ok: true }); }
     catch (e) { res.status(400).json({ ok: false, erro: String(e.response?.data?.message || e.message) }); }
+});
+
+// ── Produtos parados ────────────────────────────────────────────────────────
+// GET devolve o cache (ou calcula se não há / está velho); POST dispara o recálculo.
+router.get('/parados', auth, async (req, res) => {
+    try { res.json(await parados.obter({ forcar: req.query.forcar === '1' })); }
+    catch (e) { res.status(500).json({ erro: String(e.response?.data?.message || e.message) }); }
+});
+router.post('/parados/atualizar', auth, (req, res) => {
+    if (!parados.estado.rodando) parados.coletar().catch(() => {});
+    res.json({ ok: true, iniciado: true });
 });
 
 // ── Novidades por versão ────────────────────────────────────────────────────
