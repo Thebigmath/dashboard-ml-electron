@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.45",
+    "data": "2026-09-17",
+    "titulo": "Aviso de envio ao Full esquecido em aberto",
+    "texto": "O Mercado Livre não informa pela API quando um envio ao Full chegou, então um envio deixado em Pendente desconta unidades da reposição para sempre.\n\n- Envio aberto há mais de 15 dias agora aparece marcado em vermelho na tela Envio Full (\"há N dias\") e vira aviso no Windows (uma vez por semana por envio).\n- Se chegou, marque Recebido ou arquive.\n- O instalador não traz mais envios de exemplo.",
+    "video": "",
+    "imagens": []
+  },
+  {
     "versao": "1.9.43",
     "data": "2026-09-17",
     "titulo": "Tela Parados: estoque que não vende",

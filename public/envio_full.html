@@ -249,6 +249,11 @@ function renderEnvio(e, inativo=false) {
     const status = rec===0?'Pendente':rec>=uns?'Recebido':'Parcial';
     const badgeClass = rec===0?'badge-pendente':rec>=uns?'badge-recebido':'badge-parcial';
     const cor = rec===0?'#ff9500':rec>=uns?'#00ff99':'#0a84ff';
+    // idade do envio: aberto ha mais de 15 dias e sinal de lote esquecido em "Pendente"
+    const dataEnvio = e.data || e.criado_em;
+    const dias = dataEnvio ? Math.floor((Date.now() - new Date(String(dataEnvio).length === 10 ? dataEnvio + 'T12:00:00' : dataEnvio).getTime()) / 86400000) : null;
+    const abertoVelho = !inativo && rec < uns && dias != null && dias > 15;
+    const idadeHtml = dias == null ? '' : `<div style="font-size:10px;margin-top:3px;color:${abertoVelho ? '#ff453a' : 'var(--l3)'}" title="${abertoVelho ? 'Aberto ha mais de 15 dias: se ja chegou, marque Recebido ou arquive' : 'idade do envio'}">${abertoVelho ? '<i class="bi bi-exclamation-triangle-fill"></i> ' : ''}ha ${dias} dias</div>`;
 
     const skusHtml = e.skus
         ? Object.entries(e.skus).map(([k,v])=>`<span style="font-size:10px;background:var(--s2);border-radius:4px;padding:1px 6px;margin:1px">${k}: ${v}</span>`).join('')
@@ -264,7 +269,7 @@ function renderEnvio(e, inativo=false) {
             ${uns>0?`<div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${cor}"></div></div><div style="font-size:10px;color:var(--l3);margin-top:3px">${rec} recebido (${pct}%)</div>`:''}
         </div>
         <div class="ship-cell">
-            <span class="badge-status ${badgeClass}">${status}</span>
+            <span class="badge-status ${badgeClass}">${status}</span>${idadeHtml}
         </div>
         <div class="ship-cell">
             <div style="font-size:11px;color:var(--l3);margin-bottom:4px"><i class="bi bi-calendar3"></i> ${fmtData(e.data_coleta)}</div>
