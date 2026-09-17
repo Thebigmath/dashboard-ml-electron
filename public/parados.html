@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parados — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:none; }
+        .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-bottom:24px; }
+        .stat-card { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:20px; }
+        .stat-label { font-size:11px; text-transform:uppercase; color:var(--l3); margin-bottom:6px; letter-spacing:.5px; }
+        .stat-value { font-size:22px; font-weight:600; color:var(--l1); }
+        .stat-sub { font-size:11px; color:var(--l3); margin-top:4px; }
+        .bloco { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:22px 24px; margin-bottom:20px; }
+        .bloco-cab { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+        .bloco-cab h5 { margin:0; font-size:15px; font-weight:600; color:var(--l1); }
+        .bloco-cab small { color:var(--l3); font-size:12px; }
+        .pr-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .pr-table th { text-align:left; padding:9px 12px; font-size:11px; text-transform:uppercase; color:var(--l3); letter-spacing:.5px; border-bottom:1px solid var(--sep); font-weight:500; white-space:nowrap; cursor:pointer; user-select:none; }
+        .pr-table th.ativo { color:var(--blue); }
+        .pr-table td { padding:9px 12px; border-bottom:1px solid rgba(128,128,128,.10); color:var(--l1); vertical-align:middle; }
+        .pr-table tr:hover td { background:rgba(128,128,128,.06); cursor:pointer; }
+        .pr-table tr.sel td { background:color-mix(in srgb, var(--blue) 10%, transparent); }
+        .num { text-align:right; font-variant-numeric:tabular-nums; }
+        .sku { color:var(--l3); font-size:11px; font-family:monospace; }
+        .tit { max-width:380px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .chip { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:color-mix(in srgb, var(--l1) 8%, transparent); color:var(--l2); white-space:nowrap; }
+        .chip.full { background:color-mix(in srgb, #0A84FF 16%, transparent); color:#0A84FF; }
+        .chip.aviso { background:color-mix(in srgb, #FF9F0A 18%, transparent); color:#FF9F0A; }
+        .conv-baixa { color:#ff453a; font-weight:600; } .conv-ok { color:#30D158; font-weight:600; }
+        .pesq-input { width:100%; padding:10px 14px; background:var(--s2); border:1px solid var(--sep); border-radius:10px; color:var(--l1); font-size:13px; outline:none; margin-bottom:14px; }
+        .pesq-input:focus { border-color:var(--blue); }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao.primario { background:var(--blue); color:#fff; border-color:transparent; }
+        .btn-acao:disabled { opacity:.6; cursor:default; }
+        .estado { font-size:12px; color:var(--l3); display:flex; align-items:center; gap:8px; }
+        .estado .pulso { width:8px; height:8px; border-radius:50%; background:#30D158; }
+        .estado.rodando .pulso { background:var(--blue); animation:pulsar 1s infinite; }
+        @keyframes pulsar { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .vazio { text-align:center; padding:28px; color:var(--l3); font-size:13px; }
+        .graficos { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:14px; }
+        .gr { background:var(--s2); border:1px solid var(--sep); border-radius:12px; padding:12px 14px; }
+        .gr .gr-cab { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; margin-bottom:6px; }
+        .gr .gr-tit { font-size:12px; font-weight:600; color:var(--l1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .gr .gr-sub { font-size:11px; color:var(--l3); }
+        .gr .plot { position:relative; height:150px; }
+        .legenda { display:flex; gap:14px; font-size:11px; color:var(--l3); }
+        .legenda i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+        .opcoes { display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--l2); }
+        .opcoes label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+        .opcoes input[type=checkbox] { accent-color:var(--blue); }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li onclick="location.href='/'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
+            <li onclick="window.location.href='/perguntas'"><i class="bi bi-chat-dots"></i><span>Perguntas</span></li>
+            <li class="active"><i class="bi bi-pause-circle"></i><span>Parados</span></li>
+            <li onclick="window.location.href='/novidades'"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Produtos parados</h4>
+                <small class="text-secondary">Com estoque e nenhuma venda nos últimos 15 dias — e o histórico de 90 dias de cada um</small>
+            </div>
+            <div class="topbar-right" style="gap:10px">
+                <span class="estado" id="estado"><span class="pulso"></span><span id="estadoTexto">—</span></span>
+                <button class="btn-acao primario" id="btnAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Recalcular agora</button>
+            </div>
+        </nav>
+
+        <div style="padding:24px">
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-label">Produtos parados</div><div class="stat-value" id="cardParados" style="color:#ff9500">—</div><div class="stat-sub" id="cardParadosSub">—</div></div>
+                <div class="stat-card"><div class="stat-label">Unidades paradas</div><div class="stat-value" id="cardUnidades">—</div><div class="stat-sub">estoque somado</div></div>
+                <div class="stat-card"><div class="stat-label">Valor parado (a preço de venda)</div><div class="stat-value" id="cardValor">—</div><div class="stat-sub">estoque × preço do anúncio</div></div>
+                <div class="stat-card"><div class="stat-label">Visitas sem venda (30 d)</div><div class="stat-value" id="cardVisitas">—</div><div class="stat-sub">demanda que não converte</div></div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-pause-circle" style="color:#ff9500"></i> Parados</h5>
+                    <div class="opcoes">
+                        <label><input type="checkbox" id="optIrmaos" onchange="render()"> incluir anúncios cujo estoque vende por outro anúncio</label>
+                        <label><input type="checkbox" id="optForaFull" checked onchange="render()"> incluir fora do Full</label>
+                    </div>
+                </div>
+                <input class="pesq-input" type="text" id="pesquisa" placeholder="🔍  Pesquisar por SKU ou nome..." oninput="render()">
+                <div style="overflow-x:auto">
+                    <table class="pr-table">
+                        <thead><tr>
+                            <th data-ord="sku" onclick="ordenar('sku')">SKU</th>
+                            <th data-ord="titulo" onclick="ordenar('titulo')">Nome</th>
+                            <th>Onde</th>
+                            <th class="num" data-ord="estoque" onclick="ordenar('estoque')">Estoque</th>
+                            <th class="num" data-ord="preco" onclick="ordenar('preco')">Preço</th>
+                            <th data-ord="dias" onclick="ordenar('dias')">Última venda</th>
+                            <th class="num" data-ord="visitas30" onclick="ordenar('visitas30')">Visitas 30 d</th>
+                            <th class="num" data-ord="conversao30" onclick="ordenar('conversao30')" title="vendas 30 d ÷ visitas 30 d">Margem de conversão</th>
+                        </tr></thead>
+                        <tbody id="tabela"><tr><td colspan="8" class="vazio">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bloco">
+                <div class="bloco-cab">
+                    <h5><i class="bi bi-graph-down" style="color:var(--blue)"></i> Performance temporal — últimas 13 semanas</h5>
+                    <div class="legenda"><span><i style="background:#0A84FF"></i>Vendas (un)</span><span><i style="background:#8A8E94"></i>Visitas</span></div>
+                </div>
+                <div class="graficos" id="graficos"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+let dados = null, ordem = { campo: 'estoque', dir: -1 }, poll = null, charts = [];
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dataBr = (s) => s ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) : '';
+const dataHora = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#888';
+
+function lista() {
+    const f = document.getElementById('pesquisa').value.trim().toLowerCase();
+    const irm = document.getElementById('optIrmaos').checked, fora = document.getElementById('optForaFull').checked;
+    let L = (dados.produtos || []).filter(p => (irm || !p.irmao_vendeu) && (fora || p.onde === 'Full'));
+    if (f) L = L.filter(p => (p.sku || '').toLowerCase().includes(f) || (p.titulo || '').toLowerCase().includes(f));
+    const k = ordem.campo, d = ordem.dir;
+    const val = (p) => k === 'dias' ? (p.dias_sem_venda == null ? 9999 : p.dias_sem_venda) : (p[k] == null ? -1 : p[k]);
+    return L.sort((a, b) => { const x = val(a), y = val(b); return (typeof x === 'string' ? x.localeCompare(y) : x - y) * d; });
+}
+function ordenar(campo) { ordem = ordem.campo === campo ? { campo, dir: -ordem.dir } : { campo, dir: campo === 'sku' || campo === 'titulo' ? 1 : -1 }; render(); }
+
+function render() {
+    const L = lista();
+    document.querySelectorAll('.pr-table th[data-ord]').forEach(th => th.classList.toggle('ativo', th.dataset.ord === ordem.campo));
+    const total = dados.produtos.length, ocultos = total - L.length;
+    document.getElementById('cardParados').textContent = L.length;
+    document.getElementById('cardParadosSub').textContent = `de ${dados.total_base} anúncios na base` + (ocultos ? ` · ${ocultos} ocultos pelos filtros` : '');
+    document.getElementById('cardUnidades').textContent = L.reduce((s, p) => s + p.estoque, 0).toLocaleString('pt-BR');
+    document.getElementById('cardValor').textContent = brl(L.reduce((s, p) => s + p.estoque * (p.preco || 0), 0));
+    document.getElementById('cardVisitas').textContent = L.reduce((s, p) => s + (p.visitas30 || 0), 0).toLocaleString('pt-BR');
+    const e = dados.estado || {};
+    document.getElementById('estado').classList.toggle('rodando', !!e.rodando);
+    document.getElementById('estadoTexto').textContent = e.rodando ? 'Recalculando… ' + (e.fase || '') : (e.ultimo_erro ? 'Falha: ' + e.ultimo_erro : 'Dados de ' + dataHora(dados.gerado_em));
+    document.getElementById('btnAtualizar').disabled = !!e.rodando;
+
+    if (!L.length) { document.getElementById('tabela').innerHTML = '<tr><td colspan="8" class="vazio">Nenhum produto parado com esses filtros.</td></tr>'; }
+    else document.getElementById('tabela').innerHTML = L.map(p => {
+        const conv = p.conversao30 == null ? '—' : `<span class="${p.conversao30 < 1 ? 'conv-baixa' : 'conv-ok'}">${p.conversao30.toFixed(1)}%</span>`;
+        const ult = p.ultima_venda ? `${dataBr(p.ultima_venda)} <span class="sku">há ${p.dias_sem_venda} d</span>` : '<span class="sku">sem venda em 90 d</span>';
+        return `<tr onclick="focar('${esc(p.item_id)}')" id="lin-${esc(p.item_id)}">
+            <td class="sku">${esc(p.sku)}</td>
+            <td><div class="tit" title="${esc(p.titulo)}">${esc(p.titulo)}</div>${p.irmao_vendeu ? `<span class="chip aviso" title="outro anúncio com o mesmo estoque no Full vendeu ${p.irmao_vendeu} un em 15 d">estoque vende por outro anúncio</span>` : ''}${p.status !== 'active' ? ` <span class="chip">${esc(p.status)}</span>` : ''}</td>
+            <td><span class="chip ${p.onde === 'Full' ? 'full' : ''}">${p.onde}</span></td>
+            <td class="num" style="font-weight:600">${p.estoque}</td>
+            <td class="num">${brl(p.preco)}</td>
+            <td>${ult}</td>
+            <td class="num">${p.visitas30 == null ? '—' : p.visitas30}</td>
+            <td class="num">${conv}</td>
+        </tr>`;
+    }).join('');
+    renderGraficos(L);
+}
+
+function renderGraficos(L) {
+    charts.forEach(c => c.destroy()); charts = [];
+    const el = document.getElementById('graficos');
+    if (!L.length) { el.innerHTML = '<div class="vazio" style="grid-column:1/-1">Nada para mostrar.</div>'; return; }
+    el.innerHTML = L.map(p => `<div class="gr" id="gr-${esc(p.item_id)}">
+        <div class="gr-cab"><div style="min-width:0"><div class="gr-tit" title="${esc(p.titulo)}">${esc(p.titulo)}</div><div class="gr-sub">${esc(p.sku)} · ${p.onde} · ${p.estoque} un · ${brl(p.preco)} · ${p.un90} vendas / ${p.visitas90 ?? '—'} visitas em 90 d</div></div></div>
+        <div class="plot"><canvas id="cv-${esc(p.item_id)}"></canvas></div>
+    </div>`).join('');
+    // 300+ graficos de uma vez travam a tela: cada um so e desenhado quando entra na area visivel
+    if (observador) observador.disconnect();
+    observador = new IntersectionObserver((entradas) => {
+        for (const e of entradas) { if (!e.isIntersecting) continue; observador.unobserve(e.target); desenhar(e.target.dataset.id); }
+    }, { rootMargin: '400px 0px' });
+    porId = Object.fromEntries(L.map(p => [p.item_id, p]));
+    document.querySelectorAll('#graficos .gr').forEach(g => { g.dataset.id = g.id.slice(3); observador.observe(g); });
+}
+
+let observador = null, porId = {};
+function desenhar(id) {
+    const p = porId[id], cv = document.getElementById('cv-' + id); if (!p || !cv || cv.dataset.pronto) return;
+    cv.dataset.pronto = '1';
+    const ink2 = css('--l3'), grid = 'rgba(128,128,128,.15)';
+    const labels = p.serie.map(s => s.ini.slice(8, 10) + '/' + s.ini.slice(5, 7));
+    charts.push(new Chart(cv, {
+        data: {
+            labels,
+            datasets: [
+                { type: 'bar', label: 'Vendas', data: p.serie.map(s => s.vendas), backgroundColor: '#0A84FF', borderRadius: 3, yAxisID: 'y', maxBarThickness: 18, order: 2 },
+                { type: 'line', label: 'Visitas', data: p.serie.map(s => s.visitas), borderColor: '#8A8E94', borderWidth: 2, pointRadius: 0, tension: .3, yAxisID: 'y2', order: 1 },
+            ],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { title: (x) => 'semana de ' + x[0].label } } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: ink2, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
+                y: { beginAtZero: true, position: 'left', grid: { color: grid }, ticks: { color: '#0A84FF', font: { size: 10 }, precision: 0 }, title: { display: true, text: 'vendas', color: '#0A84FF', font: { size: 10 } } },
+                y2: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { color: ink2, font: { size: 10 }, precision: 0 }, title: { display: true, text: 'visitas', color: ink2, font: { size: 10 } } },
+            },
+        },
+    }));
+}
+
+function focar(id) {
+    document.querySelectorAll('.pr-table tr.sel').forEach(t => t.classList.remove('sel'));
+    document.getElementById('lin-' + id)?.classList.add('sel');
+    desenhar(id);
+    const g = document.getElementById('gr-' + id);
+    if (g) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); g.style.outline = '2px solid var(--blue)'; setTimeout(() => g.style.outline = '', 1800); }
+}
+
+async function carregar(forcar) {
+    const r = await fetch('/api/parados' + (forcar ? '?forcar=1' : ''));
+    dados = await r.json();
+    if (dados.erro) throw new Error(dados.erro);
+    render();
+    if (dados.estado && dados.estado.rodando) { if (!poll) poll = setInterval(() => carregar(false).catch(() => {}), 3000); }
+    else if (poll) { clearInterval(poll); poll = null; }
+}
+async function atualizar() {
+    document.getElementById('btnAtualizar').disabled = true;
+    fetch('/api/parados/atualizar', { method: 'POST' }).catch(() => {});
+    setTimeout(() => carregar(false).catch(() => {}), 800);
+    if (!poll) poll = setInterval(() => carregar(false).catch(() => {}), 3000);
+}
+
+carregar(false).then(() => document.body.classList.add('page-ready')).catch(e => {
+    document.getElementById('tabela').innerHTML = `<tr><td colspan="8" class="vazio" style="color:#ff453a">Erro: ${esc(e.message)}</td></tr>`;
+    document.body.classList.add('page-ready');
+});
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

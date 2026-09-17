@@ -21,6 +21,7 @@ app.get('/valor_estoque', (req, res) => res.sendFile(path.join(__dirname, 'publi
 app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.html')));
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
 app.get('/perguntas', (req, res) => res.sendFile(path.join(__dirname, 'public/perguntas.html')));
+app.get('/parados', (req, res) => res.sendFile(path.join(__dirname, 'public/parados.html')));
 
 // Arquivos estáticos
 // etag: true + maxAge 0 faz o navegador revalidar a cada carga em vez de
