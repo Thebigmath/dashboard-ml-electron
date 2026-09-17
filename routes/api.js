@@ -933,6 +933,9 @@ router.post('/salvar_envio', auth, (req, res) => {
         const idx = envios.findIndex(e => e.numero === body.numero);
         const entry = { ...body };
         delete entry._excluir;
+        // data de criação: é por ela que o app avisa "envio aberto há N dias"
+        if (idx >= 0) entry.criado_em = envios[idx].criado_em || entry.criado_em || new Date().toISOString();
+        else entry.criado_em = entry.criado_em || new Date().toISOString();
         if (idx >= 0) envios[idx] = entry;
         else envios.push(entry);
     }
