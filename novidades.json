@@ -3,7 +3,7 @@
     "versao": "1.9.46",
     "data": "2026-09-17",
     "titulo": "Monitor de reputação (risco de perder o Platinum)",
-    "texto": "O app lê a reputação da conta no Mercado Livre a cada 30 minutos e compara as taxas de 60 dias com os limites do MercadoLíder: reclamações 1%, cancelamentos 1%, atraso no envio 5%.\n\n- Passou de 75% de qualquer limite: tarja vermelha no topo de todas as telas (\"RISCO DE PERDER A CONTA PLATINUM\"), aviso urgente no Windows e 3 beeps.\n- O × na tarja esconde por 12 horas; o aviso repete a cada 6 h enquanto o risco durar.",
+    "texto": "O app lê a reputação da conta no Mercado Livre a cada 4 minutos e compara as taxas de 60 dias com os limites do MercadoLíder: reclamações 1%, cancelamentos 1%, atraso no envio 5%.\n\n- Passou de 75% de qualquer limite: tarja vermelha no topo de todas as telas (\"RISCO DE PERDER A CONTA PLATINUM\"), aviso urgente no Windows e 3 beeps.\n- O × na tarja esconde por 12 horas; o aviso repete a cada 6 h enquanto o risco durar.",
     "video": "",
     "imagens": []
   },
