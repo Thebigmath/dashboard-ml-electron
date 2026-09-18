@@ -75,9 +75,11 @@ const server = require('./server');
 
 // Avisos do monitor de frete viram notificação nativa do Windows; clicar
 // traz o app pra frente já na tela de frete.
-require('./lib/notificar').usarNotificador((titulo, corpo, rota) => {
+require('./lib/notificar').usarNotificador((titulo, corpo, rota, opcoes = {}) => {
+    // Aviso urgente (reputação em risco): beep do sistema 3x, além do toast.
+    if (opcoes.beep) { let i = 0; const id = setInterval(() => { shell.beep(); if (++i >= 3) clearInterval(id); }, 450); }
     if (!Notification.isSupported()) return;
-    const n = new Notification({ title: titulo, body: corpo });
+    const n = new Notification({ title: titulo, body: corpo, urgency: opcoes.urgente ? 'critical' : 'normal', timeoutType: opcoes.urgente ? 'never' : 'default' });
     n.on('click', () => {
         if (!mainWindow) return;
         mostrarJanela();

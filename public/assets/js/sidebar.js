@@ -80,6 +80,33 @@
         document.addEventListener('perguntas-mudaram', atualizarPerguntas);
     }
 
+    // ── Tarja de risco de reputação (todas as telas) ──────────────────────────
+    const pintarReputacao = (r) => {
+        document.getElementById('tarjaReputacao')?.remove();
+        if (!r || !r.em_risco) return;
+        // o X esconde a tarja por 12 h (só neste PC); o aviso do Windows continua
+        let ocultaAte = 0; try { ocultaAte = Number(localStorage.getItem('tarjaReputacaoOcultaAte') || 0); } catch {}
+        if (Date.now() < ocultaAte) return;
+        const pct = (x) => (x * 100).toFixed(2).replace('.', ',') + '%';
+        const ruins = (r.metricas || []).filter(m => m.uso >= (r.alerta_em || 0.75));
+        const t = document.createElement('div');
+        t.id = 'tarjaReputacao';
+        t.style.cssText = 'position:sticky;top:0;z-index:50;background:#C93E2E;color:#fff;padding:10px 18px;font-size:13px;font-weight:600;display:flex;gap:14px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+        t.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="font-size:18px"></i><span>RISCO DE PERDER A CONTA PLATINUM</span>' +
+            ruins.map(m => `<span style="font-weight:500;opacity:.95">${m.nome}: ${pct(m.taxa)} de ${pct(m.limite)} (${Math.round(m.uso * 100)}% do limite)</span>`).join('') +
+            `<span style="margin-left:auto;font-weight:400;font-size:11px;opacity:.85">${r.nickname || ''} · ${r.medalha || ''} · verificado ${r.verificado_em ? new Date(r.verificado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>` +
+            '<button id="tarjaReputacaoFechar" title="Esconder por 12 horas" style="background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center">×</button>';
+        t.querySelector('#tarjaReputacaoFechar').addEventListener('click', () => {
+            try { localStorage.setItem('tarjaReputacaoOcultaAte', String(Date.now() + 12 * 3600 * 1000)); } catch {}
+            t.remove();
+        });
+        const alvo = document.querySelector('.content') || document.body;
+        alvo.insertBefore(t, alvo.firstChild);
+    };
+    const atualizarReputacao = async () => { try { pintarReputacao(await fetch('/api/reputacao').then(r => r.json())); } catch {} };
+    atualizarReputacao();
+    setInterval(atualizarReputacao, 5 * 60 * 1000);
+
     // ── Versão no rodapé ─────────────────────────────────────────────────────
     const footer = document.querySelector('.sidebar-footer');
     if (footer && appInfo.versao) footer.textContent = `v${appInfo.versao}`;
