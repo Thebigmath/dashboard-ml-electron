@@ -46,6 +46,8 @@ module.exports = {
         require('./lib/perguntas').iniciarAgendador();
         // envio ao Full esquecido em aberto: aviso 2 min depois de subir e a cada 12 h
         require('./lib/envios_alerta').iniciarAgendador();
+        // reputação: 40 s depois de subir e a cada 30 min
+        require('./lib/reputacao').iniciarAgendador();
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
         setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
@@ -54,6 +56,7 @@ module.exports = {
         require('./lib/frete').pararAgendador();
         require('./lib/perguntas').pararAgendador();
         require('./lib/envios_alerta').pararAgendador();
+        require('./lib/reputacao').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };

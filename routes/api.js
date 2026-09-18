@@ -10,6 +10,7 @@ const frete = require('../lib/frete');
 const novidades = require('../lib/novidades');
 const perguntas = require('../lib/perguntas');
 const parados = require('../lib/parados');
+const reputacao = require('../lib/reputacao');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -1077,6 +1078,11 @@ router.post('/perguntas/responder', auth, async (req, res) => {
     try { await perguntas.responder(req.body?.id, req.body?.texto); res.json({ ok: true }); }
     catch (e) { res.status(400).json({ ok: false, erro: String(e.response?.data?.message || e.message) }); }
 });
+
+// ── Reputação no ML ─────────────────────────────────────────────────────────
+router.get('/reputacao', auth, (req, res) => res.json(reputacao.resumo()));
+router.post('/reputacao/verificar', auth, async (req, res) => { await reputacao.verificar().catch(() => {}); res.json(reputacao.resumo()); });
+router.post('/reputacao/config', auth, (req, res) => res.json(reputacao.salvarConfiguracao(req.body || {})));
 
 // ── Produtos parados ────────────────────────────────────────────────────────
 // GET devolve o cache (ou calcula se não há / está velho); POST dispara o recálculo.
