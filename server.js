@@ -46,7 +46,7 @@ module.exports = {
         require('./lib/perguntas').iniciarAgendador();
         // envio ao Full esquecido em aberto: aviso 2 min depois de subir e a cada 12 h
         require('./lib/envios_alerta').iniciarAgendador();
-        // reputação: 40 s depois de subir e a cada 30 min
+        // reputação: 40 s depois de subir e a cada 4 min
         require('./lib/reputacao').iniciarAgendador();
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
