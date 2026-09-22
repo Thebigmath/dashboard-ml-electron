@@ -34,6 +34,8 @@
         .pesq-input:focus { border-color:var(--blue); }
         .btn-salvar { background:var(--blue); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; }
         .btn-salvar:hover { opacity:.85; }
+        .th-sort { cursor:pointer; font-size:12px; color:var(--l3); margin-left:4px; transition:color .15s; }
+        .th-sort:hover, .th-sort.ativo { color:var(--blue); }
     </style>
 </head>
 <body>
@@ -71,7 +73,7 @@
         <nav class="topbar">
             <div>
                 <h4 class="mb-0">Valor do Estoque</h4>
-                <small class="text-secondary">Informe o custo por produto ou importe uma planilha .xlsx/.csv com colunas SKU e CUSTO</small>
+                <small class="text-secondary">Produtos no Full — informe o custo ou importe uma planilha .xlsx/.csv com colunas SKU e CUSTO</small>
             </div>
             <div class="topbar-right" style="gap:10px">
                 <button id="btnSync" onclick="sincronizar()" title="Lê automaticamente do caminho configurado em config.json" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--sep);background:none;color:var(--l1);font-size:13px;font-weight:600;cursor:pointer;">
@@ -102,8 +104,9 @@
                     <div class="stat-value" id="semCusto" style="color:#ff9500">—</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Total de SKUs</div>
+                    <div class="stat-label">SKUs no Full</div>
                     <div class="stat-value" id="totalSkus">—</div>
+                    <div id="notaFull" style="font-size:11px;color:var(--l3);margin-top:4px"></div>
                 </div>
             </div>
 
@@ -118,7 +121,9 @@
                                 <th>SKU</th>
                                 <th style="text-align:right">Estoque</th>
                                 <th style="text-align:right">Custo Unit. (R$)</th>
-                                <th style="text-align:right">Valor Total</th>
+                                <th style="text-align:right">Valor Total
+                                    <i id="ordValor" class="bi bi-arrow-down-up th-sort" title="Ordenar do maior para o menor" onclick="toggleOrdemValor()"></i>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tbody">
@@ -133,9 +138,11 @@
 </div>
 
 <script>
-let produtos = [];
+let produtos = [];      // so os do Full (o valor de estoque e do galpao do ML)
+let todosProdutos = [];  // tudo que veio do motor, para o rotulo "N fora do Full"
 let custos = {};
 let filtro = '';
+let ordemValor = null;   // null -> 'desc' -> 'asc' -> null
 
 function fmt(v) {
     return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -152,12 +159,36 @@ function recalcularTotal() {
     document.getElementById('comCusto').textContent = com;
     document.getElementById('semCusto').textContent = sem;
     document.getElementById('totalSkus').textContent = produtos.length;
+    const fora = todosProdutos.length - produtos.length;
+    const nota = document.getElementById('notaFull');
+    if (nota) nota.textContent = fora > 0 ? `${fora} produtos fora do Full não entram nesta conta` : '';
+}
+
+// Clique na setinha: maior -> menor -> ordem original (a que veio do motor).
+function toggleOrdemValor() {
+    ordemValor = ordemValor === null ? 'desc' : ordemValor === 'desc' ? 'asc' : null;
+    const i = document.getElementById('ordValor');
+    if (i) {
+        i.className = 'th-sort ' + (ordemValor === 'desc' ? 'bi bi-sort-down ativo' : ordemValor === 'asc' ? 'bi bi-sort-up ativo' : 'bi bi-arrow-down-up');
+        i.title = ordemValor === 'desc' ? 'Maior → menor (clique: menor → maior)' : ordemValor === 'asc' ? 'Menor → maior (clique: ordem normal)' : 'Ordenar do maior para o menor';
+    }
+    renderizar();
+}
+
+function valorDe(p) {
+    return Number(custos[(p.sku||'').toLowerCase()] || 0) * Number(p.estoque || 0);
 }
 
 function renderizar() {
-    const lista = filtro
+    let lista = filtro
         ? produtos.filter(p => (p.titulo||'').toLowerCase().includes(filtro) || (p.sku||'').toLowerCase().includes(filtro))
         : produtos;
+
+    if (ordemValor) {
+        const sinal = ordemValor === 'desc' ? -1 : 1;
+        // estavel: dentro do mesmo valor, mantem a ordem que veio do motor
+        lista = lista.map((p, i) => [p, i]).sort((a, b) => sinal * (valorDe(a[0]) - valorDe(b[0])) || a[1] - b[1]).map(x => x[0]);
+    }
 
     if (!lista.length) {
         document.getElementById('tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--l3)">Nenhum produto encontrado.</td></tr>';
@@ -297,7 +328,10 @@ async function init() {
     const [rd, rc] = await Promise.all([fetch('/api/dados'), fetch('/api/custos')]);
     const d = await rd.json();
     custos = await rc.json();
-    produtos = d.produtos || [];
+    todosProdutos = d.produtos || [];
+    // O valor de estoque e o do galpao do Full: fora do Full o "estoque" e a
+    // quantidade declarada no anuncio, que nao representa mercadoria nossa parada.
+    produtos = todosProdutos.filter(p => p.eFull);
     recalcularTotal();
     renderizar();
     document.body.classList.add('page-ready');
