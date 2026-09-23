@@ -20,6 +20,7 @@ app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/e
 app.get('/valor_estoque', (req, res) => res.sendFile(path.join(__dirname, 'public/valor_estoque.html')));
 app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.html')));
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
+app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
 app.get('/perguntas', (req, res) => res.sendFile(path.join(__dirname, 'public/perguntas.html')));
 app.get('/parados', (req, res) => res.sendFile(path.join(__dirname, 'public/parados.html')));
 
@@ -48,6 +49,8 @@ module.exports = {
         require('./lib/envios_alerta').iniciarAgendador();
         // reputação: 40 s depois de subir e a cada 4 min
         require('./lib/reputacao').iniciarAgendador();
+        // notificações globais: feed dos próximos projetos, 45 s depois e a cada 30 min
+        require('./lib/avisos').iniciarAgendador();
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
         setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
@@ -57,6 +60,7 @@ module.exports = {
         require('./lib/perguntas').pararAgendador();
         require('./lib/envios_alerta').pararAgendador();
         require('./lib/reputacao').pararAgendador();
+        require('./lib/avisos').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };

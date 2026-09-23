@@ -61,6 +61,21 @@
         document.addEventListener('novidades-vistas', () => pintar(0));
     }
 
+    // ── Contador de notificações globais não vistas ──────────────────────────
+    const liAvisos = [...document.querySelectorAll('.sidebar .menu li')].find(li => li.querySelector('span')?.textContent.trim() === 'Notificações globais');
+    if (liAvisos) {
+        const pintarAvisos = (n) => {
+            liAvisos.querySelector('.menu-badge')?.remove();
+            if (!n) return;
+            const b = document.createElement('span');
+            b.className = 'menu-badge';
+            b.textContent = n;
+            liAvisos.appendChild(b);
+        };
+        try { pintarAvisos((await fetch('/api/avisos').then(r => r.json())).nao_vistos); } catch {}
+        document.addEventListener('avisos-vistos', () => pintarAvisos(0));
+    }
+
     // ── Contador de perguntas sem resposta ───────────────────────────────────
     const liPerguntas = [...document.querySelectorAll('.sidebar .menu li')].find(li => li.querySelector('span')?.textContent.trim() === 'Perguntas');
     if (liPerguntas) {

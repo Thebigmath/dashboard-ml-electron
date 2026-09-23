@@ -8,6 +8,7 @@ const TokenManager = require('../lib/tokenManager');
 const { mapaLimitado, comBackoff, paginarEmParalelo } = require('../lib/paralelo');
 const frete = require('../lib/frete');
 const novidades = require('../lib/novidades');
+const avisos = require('../lib/avisos');
 const perguntas = require('../lib/perguntas');
 const parados = require('../lib/parados');
 const reputacao = require('../lib/reputacao');
@@ -1098,6 +1099,14 @@ router.post('/parados/atualizar', auth, (req, res) => {
 // ── Novidades por versão ────────────────────────────────────────────────────
 router.get('/novidades', auth, (req, res) => res.json(novidades.listar()));
 router.post('/novidades/visto', auth, (req, res) => res.json(novidades.marcarVisto()));
+
+// Notificacoes globais: feed remoto com os avisos sobre os proximos projetos
+router.get('/avisos', auth, (req, res) => res.json(avisos.listar()));
+router.post('/avisos/visto', auth, (req, res) => res.json(avisos.marcarVisto()));
+router.post('/avisos/verificar', auth, async (req, res) => {
+    try { res.json(await avisos.verificar()); }
+    catch (e) { res.status(500).json({ ok: false, erro: e.message }); }
+});
 
 // ── Gerar planilha Full ─────────────────────────────────────────────────────
 // Formato exigido pelo ML: sheet "Dados Mercado Livre", coluna D = item_id,
