@@ -1,0 +1,13 @@
+[
+  {
+    "id": "2026-09-canal-avisos",
+    "data": "2026-09-22",
+    "tag": "Aviso",
+    "titulo": "Canal de notificações globais no ar",
+    "resumo": "A partir de agora os avisos sobre projetos novos chegam aqui, sem precisar atualizar o app.",
+    "texto": "Esta tela lê um comunicado publicado fora do app. Quando entrar um aviso novo, o Windows mostra a notificação e o número aparece no menu lateral.\n\nA diferença para a tela de Novidades:\n\n- Novidades conta o que mudou em cada versão do Dashboard e chega junto com a atualização\n- Notificações globais anuncia o que está sendo construído e vale para as duas contas, Flavia Stock e Cordeiro Car\n\nO app procura comunicados novos 45 segundos depois de ligar e de meia em meia hora. O botão \"Buscar agora\" força a checagem.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  }
+]
