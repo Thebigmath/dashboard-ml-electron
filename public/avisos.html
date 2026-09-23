@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novidades — Dashboard ML</title>
+    <title>Notificações globais — Dashboard ML</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
         body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
         body.page-ready { opacity:1; transform:none; }
-        .nv-grid { display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; }
+        .nv-grid { display:grid; grid-template-columns:260px minmax(0,1fr); gap:20px; }
         @media (max-width: 900px) { .nv-grid { grid-template-columns:1fr; } }
         .nv-lista { display:flex; flex-direction:column; gap:8px; }
-        .nv-versao { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:12px 14px; cursor:pointer; transition:border-color .15s, background .15s; }
-        .nv-versao:hover { border-color:var(--sep2); }
-        .nv-versao.ativa { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 8%, var(--s1)); }
-        .nv-versao .v { font-size:13px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; }
-        .nv-versao .t { font-size:12px; color:var(--l3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .nv-item { background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:12px 14px; cursor:pointer; transition:border-color .15s, background .15s; }
+        .nv-item:hover { border-color:var(--sep2); }
+        .nv-item.ativa { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 8%, var(--s1)); }
+        .nv-item .v { font-size:13px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; }
+        .nv-item .t { font-size:12px; color:var(--l3); margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
         .nv-novo { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; background:var(--blue); color:#fff; border-radius:999px; padding:1px 7px; }
-        .nv-atual { font-size:10px; color:var(--l3); border:1px solid var(--sep); border-radius:999px; padding:1px 7px; }
+        .nv-tag { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); border:1px solid var(--sep); border-radius:999px; padding:1px 8px; }
         .nv-detalhe { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:24px; }
         .nv-cab { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
         .nv-cab h5 { margin:0; font-size:18px; font-weight:600; color:var(--l1); }
         .nv-cab small { color:var(--l3); font-size:12px; }
+        .nv-resumo { font-size:14px; color:var(--l2); margin-bottom:16px; max-width:860px; }
         .nv-video { aspect-ratio:16/9; width:100%; max-width:860px; background:#000; border-radius:12px; overflow:hidden; margin-bottom:18px; }
         .nv-video iframe, .nv-video video { width:100%; height:100%; border:0; display:block; }
         .nv-texto { font-size:14px; line-height:1.65; color:var(--l1); max-width:860px; }
@@ -32,11 +33,12 @@
         .nv-texto li { margin-bottom:4px; }
         .nv-imagens { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:16px; max-width:860px; }
         .nv-imagens img { width:100%; border-radius:10px; border:1px solid var(--sep); cursor:zoom-in; background:var(--s2); }
-        .nv-vazio { text-align:center; padding:40px; color:var(--l3); font-size:13px; }
+        .nv-vazio { text-align:center; padding:40px; color:var(--l3); font-size:13px; line-height:1.6; }
         .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
         .btn-acao:disabled { opacity:.5; cursor:default; }
         .nv-zoom { position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:9999; cursor:zoom-out; }
         .nv-zoom img { max-width:94vw; max-height:94vh; border-radius:8px; }
+        .nv-link { display:inline-flex; align-items:center; gap:6px; margin-top:18px; font-size:13px; font-weight:600; color:var(--blue); text-decoration:none; }
     </style>
 </head>
 <body>
@@ -61,8 +63,8 @@
             <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
             <li onclick="window.location.href='/perguntas'"><i class="bi bi-chat-dots"></i><span>Perguntas</span></li>
             <li onclick="window.location.href='/parados'"><i class="bi bi-pause-circle"></i><span>Parados</span></li>
-            <li class="active"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
-            <li onclick="window.location.href='/avisos'"><i class="bi bi-broadcast"></i><span>Notificações globais</span></li>
+            <li onclick="window.location.href='/novidades'"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
+            <li class="active"><i class="bi bi-broadcast"></i><span>Notificações globais</span></li>
             <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
         </ul>
         <div class="sidebar-footer">v5.0</div>
@@ -72,10 +74,12 @@
     <main class="content">
         <nav class="topbar">
             <div>
-                <h4 class="mb-0">Novidades</h4>
-                <small class="text-secondary">O que mudou em cada versão do app</small>
+                <h4 class="mb-0">Notificações globais</h4>
+                <small class="text-secondary">Novidades e projetos que estão por vir</small>
             </div>
             <div class="topbar-right" style="gap:10px">
+                <small class="text-secondary" id="verificado"></small>
+                <button class="btn-acao" id="btnBuscar" onclick="buscar()"><i class="bi bi-arrow-clockwise"></i> Buscar agora</button>
                 <button class="btn-acao" id="btnVisto" onclick="marcarVisto()"><i class="bi bi-check2-all"></i> Marcar tudo como visto</button>
             </div>
         </nav>
@@ -91,11 +95,10 @@
 
 <script>
 let dados = null;
-let selecionada = null;
+let selecionado = null;
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const dataBr = (s) => { if (!s) return ''; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : esc(s); };
-const maisNova = (a, b) => { const pa = a.split('.').map(Number), pb = b.split('.').map(Number); for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; } return 0; };
 
 // YouTube (watch, youtu.be, shorts) vira embed; qualquer outra coisa é tratada como arquivo de vídeo
 function videoHtml(url) {
@@ -118,30 +121,31 @@ function textoHtml(texto) {
 
 function renderLista() {
     const el = document.getElementById('lista');
-    if (!dados.itens.length) { el.innerHTML = ''; return; }
-    el.innerHTML = dados.itens.map(n => {
-        const nova = maisNova(n.versao, dados.vista_ate || '0') > 0;
-        const atual = n.versao === dados.versao_atual;
-        return `<div class="nv-versao ${n.versao === selecionada ? 'ativa' : ''}" onclick="selecionar('${esc(n.versao)}')">
-            <div class="v">v${esc(n.versao)} ${nova ? '<span class="nv-novo">novo</span>' : ''} ${atual ? '<span class="nv-atual">instalada</span>' : ''}</div>
-            <div class="t" title="${esc(n.titulo)}">${esc(n.titulo)}</div>
-        </div>`;
-    }).join('');
+    el.innerHTML = dados.itens.map(a => `
+        <div class="nv-item ${a.id === selecionado ? 'ativa' : ''}" onclick="selecionar(${JSON.stringify(a.id).replace(/"/g, '&quot;')})">
+            <div class="v">${esc(a.titulo)} ${a.novo ? '<span class="nv-novo">novo</span>' : ''}</div>
+            <div class="t">${a.tag ? `<span class="nv-tag">${esc(a.tag)}</span> ` : ''}${esc(a.resumo || dataBr(a.data))}</div>
+        </div>`).join('');
 }
 
 function renderDetalhe() {
     const el = document.getElementById('detalhe');
-    const n = dados.itens.find(x => x.versao === selecionada);
-    if (!n) { el.innerHTML = '<div class="nv-vazio">Nenhuma novidade registrada ainda. As notas de cada versão aparecem aqui quando o app atualizar.</div>'; return; }
+    const a = dados.itens.find(x => x.id === selecionado);
+    if (!a) {
+        el.innerHTML = '<div class="nv-vazio">Nenhum comunicado por enquanto.<br>Aqui aparecem os avisos sobre os próximos projetos — sem precisar atualizar o app.</div>';
+        return;
+    }
     el.innerHTML = `
-        <div class="nv-cab"><h5>${esc(n.titulo)}</h5><small>${dataBr(n.data)}${n.data ? ' · ' : ''}v${esc(n.versao)}</small></div>
-        ${videoHtml(n.video)}
-        <div class="nv-texto">${textoHtml(n.texto)}</div>
-        ${n.imagens.length ? '<div class="nv-imagens">' + n.imagens.map(u => `<img src="${esc(u)}" alt="" loading="lazy" onclick="ampliar('${esc(u)}')">`).join('') + '</div>' : ''}
+        <div class="nv-cab"><h5>${esc(a.titulo)}</h5><small>${a.tag ? esc(a.tag) + (a.data ? ' · ' : '') : ''}${dataBr(a.data)}</small></div>
+        ${a.resumo ? `<div class="nv-resumo">${esc(a.resumo)}</div>` : ''}
+        ${videoHtml(a.video)}
+        <div class="nv-texto">${textoHtml(a.texto)}</div>
+        ${a.imagens.length ? '<div class="nv-imagens">' + a.imagens.map(u => `<img src="${esc(u)}" alt="" loading="lazy" onclick="ampliar('${esc(u)}')">`).join('') + '</div>' : ''}
+        ${a.link ? `<a class="nv-link" href="${esc(a.link)}" target="_blank" rel="noopener">Saiba mais <i class="bi bi-box-arrow-up-right"></i></a>` : ''}
     `;
 }
 
-function selecionar(v) { selecionada = v; renderLista(); renderDetalhe(); }
+function selecionar(id) { selecionado = id; renderLista(); renderDetalhe(); }
 
 function ampliar(url) {
     const z = document.createElement('div');
@@ -151,22 +155,35 @@ function ampliar(url) {
     document.body.appendChild(z);
 }
 
-async function marcarVisto() {
-    const r = await fetch('/api/novidades/visto', { method: 'POST' });
-    dados = await r.json();
+function aplicar(d) {
+    dados = d;
+    if (!dados.itens.some(a => a.id === selecionado)) selecionado = dados.itens.length ? dados.itens[0].id : null;
     renderLista();
-    document.getElementById('btnVisto').disabled = true;
-    document.dispatchEvent(new CustomEvent('novidades-vistas'));
+    renderDetalhe();
+    document.getElementById('btnVisto').disabled = !dados.nao_vistos;
+    const v = document.getElementById('verificado');
+    v.textContent = dados.verificado_em ? 'Atualizado ' + new Date(dados.verificado_em).toLocaleString('pt-BR') : '';
+}
+
+async function marcarVisto() {
+    aplicar(await fetch('/api/avisos/visto', { method: 'POST' }).then(r => r.json()));
+    document.dispatchEvent(new CustomEvent('avisos-vistos'));
+}
+
+async function buscar() {
+    const b = document.getElementById('btnBuscar');
+    b.disabled = true;
+    try {
+        const d = await fetch('/api/avisos/verificar', { method: 'POST' }).then(r => r.json());
+        aplicar(d);
+        if (d.ok === false) document.getElementById('verificado').textContent = 'Sem conexão com o feed';
+    } finally { b.disabled = false; }
 }
 
 async function init() {
-    const r = await fetch('/api/novidades');
-    dados = await r.json();
-    selecionada = dados.itens.length ? dados.itens[0].versao : null;
-    renderLista();
-    renderDetalhe();
-    if (!dados.nao_vistas) document.getElementById('btnVisto').disabled = true;
+    aplicar(await fetch('/api/avisos').then(r => r.json()));
     document.body.classList.add('page-ready');
+    if (!dados.itens.length) buscar();
 }
 init().catch(e => {
     document.getElementById('detalhe').innerHTML = `<div class="nv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
