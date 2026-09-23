@@ -155,6 +155,8 @@ window.setFiltroCategoria = function(cat) {
         b.classList.toggle('cat-filter-ativo', b.dataset.cat === cat);
     });
     sincronizarRotuloCategoria();
+    const caixa = document.getElementById('caixaEstrela');
+    if (caixa) caixa.style.display = cat === 'estrela' ? 'flex' : 'none';
     aplicarFiltros();
 };
 /* ── Fila de categorias no menu de tres pontinhos ─────────────────── */
@@ -341,8 +343,10 @@ function aplicarFiltros() {
     if (filtroCategoria === 'forafull') {
         lista = lista.filter(p => p.eFull === false);
     } else if (filtroCategoria === 'estrela') {
-        // estrela e lista de acompanhamento: mostra dentro e fora do Full
-        lista = lista.filter(p => window.estrelas.has(chaveDe(p)));
+        // mais vendidos no Full (critério do ML) + o que o usuário marcou à mão;
+        // a marcação manual vale também fora do Full, por isso não filtra aqui
+        lista = lista.filter(p => ehEstrela(chaveDe(p)));
+        lista.sort((a, b) => Number(b.vendas30) - Number(a.vendas30));
     } else {
         lista = lista.filter(p => p.eFull !== false);
         lista = lista.filter(p => !isEmpilhadeira(p));
@@ -465,6 +469,21 @@ function badgeUrgencia(p) {
     return '<span class="urgencia-badge ok">OK</span>';
 }
 
+// A estrela do ranking do ML mostra a posição e não se apaga no clique: ela sai
+// sozinha quando o produto deixa de ser um dos mais vendidos. O clique continua
+// valendo para a marcação manual, que é do usuário e sobrevive à próxima coleta.
+function celulaEstrela(p) {
+    const chave = chaveDe(p);
+    const rank = window.rankEstrela[chave];
+    const manual = window.estrelas.has(chave);
+    const titulo = rank
+        ? `${rank}º mais vendido no Full em 30 dias (${p.vendas30} vendas)` + (manual ? ' · também marcado por você' : '')
+        : (manual ? 'Remover dos produtos estrela' : 'Marcar como produto estrela');
+    return `<button type="button" class="btn-estrela${manual || rank ? ' ativo' : ''}${rank ? ' auto' : ''}" data-chave="${chave}" title="${titulo}">
+        <i class="bi bi-star${manual || rank ? '-fill' : ''}"></i>${rank ? `<span class="rank-estrela">${rank}</span>` : ''}
+    </button>`;
+}
+
 /* ── Renderizar página ──────────────────────────────────────────────────── */
 function renderPagina(lista, pagina) {
     if (!tabela) return;
@@ -476,7 +495,7 @@ function renderPagina(lista, pagina) {
     tabela.innerHTML = fatia.map(p => `
         <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' class="linha-sel"' : ''}>
             <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
-            <td class="col-estrela"><button type="button" class="btn-estrela${window.estrelas.has(chaveDe(p)) ? ' ativo' : ''}" data-chave="${chaveDe(p)}" title="${window.estrelas.has(chaveDe(p)) ? 'Remover dos produtos estrela' : 'Marcar como produto estrela'}"><i class="bi bi-star${window.estrelas.has(chaveDe(p)) ? '-fill' : ''}"></i></button></td>
+            <td class="col-estrela">${celulaEstrela(p)}</td>
             <td>${badgeUrgencia(p)}</td>
             <td>${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}</td>
             <td>${p.sku}</td>
@@ -562,6 +581,42 @@ addEventListener('resize', () => {
     if (p && p.style.left) aplicarPosicaoPainel(p);
 });
 
+/* ── Estrela automática: os mais vendidos no Full ────────────── */
+// É assim que o Mercado Livre define produto estrela: o que mais vendeu no
+// Full nos últimos 30 dias. Como o dashboard já traz vendas30 por produto, o
+// ranking sai aqui mesmo, sem chamada extra na API — e acompanha a coleta.
+// Fora do Full não entra: o critério do ML é do galpão.
+window.estrelasAuto = new Set();   // chaves no top
+window.rankEstrela = {};           // chave -> posição (1 = mais vendido)
+const TOPO_PADRAO = 20;
+
+function topoEstrela() {
+    const n = parseInt(localStorage.getItem('estrelaTopo'), 10);
+    return Number.isFinite(n) && n > 0 ? n : TOPO_PADRAO;
+}
+
+function calcularEstrelasAuto() {
+    const elegiveis = (window.produtosReposicao || [])
+        .filter(p => p.eFull !== false && Number(p.vendas30) > 0 && !isEmpilhadeira(p))
+        .sort((a, b) => Number(b.vendas30) - Number(a.vendas30));
+    const topo = elegiveis.slice(0, topoEstrela());
+    window.estrelasAuto = new Set(topo.map(chaveDe));
+    window.rankEstrela = {};
+    topo.forEach((p, i) => { window.rankEstrela[chaveDe(p)] = i + 1; });
+    const sel = document.getElementById('estrelaTopo');
+    if (sel) sel.value = String(topoEstrela());
+}
+
+// A união é o que a aba Estrela mostra: o ranking do ML mais o que o usuário marcou.
+function ehEstrela(chave) { return window.estrelasAuto.has(chave) || window.estrelas.has(chave); }
+
+window.mudarTopoEstrela = function(valor) {
+    localStorage.setItem('estrelaTopo', String(parseInt(valor, 10) || TOPO_PADRAO));
+    calcularEstrelasAuto();
+    atualizarContadorEstrelas();
+    aplicarFiltros();
+};
+
 /* ── Produtos estrela ───────────────────────────────────────── */
 // Lista de acompanhamento do usuario, gravada no servidor (estrelas.json).
 // Salva com atraso para nao disparar um POST por clique numa marcacao em serie.
@@ -581,20 +636,23 @@ function salvarEstrelas() {
 
 function atualizarContadorEstrelas() {
     const el = document.querySelector('.cat-filter-btn[data-cat="estrela"] .cat-contador');
-    if (el) el.textContent = window.estrelas.size || '';
+    const total = new Set([...window.estrelasAuto, ...window.estrelas]).size;
+    if (el) el.textContent = total || '';
 }
 
 window.toggleEstrela = function(chave, botao) {
     if (window.estrelas.has(chave)) window.estrelas.delete(chave);
     else                            window.estrelas.add(chave);
-    const ativo = window.estrelas.has(chave);
-    botao.classList.toggle('ativo', ativo);
-    botao.querySelector('i').className = ativo ? 'bi bi-star-fill' : 'bi bi-star';
-    botao.title = ativo ? 'Remover dos produtos estrela' : 'Marcar como produto estrela';
+    const manual = window.estrelas.has(chave);
+    const rank = window.rankEstrela[chave];
+    // produto do ranking continua aceso mesmo sem a marcação manual
+    botao.classList.toggle('ativo', manual || !!rank);
+    botao.querySelector('i').className = (manual || rank) ? 'bi bi-star-fill' : 'bi bi-star';
+    if (!rank) botao.title = manual ? 'Remover dos produtos estrela' : 'Marcar como produto estrela';
     salvarEstrelas();
     atualizarContadorEstrelas();
     // na aba Estrela a linha desmarcada deixa de pertencer a lista
-    if (filtroCategoria === 'estrela') aplicarFiltros();
+    if (filtroCategoria === 'estrela' && !rank) aplicarFiltros();
 };
 
 /* ── Seleção de produtos ────────────────────────────────────────────────── */
@@ -964,6 +1022,8 @@ function carregarProdutos() {
             });
             const produtos = Object.values(mapa);
             window.produtosReposicao = produtos;
+            calcularEstrelasAuto();
+            atualizarContadorEstrelas();
             // reposicao.json guarda o resultado do último motor, mas o trânsito muda a
             // cada envio editado. Sem recalcular aqui, EM TRÂNSITO atualizava sozinha e
             // REPOSIÇÃO/COBERTURA ficavam congeladas no valor da última coleta.
