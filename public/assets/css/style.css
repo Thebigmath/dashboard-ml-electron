@@ -782,6 +782,10 @@ body {
 .btn-estrela:hover  { color: #FFB300; transform: scale(1.2); }
 .btn-estrela:active { transform: scale(0.9); }
 .btn-estrela.ativo  { color: #FFB300; }
+/* estrela do ranking do ML: traz a posicao ao lado, para dar para ler a ordem
+   sem depender de olhar a coluna de vendas */
+.btn-estrela.auto { display: inline-flex; align-items: center; gap: 2px; }
+.rank-estrela { font-size: 9px; font-weight: 700; color: #FFB300; line-height: 1; }
 
 .dashboard-table tbody tr.linha-sel td { background: color-mix(in srgb, var(--blue) 9%, transparent); }
 .dashboard-table tbody tr.linha-sel:hover td { background: color-mix(in srgb, var(--blue) 13%, transparent); }
