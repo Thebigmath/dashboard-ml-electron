@@ -22,5 +22,16 @@
     "video": "",
     "imagens": [],
     "link": ""
+  },
+  {
+    "id": "2026-09-nexus",
+    "data": "2026-09-24",
+    "tag": "Projeto novo",
+    "titulo": "Nexus Engine",
+    "resumo": "Motor de integração com Bling ERP, 100% focado em dados sem excesso.",
+    "texto": "O Bling tem muito dado. O Nexus filtra, agregra e entrega só o que importa para decisão.\n\nQuatro operações especializadas:\n\n— Estoque por locação (atualizado cada 30 min)\n— Categorias e descrições dos anúncios (atualizado cada 1h)\n— Sincronização automática de anúncios com ML (atualizado cada 5 min)\n— Bot de sincronização contínua de estoque (atualizado cada 15 min)\n\nCada uma usa cache inteligente para economizar quota da API. Acessa em Nexus Engine no menu lateral.",
+    "video": "",
+    "imagens": [],
+    "link": ""
   }
 ]
