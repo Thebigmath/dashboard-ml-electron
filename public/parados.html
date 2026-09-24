@@ -42,12 +42,32 @@
         .estado.rodando .pulso { background:var(--blue); animation:pulsar 1s infinite; }
         @keyframes pulsar { 0%,100%{opacity:1} 50%{opacity:.3} }
         .vazio { text-align:center; padding:28px; color:var(--l3); font-size:13px; }
-        .graficos { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:14px; }
-        .gr { background:var(--s2); border:1px solid var(--sep); border-radius:12px; padding:12px 14px; }
-        .gr .gr-cab { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; margin-bottom:6px; }
-        .gr .gr-tit { font-size:12px; font-weight:600; color:var(--l1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .gr .gr-sub { font-size:11px; color:var(--l3); }
-        .gr .plot { position:relative; height:150px; }
+        /* Gaveta: o grafico de cada produto mora na propria linha, aberto sob demanda.
+           Antes eram ~300 graficos empilhados embaixo da tabela — pesado e ilegivel. */
+        .col-seta { width:28px; text-align:center; color:var(--l3); }
+        .col-seta i { transition:transform .18s var(--ease, ease); display:inline-block; font-size:12px; }
+        tr.aberta .col-seta i { transform:rotate(90deg); color:var(--blue); }
+        tr.aberta td { background:color-mix(in srgb, var(--blue) 7%, transparent) !important; }
+        tr.gaveta > td { padding:0 !important; border-bottom:1px solid var(--sep); background:var(--s2); }
+        tr.gaveta:hover > td { background:var(--s2); cursor:default; }
+        .gaveta-corpo { padding:16px 18px 18px; display:grid; grid-template-columns:minmax(0,2fr) minmax(220px,1fr); gap:18px; }
+        @media (max-width:900px) { .gaveta-corpo { grid-template-columns:1fr; } }
+        .gaveta-corpo .plot { position:relative; height:190px; }
+        .gv-tit { font-size:12px; font-weight:600; color:var(--l1); margin-bottom:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .gv-nums { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .gv-num { background:var(--s1); border:1px solid var(--sep); border-radius:10px; padding:9px 11px; }
+        .gv-num .r { font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); }
+        .gv-num .v { font-size:15px; font-weight:600; color:var(--l1); margin-top:2px; }
+        .gv-acoes { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        .gv-link { font-size:12px; color:var(--blue); text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+        .btn-mercado { font-size:12px; padding:5px 12px; border-radius:7px; border:1px solid var(--sep); background:none; color:var(--l1); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+        .btn-mercado:hover { border-color:var(--blue); color:var(--blue); }
+        .btn-mercado:disabled { opacity:.55; cursor:default; }
+        .mercado { margin-top:12px; font-size:12px; color:var(--l2); border-top:1px solid var(--sep); padding-top:10px; }
+        .mercado .vd { font-weight:600; margin-bottom:6px; }
+        .mercado .vd.ruim { color:#FF9F0A; } .mercado .vd.neutro { color:var(--l2); }
+        .mercado .mini { display:flex; gap:14px; flex-wrap:wrap; color:var(--l3); font-size:11px; }
+        .mercado .fonte { font-size:10px; color:var(--l3); margin-top:6px; }
         .legenda { display:flex; gap:14px; font-size:11px; color:var(--l3); }
         .legenda i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
         .opcoes { display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--l2); }
@@ -106,7 +126,9 @@
 
             <div class="bloco">
                 <div class="bloco-cab">
-                    <h5><i class="bi bi-pause-circle" style="color:#ff9500"></i> Parados</h5>
+                    <h5><i class="bi bi-pause-circle" style="color:#ff9500"></i> Parados
+                        <small style="font-weight:400;color:var(--l3);margin-left:8px">clique na linha para abrir o gráfico</small>
+                    </h5>
                     <div class="opcoes">
                         <label><input type="checkbox" id="optIrmaos" onchange="render()"> incluir anúncios cujo estoque vende por outro anúncio</label>
                         <label><input type="checkbox" id="optForaFull" checked onchange="render()"> incluir fora do Full</label>
@@ -116,6 +138,7 @@
                 <div style="overflow-x:auto">
                     <table class="pr-table">
                         <thead><tr>
+                            <th class="col-seta"></th>
                             <th data-ord="sku" onclick="ordenar('sku')">SKU</th>
                             <th data-ord="titulo" onclick="ordenar('titulo')">Nome</th>
                             <th>Onde</th>
@@ -125,18 +148,11 @@
                             <th class="num" data-ord="visitas30" onclick="ordenar('visitas30')">Visitas 30 d</th>
                             <th class="num" data-ord="conversao30" onclick="ordenar('conversao30')" title="vendas 30 d ÷ visitas 30 d">Margem de conversão</th>
                         </tr></thead>
-                        <tbody id="tabela"><tr><td colspan="8" class="vazio">Carregando...</td></tr></tbody>
+                        <tbody id="tabela"><tr><td colspan="9" class="vazio">Carregando...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="bloco">
-                <div class="bloco-cab">
-                    <h5><i class="bi bi-graph-down" style="color:var(--blue)"></i> Performance temporal — últimas 13 semanas</h5>
-                    <div class="legenda"><span><i style="background:#0A84FF"></i>Vendas (un)</span><span><i style="background:#8A8E94"></i>Visitas</span></div>
-                </div>
-                <div class="graficos" id="graficos"></div>
-            </div>
         </div>
     </main>
 </div>
@@ -175,11 +191,12 @@ function render() {
     document.getElementById('estadoTexto').textContent = e.rodando ? 'Recalculando… ' + (e.fase || '') : (e.ultimo_erro ? 'Falha: ' + e.ultimo_erro : 'Dados de ' + dataHora(dados.gerado_em));
     document.getElementById('btnAtualizar').disabled = !!e.rodando;
 
-    if (!L.length) { document.getElementById('tabela').innerHTML = '<tr><td colspan="8" class="vazio">Nenhum produto parado com esses filtros.</td></tr>'; }
+    if (!L.length) { document.getElementById('tabela').innerHTML = '<tr><td colspan="9" class="vazio">Nenhum produto parado com esses filtros.</td></tr>'; }
     else document.getElementById('tabela').innerHTML = L.map(p => {
         const conv = p.conversao30 == null ? '—' : `<span class="${p.conversao30 < 1 ? 'conv-baixa' : 'conv-ok'}">${p.conversao30.toFixed(1)}%</span>`;
         const ult = p.ultima_venda ? `${dataBr(p.ultima_venda)} <span class="sku">há ${p.dias_sem_venda} d</span>` : '<span class="sku">sem venda em 90 d</span>';
-        return `<tr onclick="focar('${esc(p.item_id)}')" id="lin-${esc(p.item_id)}">
+        return `<tr onclick="alternar('${esc(p.item_id)}')" id="lin-${esc(p.item_id)}">
+            <td class="col-seta"><i class="bi bi-chevron-right"></i></td>
             <td class="sku">${esc(p.sku)}</td>
             <td><div class="tit" title="${esc(p.titulo)}">${esc(p.titulo)}</div>${p.irmao_vendeu ? `<span class="chip aviso" title="outro anúncio com o mesmo estoque no Full vendeu ${p.irmao_vendeu} un em 15 d">estoque vende por outro anúncio</span>` : ''}${p.status !== 'active' ? ` <span class="chip">${esc(p.status)}</span>` : ''}</td>
             <td><span class="chip ${p.onde === 'Full' ? 'full' : ''}">${p.onde}</span></td>
@@ -188,31 +205,113 @@ function render() {
             <td>${ult}</td>
             <td class="num">${p.visitas30 == null ? '—' : p.visitas30}</td>
             <td class="num">${conv}</td>
-        </tr>`;
+        </tr>
+        <tr class="gaveta" id="gv-${esc(p.item_id)}" style="display:none"><td colspan="9"></td></tr>`;
     }).join('');
-    renderGraficos(L);
-}
-
-function renderGraficos(L) {
-    charts.forEach(c => c.destroy()); charts = [];
-    const el = document.getElementById('graficos');
-    if (!L.length) { el.innerHTML = '<div class="vazio" style="grid-column:1/-1">Nada para mostrar.</div>'; return; }
-    el.innerHTML = L.map(p => `<div class="gr" id="gr-${esc(p.item_id)}">
-        <div class="gr-cab"><div style="min-width:0"><div class="gr-tit" title="${esc(p.titulo)}">${esc(p.titulo)}</div><div class="gr-sub">${esc(p.sku)} · ${p.onde} · ${p.estoque} un · ${brl(p.preco)} · ${p.un90} vendas / ${p.visitas90 ?? '—'} visitas em 90 d</div></div></div>
-        <div class="plot"><canvas id="cv-${esc(p.item_id)}"></canvas></div>
-    </div>`).join('');
-    // 300+ graficos de uma vez travam a tela: cada um so e desenhado quando entra na area visivel
-    if (observador) observador.disconnect();
-    observador = new IntersectionObserver((entradas) => {
-        for (const e of entradas) { if (!e.isIntersecting) continue; observador.unobserve(e.target); desenhar(e.target.dataset.id); }
-    }, { rootMargin: '400px 0px' });
     porId = Object.fromEntries(L.map(p => [p.item_id, p]));
-    document.querySelectorAll('#graficos .gr').forEach(g => { g.dataset.id = g.id.slice(3); observador.observe(g); });
+    // reabre o que o usuario ja tinha aberto antes do filtro/ordenacao
+    for (const id of [...abertas]) { if (porId[id]) abrir(id); else abertas.delete(id); }
 }
 
-let observador = null, porId = {};
+// A gaveta so monta (e so desenha o grafico) quando abre: com ~300 parados,
+// montar tudo de uma vez era o que travava a tela.
+const abertas = new Set();
+
+function alternar(id) {
+    if (abertas.has(id)) fechar(id); else abrir(id);
+}
+
+function fechar(id) {
+    abertas.delete(id);
+    document.getElementById('lin-' + id)?.classList.remove('aberta');
+    const g = document.getElementById('gv-' + id);
+    if (g) { g.style.display = 'none'; }
+}
+
+function abrir(id) {
+    const p = porId[id], g = document.getElementById('gv-' + id);
+    if (!p || !g) return;
+    abertas.add(id);
+    document.getElementById('lin-' + id)?.classList.add('aberta');
+    g.style.display = '';
+    if (g.dataset.pronto !== '1') {
+        g.dataset.pronto = '1';
+        const conv90 = p.visitas90 ? (p.un90 / p.visitas90 * 100) : null;
+        g.querySelector('td').innerHTML = `
+            <div class="gaveta-corpo">
+                <div>
+                    <div class="gv-tit">
+                        <span>Performance — últimas 13 semanas</span>
+                        <span class="legenda"><span><i style="background:#0A84FF"></i>Vendas</span><span><i style="background:#8A8E94"></i>Visitas</span></span>
+                    </div>
+                    <div class="plot"><canvas id="cv-${esc(id)}"></canvas></div>
+                </div>
+                <div>
+                    <div class="gv-nums">
+                        <div class="gv-num"><div class="r">Vendas 90 d</div><div class="v">${p.un90}</div></div>
+                        <div class="gv-num"><div class="r">Visitas 90 d</div><div class="v">${p.visitas90 ?? '—'}</div></div>
+                        <div class="gv-num"><div class="r">Conversão 90 d</div><div class="v">${conv90 == null ? '—' : conv90.toFixed(1) + '%'}</div></div>
+                        <div class="gv-num"><div class="r">Parado há</div><div class="v">${p.dias_sem_venda == null ? '90+ d' : p.dias_sem_venda + ' d'}</div></div>
+                        <div class="gv-num"><div class="r">Estoque</div><div class="v">${p.estoque}</div></div>
+                        <div class="gv-num"><div class="r">Valor parado</div><div class="v">${brl(p.estoque * (p.preco || 0))}</div></div>
+                    </div>
+                    <div class="gv-acoes">
+                        ${p.link ? `<a class="gv-link" href="${esc(p.link)}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> ver anúncio</a>` : ''}
+                        <span class="gv-link" style="color:var(--l3)"><i class="bi bi-upc"></i> ${esc(p.item_id)}</span>
+                    </div>
+                    <div class="gv-acoes">
+                        <button class="btn-mercado" id="bm-${esc(id)}" onclick="verMercado('${esc(id)}')"><i class="bi bi-bar-chart-line"></i> Ver o mercado (Nubimetrics)</button>
+                    </div>
+                    <div class="mercado" id="mk-${esc(id)}" style="display:none"></div>
+                </div>
+            </div>`;
+        desenhar(id);
+    }
+}
+
+let porId = {};
+
+// Consulta o Nubimetrics SO deste produto, e so quando o usuario pede. A cota e
+// por token e compartilhada com os outros projetos: puxar a lista inteira
+// bloquearia todo mundo por uma hora.
+async function verMercado(id) {
+    const b = document.getElementById('bm-' + id), el = document.getElementById('mk-' + id);
+    if (!b || !el) return;
+    b.disabled = true;
+    b.innerHTML = '<i class="bi bi-hourglass-split"></i> consultando...';
+    el.style.display = '';
+    el.innerHTML = '<span style="color:var(--l3)">buscando no Nubimetrics (o motor espaça as consultas para não bloquear a conta)...</span>';
+    try {
+        const m = await fetch('/api/parados/mercado?item=' + encodeURIComponent(id)).then(r => r.json());
+        if (m.bloqueado) {
+            el.innerHTML = `<div class="vd" style="color:#ff453a">Nubimetrics bloqueado</div><div class="mini">${esc(m.erro || '')}</div>`;
+        } else if (m.erro && !m.anuncios) {
+            el.innerHTML = `<div class="mini" style="color:#ff453a">${esc(m.erro)}</div>`;
+        } else if (m.vazio) {
+            el.innerHTML = `<div class="vd neutro">Nenhum anúncio parecido encontrado no mercado</div><div class="fonte">busca: "${esc(m.busca)}"</div>`;
+        } else {
+            const f = (v) => v == null ? '—' : brl(v);
+            el.innerHTML = `
+                <div class="vd ${esc(m.cor)}">${esc(m.veredito)}</div>
+                <div class="mini">
+                    <span>${m.anuncios} anúncios no mercado</span>
+                    <span>${m.vendendo} vendendo</span>
+                    <span>${m.vendas_mercado} un em 30 d</span>
+                    <span>preço ${f(m.preco_min)} – ${f(m.preco_max)} (mediana ${f(m.preco_mediana)})</span>
+                    ${m.mais_baratos_que_nos != null ? `<span>${m.mais_baratos_que_nos} mais baratos que nós</span>` : ''}
+                    <span>${m.no_full} no Full</span>
+                </div>
+                <div class="fonte">busca: "${esc(m.busca)}"${m.doCache ? ` · do cache, ${m.idade_min} min` : ''}${m.vencido ? ' (dado antigo: ' + esc(m.aviso || '') + ')' : ''}</div>`;
+        }
+    } catch (e) {
+        el.innerHTML = `<div class="mini" style="color:#ff453a">Falhou: ${esc(e.message)}</div>`;
+    }
+    b.disabled = false;
+    b.innerHTML = '<i class="bi bi-arrow-clockwise"></i> consultar de novo';
+}
 function desenhar(id) {
     const p = porId[id], cv = document.getElementById('cv-' + id); if (!p || !cv || cv.dataset.pronto) return;
+    charts = charts.filter(c => c.canvas && document.body.contains(c.canvas) || (c.destroy(), false));
     cv.dataset.pronto = '1';
     const ink2 = css('--l3'), grid = 'rgba(128,128,128,.15)';
     const labels = p.serie.map(s => s.ini.slice(8, 10) + '/' + s.ini.slice(5, 7));
@@ -236,14 +335,6 @@ function desenhar(id) {
     }));
 }
 
-function focar(id) {
-    document.querySelectorAll('.pr-table tr.sel').forEach(t => t.classList.remove('sel'));
-    document.getElementById('lin-' + id)?.classList.add('sel');
-    desenhar(id);
-    const g = document.getElementById('gr-' + id);
-    if (g) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); g.style.outline = '2px solid var(--blue)'; setTimeout(() => g.style.outline = '', 1800); }
-}
-
 async function carregar(forcar) {
     const r = await fetch('/api/parados' + (forcar ? '?forcar=1' : ''));
     dados = await r.json();
@@ -260,7 +351,7 @@ async function atualizar() {
 }
 
 carregar(false).then(() => document.body.classList.add('page-ready')).catch(e => {
-    document.getElementById('tabela').innerHTML = `<tr><td colspan="8" class="vazio" style="color:#ff453a">Erro: ${esc(e.message)}</td></tr>`;
+    document.getElementById('tabela').innerHTML = `<tr><td colspan="9" class="vazio" style="color:#ff453a">Erro: ${esc(e.message)}</td></tr>`;
     document.body.classList.add('page-ready');
 });
 </script>
