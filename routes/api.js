@@ -11,6 +11,8 @@ const novidades = require('../lib/novidades');
 const avisos = require('../lib/avisos');
 const perguntas = require('../lib/perguntas');
 const parados = require('../lib/parados');
+const mercado = require('../lib/mercado');
+const nubimetrics = require('../lib/nubimetrics');
 const reputacao = require('../lib/reputacao');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
@@ -1095,6 +1097,22 @@ router.post('/parados/atualizar', auth, (req, res) => {
     if (!parados.estado.rodando) parados.coletar().catch(() => {});
     res.json({ ok: true, iniciado: true });
 });
+
+// Contexto de mercado (Nubimetrics) de UM produto parado. Só é chamado quando a
+// gaveta daquele produto abre: a cota do Nubimetrics é por token e compartilhada
+// com os outros projetos, então nada de consultar a lista inteira de uma vez.
+router.get('/parados/mercado', auth, async (req, res) => {
+    try {
+        const item = String(req.query.item || '');
+        const base = await parados.obter({});
+        const p = (base.produtos || []).find(x => x.item_id === item);
+        if (!p) return res.status(404).json({ erro: 'Produto não está na lista de parados.' });
+        res.json(await mercado.doProduto({ titulo: p.titulo, preco: p.preco, vendas30: p.un30 || 0 }));
+    } catch (e) {
+        res.status(500).json({ erro: String(e.message || e) });
+    }
+});
+router.get('/nubimetrics/situacao', auth, (req, res) => res.json(nubimetrics.situacao()));
 
 // ── Novidades por versão ────────────────────────────────────────────────────
 router.get('/novidades', auth, (req, res) => res.json(novidades.listar()));
