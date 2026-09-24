@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-09-horizon",
+    "data": "2026-09-24",
+    "tag": "Projeto novo",
+    "titulo": "Horizon Engine — o motor de coleta",
+    "resumo": "Coleta. Processa. Transforma. O motor que puxa os dados do Mercado Livre por baixo de tudo que a gente constrói.",
+    "texto": "O Horizon é o motor de coleta da API do Mercado Livre. Ele não decide nada: busca o dado bruto e entrega junto uma ficha dizendo de onde veio, a que horas, se veio completo e o que deu errado no caminho. É essa ficha que permite confiar no número — ou saber que não dá.\n\nO que ele resolve:\n\n- Coleta em paralelo, sem estourar o limite do ML: espera quando precisa, tenta de novo quando o erro é temporário e nunca cai calado\n- Cache com validade: não remede o que acabou de ser medido\n- Cada conta com sessão, token e cache próprios — Flavia e Cordeiro nunca se atrapalham\n- Todas as chamadas ficam registradas, com status e tempo: falha silenciosa deixa de existir\n\nJá está rodando por trás do Seven e das análises. As duas ideias que mais valeram foram trazidas para os Dashboards: a trava que impede duas renovações de token ao mesmo tempo (a causa do invalid_grant) e o log estruturado de cada chamada.\n\nUm motor de coleta. Infinitas possibilidades.",
+    "video": "",
+    "imagens": [
+      "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/horizon.webp"
+    ],
+    "link": ""
+  },
+  {
     "id": "2026-09-canal-avisos",
     "data": "2026-09-22",
     "tag": "Aviso",
