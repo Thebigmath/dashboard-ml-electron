@@ -15,7 +15,11 @@ app.use('/api', require('./routes/api'));
 app.use('/auth', require('./routes/auth'));
 
 // Dashboard principal (sem login)
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
+// O app abre no Feed: e a tela que diz o que fazer hoje. O painel completo
+// continua inteiro em /painel (e no menu), so deixou de ser a porta de entrada.
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
+app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
+app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/envio_full.html')));
 app.get('/valor_estoque', (req, res) => res.sendFile(path.join(__dirname, 'public/valor_estoque.html')));
 app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.html')));

@@ -11,6 +11,7 @@ const novidades = require('../lib/novidades');
 const avisos = require('../lib/avisos');
 const perguntas = require('../lib/perguntas');
 const parados = require('../lib/parados');
+const feed = require('../lib/feed');
 const mercado = require('../lib/mercado');
 const nubimetrics = require('../lib/nubimetrics');
 const reputacao = require('../lib/reputacao');
@@ -314,6 +315,10 @@ router.post('/atualizar', auth, async (req, res) => {
         // pode ainda constar como "em trânsito" em envios_full.json — sem descontar,
         // a mesma unidade entraria duas vezes na conta da reposição.
         const transferenciaPorInventory = {};
+        // Unidades nossas que estao no galpao mas o ML nao poe a venda
+        // (internalProcess, lost, withdrawal). Sao mercadoria parada que reposicao
+        // nenhuma resolve — so o ML liberando. Antes isso era lido e descartado.
+        const bloqueadoPorInventory = {};
         // Estas chamadas iam todas de uma vez (340 conexoes) e o catch era mudo: uma
         // que tomasse 429 caia calada no fallback available_quantity, ou seja, estoque
         // errado sem aviso. Agora tem teto, backoff e contagem de falhas.
@@ -330,6 +335,13 @@ router.post('/atualizar', auth, async (req, res) => {
                         .reduce((soma, x) => soma + (x.quantity || 0), 0);
                     estoqueFullPorInventory[invId] = data.available_quantity + emTransferencia;
                     transferenciaPorInventory[invId] = emTransferencia;
+                    const travado = (data.not_available_detail || []).filter(x => x.status !== 'transfer');
+                    if (travado.length) {
+                        bloqueadoPorInventory[invId] = {
+                            total: travado.reduce((soma, x) => soma + (x.quantity || 0), 0),
+                            detalhe: travado.map(x => ({ status: x.status, quantidade: x.quantity || 0 })),
+                        };
+                    }
                 }
             } catch { invFalhados++; /* item sem estoque FULL detalhado, mantém fallback */ }
             invProntos++;
@@ -437,6 +449,7 @@ router.post('/atualizar', auth, async (req, res) => {
                     : (p.available_quantity || 0);
                 // parcela de "estoque" que o ML já contabiliza como transferência entre galpões
                 const transferenciaMl = (eFull && transferenciaPorInventory[p.inventory_id]) || 0;
+                const travado = (eFull && bloqueadoPorInventory[p.inventory_id]) || null;
 
                 // inventory_id é o "Código ML" do galpão: único por produto, mesmo quando
                 // vários produtos dividem o seller_sku. É por ele que o trânsito consegue
@@ -445,7 +458,9 @@ router.post('/atualizar', auth, async (req, res) => {
                 const invId = eFull ? p.inventory_id : null;
 
                 if (!porSku[sku]) {
-                    porSku[sku] = { item_id: itemId, inventory_id: invId, sku, titulo: tituloBase, estoque, transferenciaMl, status, eFull };
+                    porSku[sku] = { item_id: itemId, inventory_id: invId, sku, titulo: tituloBase, estoque, transferenciaMl, status, eFull,
+                        preco: p.price ?? null, permalink: p.permalink || '',
+                        bloqueado: travado ? travado.total : 0, bloqueado_detalhe: travado ? travado.detalhe : [] };
                 } else {
                     const novoEPar      = ePar(tituloBase, sku);
                     const existenteEPar = ePar(porSku[sku].titulo, porSku[sku].sku);
@@ -1086,6 +1101,18 @@ router.post('/perguntas/responder', auth, async (req, res) => {
 router.get('/reputacao', auth, (req, res) => res.json(reputacao.resumo()));
 router.post('/reputacao/verificar', auth, async (req, res) => { await reputacao.verificar().catch(() => {}); res.json(reputacao.resumo()); });
 router.post('/reputacao/config', auth, (req, res) => res.json(reputacao.salvarConfiguracao(req.body || {})));
+
+// ── Feed de acoes de estoque ────────────────────────────────────────────────
+// Le o que o motor ja coletou (reposicao.json): abre instantaneo, sem API.
+router.get('/feed', auth, (req, res) => {
+    try { res.json(feed.montar({ incluirEmpilhadeira: req.query.empilhadeira === '1' })); }
+    catch (e) { res.status(500).json({ erro: String(e.message || e) }); }
+});
+// A tela consulta isto de 30 em 30 s: e barato e so muda quando ha novidade.
+router.get('/feed/assinatura', auth, (req, res) => {
+    try { res.json(feed.assinatura()); }
+    catch (e) { res.status(500).json({ erro: String(e.message || e) }); }
+});
 
 // ── Produtos parados ────────────────────────────────────────────────────────
 // GET devolve o cache (ou calcula se não há / está velho); POST dispara o recálculo.
