@@ -4,8 +4,8 @@
     "data": "2026-09-24",
     "tag": "Projeto novo",
     "titulo": "Horizon Engine",
-    "resumo": "Um motor de coleta que abre portas para um novo app.",
-    "texto": "Pensa nos dados do Mercado Livre. Agora pensa em coletar tudo sem erros, sem esperar, sem cair. Isso é Horizon.\n\nEle não decide: busca, valida e entrega. E deixa registrado cada movimento.\n\nJá está por trás do Seven — o app que traz conceitos de computação quântica (superposição, emaranhamento, interferência) para otimizar decisões de estoque em tempo real. O motor que coleta o dado bruto se torna a porta de entrada para análises que o app consegue processar.\n\nTá firme em cima de um log estruturado que te diz exatamente o que deu certo, o que travou e por quê.",
+    "resumo": "Um motor otimizado de coleta com parâmetros inteligentes.",
+    "texto": "Pensa nos dados do Mercado Livre. Agora pensa em coletar tudo sem erros, sem esperar, sem cair. Isso é Horizon.\n\nNão é só um collector. É um motor com parâmetros — ajusta a frequência, respeita limites, entende padrões, aprende com falhas.\n\nFoi feito para abrir porta para o Seven, o app de manutenção de anúncios. Um motor robusto que coleta, valida e entrega o dado limpo. Deixa registrado cada movimento.\n\nCada chamada tem seu log. Cada erro tem seu contexto. Você sabe o que deu certo, o que travou e exatamente por quê.",
     "video": "",
     "imagens": [
       "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/horizon.webp"
