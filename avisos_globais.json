@@ -11,27 +11,5 @@
       "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/horizon.webp"
     ],
     "link": ""
-  },
-  {
-    "id": "2026-09-canal-avisos",
-    "data": "2026-09-22",
-    "tag": "Aviso",
-    "titulo": "Canal de notificações globais no ar",
-    "resumo": "A partir de agora os avisos sobre projetos novos chegam aqui, sem precisar atualizar o app.",
-    "texto": "Esta tela lê um comunicado publicado fora do app. Quando entrar um aviso novo, o Windows mostra a notificação e o número aparece no menu lateral.\n\nA diferença para a tela de Novidades:\n\n- Novidades conta o que mudou em cada versão do Dashboard e chega junto com a atualização\n- Notificações globais anuncia o que está sendo construído e vale para as duas contas, Flavia Stock e Cordeiro Car\n\nO app procura comunicados novos 45 segundos depois de ligar e de meia em meia hora. O botão \"Buscar agora\" força a checagem.",
-    "video": "",
-    "imagens": [],
-    "link": ""
-  },
-  {
-    "id": "2026-09-nexus",
-    "data": "2026-09-24",
-    "tag": "Projeto novo",
-    "titulo": "Nexus Engine",
-    "resumo": "Motor de integração com Bling ERP, 100% focado em dados sem excesso.",
-    "texto": "O Bling tem muito dado. O Nexus filtra, agregra e entrega só o que importa para decisão.\n\nQuatro operações especializadas:\n\n— Estoque por locação (atualizado cada 30 min)\n— Categorias e descrições dos anúncios (atualizado cada 1h)\n— Sincronização automática de anúncios com ML (atualizado cada 5 min)\n— Bot de sincronização contínua de estoque (atualizado cada 15 min)\n\nCada uma usa cache inteligente para economizar quota da API. Acessa em Nexus Engine no menu lateral.",
-    "video": "",
-    "imagens": [],
-    "link": ""
   }
 ]
