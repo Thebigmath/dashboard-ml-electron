@@ -32,6 +32,9 @@
         .nv-texto ul { margin:0 0 10px 18px; padding:0; }
         .nv-texto li { margin-bottom:4px; }
         .nv-imagens { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:16px; max-width:860px; }
+        /* Imagem unica e quase sempre a arte do anuncio: cabe inteira, nao numa
+           coluna de 220px onde nao se le nada. */
+        .nv-imagens.unica { grid-template-columns:1fr; }
         .nv-imagens img { width:100%; border-radius:10px; border:1px solid var(--sep); cursor:zoom-in; background:var(--s2); }
         .nv-vazio { text-align:center; padding:40px; color:var(--l3); font-size:13px; line-height:1.6; }
         .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
@@ -141,7 +144,7 @@ function renderDetalhe() {
         ${a.resumo ? `<div class="nv-resumo">${esc(a.resumo)}</div>` : ''}
         ${videoHtml(a.video)}
         <div class="nv-texto">${textoHtml(a.texto)}</div>
-        ${a.imagens.length ? '<div class="nv-imagens">' + a.imagens.map(u => `<img src="${esc(u)}" alt="" loading="lazy" onclick="ampliar('${esc(u)}')">`).join('') + '</div>' : ''}
+        ${a.imagens.length ? `<div class="nv-imagens${a.imagens.length === 1 ? ' unica' : ''}">` + a.imagens.map(u => `<img src="${esc(u)}" alt="" loading="lazy" onclick="ampliar('${esc(u)}')">`).join('') + '</div>' : ''}
         ${a.link ? `<a class="nv-link" href="${esc(a.link)}" target="_blank" rel="noopener">Saiba mais <i class="bi bi-box-arrow-up-right"></i></a>` : ''}
     `;
 }

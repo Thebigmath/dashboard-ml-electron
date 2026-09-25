@@ -1030,11 +1030,47 @@ function carregarProdutos() {
             recalcularComTransito();
             renderizarGraficoFaturamento();
             aplicarFiltros();
+            focarProdutoDaURL();
             fetch('/api/avisos_sku').then(r => r.json()).then(renderAvisosSku).catch(() => {});
         })
         .catch(() => {
             if (tabela) tabela.innerHTML = '<tr><td colspan="12" class="text-center text-danger py-4">Erro ao carregar dados.</td></tr>';
         });
+}
+
+/* ── Deep-link a partir do Feed ─────────────────────────────────────────── */
+// O Feed leva o clique direto pra linha exata do produto: /painel?chave=XXX.
+// Aqui a URL vira acao — libera os filtros que esconderiam o produto, vai ate
+// a pagina certa, rola ate a linha e a destaca por alguns segundos.
+let produtoFocado = null;
+
+function focarProdutoDaURL() {
+    const chave = new URLSearchParams(location.search).get('chave');
+    if (!chave || !window.produtosReposicao.length || produtoFocado === chave) return;
+    produtoFocado = chave;
+
+    const alvo = window.produtosReposicao.find(p => chaveDe(p) === chave);
+    if (!alvo) return;
+
+    // Libera a categoria: produto fora do Full so aparece no filtro correspondente
+    if (alvo.eFull === false) setFiltroCategoria('forafull');
+    else if (filtroCategoria !== 'todos') setFiltroCategoria('todos');
+    // Limpa busca, status, fornecedores e o resto que esconderia a linha
+    if (pesquisa) pesquisa.value = '';
+    textoPesquisa = '';
+    limparFiltros();
+
+    const idx = produtosFiltrados.findIndex(p => chaveDe(p) === chave);
+    if (idx < 0) return;
+    irPagina(Math.floor(idx / POR_PAGINA) + 1);
+
+    requestAnimationFrame(() => {
+        const tr = [...tabela.querySelectorAll('tr[data-chave]')].find(r => r.dataset.chave === chave);
+        if (!tr) return;
+        tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        tr.classList.add('linha-foco');
+        setTimeout(() => tr.classList.remove('linha-foco'), 3500);
+    });
 }
 
 if (tabela) {

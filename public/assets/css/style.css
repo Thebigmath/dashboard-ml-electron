@@ -790,6 +790,18 @@ body {
 .dashboard-table tbody tr.linha-sel td { background: color-mix(in srgb, var(--blue) 9%, transparent); }
 .dashboard-table tbody tr.linha-sel:hover td { background: color-mix(in srgb, var(--blue) 13%, transparent); }
 
+/* Linha destacada quando o Feed leva o usuario ate o produto (deep-link) */
+.dashboard-table tbody tr.linha-foco td {
+  background: color-mix(in srgb, #FFB300 22%, transparent);
+  box-shadow: inset 3px 0 0 #FFB300;
+  animation: piscar-foco 1s ease 2;
+}
+.dashboard-table tbody tr.linha-foco:hover td { background: color-mix(in srgb, #FFB300 28%, transparent); }
+@keyframes piscar-foco {
+  0%, 100% { background: color-mix(in srgb, #FFB300 22%, transparent); }
+  50% { background: color-mix(in srgb, #FFB300 8%, transparent); }
+}
+
 #painel-selecao {
   position: fixed; right: 24px; bottom: 24px;
   width: 250px; padding: 14px;
