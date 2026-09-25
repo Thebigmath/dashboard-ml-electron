@@ -243,6 +243,7 @@
             <li onclick="window.location.href='/novidades'"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
             <li onclick="window.location.href='/avisos'"><i class="bi bi-broadcast"></i><span>Notificações globais</span></li>
             <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+            <li onclick="window.location.href='/seven'"><i class="bi bi-7-circle"></i><span>SEVEN</span></li>
         </ul>
         <div class="sidebar-footer">v5.0</div>
         <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
@@ -256,7 +257,7 @@
             </div>
             <div class="topbar-right" style="gap:12px">
                 <span class="estado" id="estado"><span class="pulso"></span><span id="estadoTexto">—</span></span>
-                <button class="btn-acao" onclick="recarregar(true)"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>
+                <button class="btn-acao" id="btnAtualizar" onclick="coletarAgora()" title="Busca os dados atuais no Mercado Livre"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>
             </div>
         </nav>
 
@@ -550,6 +551,41 @@ async function recarregar(manual) {
     dados = await fetch('/api/feed').then(r => r.json());
     if (dados.erro) throw new Error(dados.erro);
     render();
+}
+
+// "Atualizar" roda a coleta de verdade (a mesma do Atualizar Estoque do painel).
+// Reler o reposicao.json nao bastava: o card continuava com o dado da ultima coleta.
+async function coletarAgora() {
+    const btn = document.getElementById('btnAtualizar');
+    const txt = document.getElementById('estadoTexto');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    txt.textContent = 'coletando no Mercado Livre...';
+    try {
+        const resp = await fetch('/api/atualizar', { method: 'POST' });
+        if (!resp.ok) throw new Error('a coleta respondeu ' + resp.status);
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let resto = '', erro = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            resto += dec.decode(value, { stream: true });
+            const linhas = resto.split(String.fromCharCode(10));
+            resto = linhas.pop();
+            for (const l of linhas) {
+                const m = l.match(/^\[PROGRESSO\]\s*(\S+)\s+(\d+)\/(\d+)/);
+                if (m) txt.textContent = `coletando ${m[1]}: ${m[2]} de ${m[3]}`;
+                if (l.startsWith('ERRO:')) erro = l.slice(5).trim();
+            }
+        }
+        if (erro) throw new Error(erro);
+        await recarregar(false);
+    } catch (e) {
+        txt.textContent = 'falhou: ' + e.message;
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 recarregar(false).then(() => {

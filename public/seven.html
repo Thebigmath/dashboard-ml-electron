@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEVEN — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; transform:none; }
+        /* Imagem unica e quase sempre a arte do anuncio: cabe inteira, nao numa
+           coluna de 220px onde nao se le nada. */
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao:disabled { opacity:.5; cursor:default; }
+        .sv-palco { min-height: calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px; }
+        .sv-cartao { width:min(520px, 100%); padding:40px 36px; border-radius:20px; border:1px solid var(--sep); background:var(--s1); text-align:center; }
+        .sv-marca { font-size:13px; font-weight:700; letter-spacing:.14em; color:var(--l3); display:inline-flex; align-items:center; gap:8px; }
+        .sv-status { font-size:56px; font-weight:800; color:var(--l1); margin:18px 0 22px; letter-spacing:-.02em; }
+        .sv-barra { height:10px; border-radius:99px; background:color-mix(in srgb, var(--l1) 10%, transparent); overflow:hidden; }
+        .sv-cheio { height:100%; border-radius:99px; background:var(--accent, #0a84ff); }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/feed'"><i class="bi bi-lightning-charge"></i><span>Feed</span></li>
+            <li onclick="window.location.href='/painel'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
+            <li onclick="location.href='/painel'"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
+            <li onclick="location.href='/painel'"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
+            <li onclick="location.href='/painel'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
+            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
+            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
+            <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
+            <li onclick="window.location.href='/perguntas'"><i class="bi bi-chat-dots"></i><span>Perguntas</span></li>
+            <li onclick="window.location.href='/parados'"><i class="bi bi-pause-circle"></i><span>Parados</span></li>
+            <li onclick="window.location.href='/novidades'"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
+            <li onclick="window.location.href='/avisos'"><i class="bi bi-broadcast"></i><span>Notificações globais</span></li>
+            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
+            <li class="active"><i class="bi bi-7-circle"></i><span>SEVEN</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">SEVEN</h4>
+                <small class="text-secondary">App de manutenção de anúncios</small>
+            </div>
+        </nav>
+
+        <div class="sv-palco">
+            <div class="sv-cartao">
+                <div class="sv-marca"><i class="bi bi-7-circle"></i> SEVEN</div>
+                <div class="sv-status">Em 45%</div>
+                <div class="sv-barra"><div class="sv-cheio" style="width:45%"></div></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+requestAnimationFrame(() => document.body.classList.add('page-ready'));
+setTimeout(() => document.body.classList.add('page-ready'), 150);
+</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>
