@@ -10,43 +10,215 @@
     <style>
         body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
         body.page-ready { opacity:1; }
-        .topo { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:20px; }
-        .kpi { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:16px 18px; }
-        .kpi .r { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--l3); }
-        .kpi .v { font-size:24px; font-weight:600; color:var(--l1); margin-top:4px; }
-        .kpi .s { font-size:11px; color:var(--l3); margin-top:2px; }
-        .abas { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px; }
-        .aba { flex:0 0 auto; background:var(--s1); border:1px solid var(--sep); border-radius:12px; padding:10px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:border-color .15s, background .15s; }
-        .aba:hover { border-color:var(--sep2); }
-        .aba.ativa { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 8%, var(--s1)); }
-        .aba i { font-size:15px; }
-        .aba .n { font-size:15px; font-weight:700; color:var(--l1); line-height:1; }
-        .aba .t { font-size:11px; color:var(--l3); white-space:nowrap; }
-        .aba .d { font-size:10px; color:var(--l3); }
-        .fila-cab { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:16px 18px; margin-bottom:14px; }
-        .fila-cab h5 { margin:0 0 4px; font-size:16px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; }
-        .fila-cab p { margin:0; font-size:12px; color:var(--l3); max-width:760px; }
-        .cartoes { display:flex; flex-direction:column; gap:10px; }
-        .cartao { background:var(--s1); border:1px solid var(--sep); border-left:3px solid var(--marca,var(--sep2)); border-radius:12px; padding:13px 16px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:14px; align-items:center; }
-        .cartao:hover { border-color:var(--sep2); }
-        .c-tit { font-size:13px; font-weight:600; color:var(--l1); margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .c-sub { font-size:11px; color:var(--l3); display:flex; gap:10px; flex-wrap:wrap; }
-        .c-acao { font-size:12px; color:var(--l1); margin-top:7px; display:flex; align-items:center; gap:6px; }
-        .c-acao i { color:var(--marca,var(--blue)); }
-        .c-peso { text-align:right; white-space:nowrap; }
-        .c-peso .v { font-size:15px; font-weight:700; color:var(--l1); }
-        .c-peso .r { font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); }
-        .chip { display:inline-block; font-size:10px; padding:1px 7px; border-radius:999px; background:color-mix(in srgb, var(--l1) 8%, transparent); color:var(--l2); }
-        .chip.full { background:color-mix(in srgb,#0A84FF 16%,transparent); color:#0A84FF; }
-        .chip.abc { background:color-mix(in srgb,#30D158 16%,transparent); color:#30D158; }
-        .vazio { text-align:center; padding:40px; color:var(--l3); font-size:13px; }
+        .envelope { max-width:1080px; margin:0 auto; padding:26px 24px 60px; }
+
+        /* Abertura: a frase que responde "o que eu faço agora" */
+        .manha { margin-bottom:22px; }
+        .manha h2 { font-size:27px; font-weight:700; color:var(--l1); margin:0 0 6px; letter-spacing:-.3px; }
+        .manha p { font-size:14px; color:var(--l2); margin:0; }
+        .manha b { color:var(--l1); }
+
+        /* Filas em bolha, como atalho — o detalhe fica abaixo */
+        .bolhas { display:flex; gap:20px; overflow-x:auto; padding:18px 4px 6px; margin-bottom:22px; }
+        .bolha { flex:0 0 auto; width:92px; text-align:center; cursor:pointer; background:none; border:0; padding:0; }
+        .bolha .circulo { width:62px; height:62px; margin:0 auto 8px; border-radius:50%; background:var(--s1); border:2px solid var(--sep);
+            display:flex; align-items:center; justify-content:center; position:relative; transition:transform .16s, border-color .16s; }
+        .bolha:hover .circulo { transform:translateY(-2px); }
+        .bolha.ativa .circulo { border-color:var(--marca); box-shadow:0 0 0 4px color-mix(in srgb, var(--marca) 16%, transparent); }
+        .bolha .circulo i { font-size:23px; color:var(--marca); }
+        .bolha .selo { position:absolute; top:-5px; right:-5px; min-width:22px; height:22px; border-radius:11px; background:var(--marca); color:#fff;
+            font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 6px; border:2px solid var(--bg,#fff); }
+        .bolha .nome { font-size:11.5px; font-weight:600; color:var(--l1); line-height:1.2; }
+        .bolha .val { font-size:10.5px; color:var(--l3); margin-top:2px; }
+        .bolha.ativa .nome { color:var(--marca); }
+
+        /* Capa dos urgentes: um cartao so, que abre em tela cheia. A expansao usa
+           FLIP — mede o retangulo de origem, fixa o elemento e anima ate o
+           retangulo de destino. E o que da a sensacao de "a pagina nasceu do
+           card" em vez de trocar de tela. */
+        .capa { position:relative; border-radius:24px; overflow:hidden; cursor:pointer; margin-bottom:26px;
+            min-height:210px; display:flex; flex-direction:column; justify-content:flex-end; padding:26px 28px;
+            background:linear-gradient(135deg, color-mix(in srgb, var(--blue) 92%, #000) 0%, #1a2340 45%, #0d1220 100%);
+            box-shadow:0 18px 44px rgba(10,60,140,.28); isolation:isolate;
+            transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s; }
+        .capa:hover { transform:translateY(-3px); box-shadow:0 24px 56px rgba(10,60,140,.36); }
+        .capa::after { content:''; position:absolute; inset:-40% -10% auto auto; width:460px; height:460px; z-index:-1;
+            background:radial-gradient(circle, rgba(255,159,10,.5) 0%, transparent 62%); filter:blur(14px); }
+        .capa::before { content:''; position:absolute; inset:auto auto -45% -12%; width:380px; height:380px; z-index:-1;
+            background:radial-gradient(circle, rgba(10,132,255,.55) 0%, transparent 64%); filter:blur(10px); }
+        .capa .rotulo { font-size:11px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+            color:rgba(255,255,255,.72); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+        .capa .rotulo i { color:#FF9F0A; }
+        .capa h3 { font-size:38px; font-weight:800; color:#fff; margin:0 0 8px; letter-spacing:-.8px; line-height:1; }
+        .capa .sub { font-size:14px; color:rgba(255,255,255,.78); margin:0; max-width:620px; }
+        .capa .sub b { color:#fff; }
+        .capa .abrir { position:absolute; top:22px; right:24px; display:flex; align-items:center; gap:7px;
+            font-size:12px; font-weight:700; color:#fff; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22);
+            padding:7px 14px; border-radius:999px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+        .capa .fitas { display:flex; gap:7px; margin-top:16px; flex-wrap:wrap; }
+        .capa .fita { font-size:11px; font-weight:600; color:#fff; background:rgba(255,255,255,.13);
+            border:1px solid rgba(255,255,255,.18); padding:4px 11px; border-radius:999px; }
+
+        /* Painel expandido: nasce no retangulo da capa e cresce ate a tela */
+        .palco { position:fixed; inset:0; z-index:120; pointer-events:none; opacity:0; transition:opacity .3s ease; }
+        .palco.aberto { pointer-events:auto; opacity:1; }
+        .palco .fundo { position:absolute; inset:0; background:color-mix(in srgb, var(--bg,#0b0d12) 62%, transparent);
+            -webkit-backdrop-filter:blur(22px); backdrop-filter:blur(22px); }
+        .palco .folha { position:fixed; overflow:hidden; border-radius:24px; display:flex; flex-direction:column;
+            background:linear-gradient(140deg, #101a2e 0%, #0b1020 55%, #090c16 100%);
+            box-shadow:0 40px 90px rgba(0,0,0,.45);
+            transition:top .52s cubic-bezier(.22,1,.36,1), left .52s cubic-bezier(.22,1,.36,1),
+                       width .52s cubic-bezier(.22,1,.36,1), height .52s cubic-bezier(.22,1,.36,1),
+                       border-radius .52s cubic-bezier(.22,1,.36,1); }
+        .folha-cab { display:flex; align-items:center; gap:14px; padding:20px 26px 14px; flex:0 0 auto; }
+        .voltar { width:38px; height:38px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
+            background:rgba(255,255,255,.1); color:#fff; font-size:17px; cursor:pointer; display:flex;
+            align-items:center; justify-content:center; transition:background .15s, transform .15s; }
+        .voltar:hover { background:rgba(255,255,255,.2); transform:translateX(-2px); }
+        .folha-cab h3 { font-size:21px; font-weight:700; color:#fff; margin:0; }
+        .folha-cab small { color:rgba(255,255,255,.6); font-size:12.5px; display:block; margin-top:2px; }
+        .folha-corpo { flex:1; overflow-y:auto; padding:8px 26px 30px; opacity:0; transform:translateY(14px);
+            transition:opacity .3s ease .18s, transform .34s cubic-bezier(.22,1,.36,1) .18s; }
+        .palco.pronto .folha-corpo { opacity:1; transform:none; }
+        /* Dentro do palco e feed: UMA coluna, cartao grande ocupando boa parte da
+           tela, com encaixe no scroll. O olho le um de cada vez em vez de varrer
+           uma grade — e a leitura certa quando cada item pede uma decisao. */
+        .folha .folha-corpo { scroll-snap-type:y proximity; scroll-padding-top:8px; }
+        .folha-nota { max-width:680px; margin:0 auto 18px; font-size:13.5px; color:rgba(255,255,255,.62);
+            border-left:2px solid rgba(255,255,255,.2); padding-left:14px; line-height:1.5; }
+        .folha .lista { grid-template-columns:1fr; max-width:680px; margin:0 auto; gap:22px; }
+        .folha .item { aspect-ratio:auto; min-height:min(64vh, 440px); padding:30px 32px; border-radius:26px;
+            scroll-snap-align:start; }
+        .folha .cab { margin-bottom:18px; }
+        .folha .pos { width:38px; height:38px; border-radius:12px; font-size:16px; }
+        .folha .marca-fila { font-size:11.5px; letter-spacing:.9px; }
+        .folha .acao { font-size:29px; margin-bottom:6px; }
+        .folha .acao-det { font-size:16px; margin-bottom:16px; }
+        .folha .motivo { font-size:15px; padding-left:14px; margin-bottom:18px; }
+        .folha .item h4 { font-size:14px; line-height:1.4; margin-bottom:14px; -webkit-line-clamp:2; }
+        .folha .nums { gap:26px; padding-top:18px; }
+        .folha .num .v { font-size:22px; }
+        .folha .num .r { font-size:10.5px; }
+        .folha .num .n { font-size:11px; }
+        .folha .meta { font-size:12.5px; gap:9px; margin-top:18px; }
+        .folha .meta .chip { padding:2px 10px; }
+        .folha .rodape { padding-top:20px; }
+        .folha .valor .v { font-size:30px; }
+        .folha .valor .r { font-size:10.5px; }
+        .folha .valor a { font-size:13px; }
+        @media (max-width:620px) { .folha .item { min-height:auto; padding:22px; } .folha .item h4 { font-size:19px; } }
+
+        /* dentro do palco os cartoes ficam escuros, para o vidro valer no fundo escuro */
+        .folha .item { background:rgba(255,255,255,.055); border-color:rgba(255,255,255,.1);
+            box-shadow:0 8px 26px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08); }
+        /* No palco o fundo e escuro: os tons de texto da tela clara sumiriam */
+        .folha .acao, .folha .valor .v, .folha .num .v { color:#fff; }
+        .folha .acao-det { color:rgba(255,255,255,.82); }
+        .folha .motivo { color:rgba(255,255,255,.64); }
+        .folha .item h4 { color:rgba(255,255,255,.52); }
+        .folha .num .r { color:rgba(255,255,255,.72); }
+        .folha .num .n { color:rgba(255,255,255,.42); }
+        .folha .num.alerta .v { color:#FFB340; }
+        .folha .meta, .folha .valor .r { color:rgba(255,255,255,.55); }
+        .folha .meta .chip { background:rgba(255,255,255,.1); color:rgba(255,255,255,.8); }
+        .folha .rodape { border-top-color:rgba(255,255,255,.1); }
+        @media (prefers-reduced-motion: reduce) {
+            .palco .folha, .folha-corpo { transition:none; }
+        }
+
+        .secao-tit { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--l3); margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+
+        /* Cartão grande e legível: número, ação em destaque, dinheiro à direita */
+        /* Grade de cards quadrados, como um feed: bate o olho e ve varios de uma
+           vez, em vez de uma lista comprida que so mostra tres por tela. */
+        .lista { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; align-items:stretch; }
+
+        /* Vidro fosco: o cartao deixa o fundo (a aurora) atravessar desfocado.
+           color-mix com transparent mantem isso legivel no tema claro e no escuro
+           sem cor fixa. */
+        .item { position:relative; border-radius:20px; padding:18px; aspect-ratio:1/1;
+            background:color-mix(in srgb, var(--s1) 62%, transparent);
+            -webkit-backdrop-filter:blur(20px) saturate(160%); backdrop-filter:blur(20px) saturate(160%);
+            border:1px solid color-mix(in srgb, var(--l1) 10%, transparent);
+            box-shadow:0 8px 26px rgba(0,0,0,.07), inset 0 1px 0 color-mix(in srgb, #fff 26%, transparent);
+            display:flex; flex-direction:column; overflow:hidden;
+            cursor:pointer;
+            transition:border-color .2s, transform .2s, box-shadow .2s; }
+        .item:hover { border-color:var(--marca); transform:translateY(-3px); box-shadow:0 16px 38px rgba(0,0,0,.14); }
+        /* faixa da cor da fila no topo: da para varrer a grade so pela cor */
+        .item::before { content:''; position:absolute; inset:0 0 auto 0; height:3px; background:var(--marca); opacity:.85; }
+        .cab { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+        /* centraliza no miolo: o quadrado com tudo colado no topo fica oco */
+        .corpo { flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; justify-content:center; }
+        .rodape { margin-top:auto; padding-top:12px; border-top:1px solid color-mix(in srgb, var(--l1) 8%, transparent); }
+
+        /* Entram deslizando quando alcancam a area visivel. Quem ja esta na tela
+           entra na abertura, escalonado, para nao piscar tudo de uma vez. */
+        .revela { opacity:0; transform:translateY(26px) scale(.985); }
+        .revela.dentro { opacity:1; transform:none; transition:opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1); }
+        @media (prefers-reduced-motion: reduce) { .revela, .revela.dentro { opacity:1; transform:none; transition:none; } }
+
+        /* As bolhas tambem ganham o vidro, para a tela ter um material so */
+        .bolha .circulo { background:color-mix(in srgb, var(--s1) 60%, transparent);
+            -webkit-backdrop-filter:blur(14px) saturate(150%); backdrop-filter:blur(14px) saturate(150%); }
+        .pos { width:30px; height:30px; border-radius:9px; background:color-mix(in srgb, var(--marca) 15%, transparent);
+            color:var(--marca); font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+        .marca-fila { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--marca);
+            display:inline-flex; align-items:center; gap:5px; min-width:0; }
+        .marca-fila span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        /* A acao e a manchete: e o que o olho pega primeiro. O produto vira
+           legenda, porque saber QUAL e menos urgente que saber O QUE FAZER. */
+        .acao { font-size:19px; font-weight:700; color:var(--l1); line-height:1.2; letter-spacing:-.2px; margin:0 0 4px; }
+        .acao-det { font-size:13px; color:var(--l2); margin-bottom:10px; }
+        .motivo { font-size:12.5px; color:var(--l3); line-height:1.45; padding-left:10px;
+            border-left:2px solid color-mix(in srgb, var(--marca) 45%, transparent); margin-bottom:12px; }
+        .item h4 { font-size:12.5px; font-weight:500; color:var(--l3); margin:0 0 10px; line-height:1.35; flex:0 0 auto;
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        /* Numeros com a janela embaixo: sem isso "54" nao quer dizer nada */
+        .nums { display:flex; gap:16px; flex-wrap:wrap; margin-top:auto; padding-top:12px; }
+        .num .v { font-size:15px; font-weight:700; color:var(--l1); line-height:1.1; font-variant-numeric:tabular-nums; }
+        .num .r { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--l2); margin-top:3px; }
+        .num .n { font-size:9.5px; color:var(--l3); }
+        .num.alerta .v { color:#FF9F0A; }
+        .meta { font-size:10.5px; color:var(--l3); display:flex; gap:7px; flex-wrap:wrap; margin-top:10px; }
+        .meta .chip { padding:1px 7px; border-radius:999px; background:color-mix(in srgb, var(--l1) 7%, transparent); color:var(--l2); }
+        .meta .chip.full { background:color-mix(in srgb,#0A84FF 15%,transparent); color:#0A84FF; }
+        .meta .chip.abc { background:color-mix(in srgb,#30D158 15%,transparent); color:#30D158; }
+        .valor { display:flex; align-items:flex-end; justify-content:space-between; gap:8px; }
+        .valor .v { font-size:19px; font-weight:700; color:var(--l1); line-height:1.05; }
+        .valor .r { font-size:9.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--l3); margin-top:2px; }
+        .valor a { font-size:11px; white-space:nowrap; }
+
+        /* Atalhos das filas: a mesma porta das bolinhas, em lista, para quem
+           prefere ler o nome a decorar o icone. */
+        .atalhos { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+        .atalho { display:flex; align-items:center; gap:13px; text-align:left; cursor:pointer;
+            border:1px solid color-mix(in srgb, var(--l1) 9%, transparent); border-left:3px solid var(--marca);
+            border-radius:14px; padding:14px 16px;
+            background:color-mix(in srgb, var(--s1) 62%, transparent);
+            -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+            transition:transform .16s, border-color .16s; }
+        .atalho:hover { transform:translateX(3px); border-color:var(--marca); }
+        .atalho > i:first-child { font-size:19px; color:var(--marca); }
+        .atalho .a-tit { font-size:14px; font-weight:600; color:var(--l1); }
+        .atalho .a-sub { font-size:11.5px; color:var(--l3); margin-top:2px; }
+        .atalho .seta { margin-left:auto; color:var(--l3); font-size:14px; }
+
+        .fila-nota { font-size:13px; color:var(--l2); border:1px solid color-mix(in srgb, var(--l1) 9%, transparent); border-left:3px solid var(--marca);
+            border-radius:14px; padding:12px 16px; margin-bottom:14px;
+            background:color-mix(in srgb, var(--s1) 62%, transparent);
+            -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); }
+        .vazio { text-align:center; padding:56px 20px; color:var(--l3); font-size:14px; }
+        .vazio i { font-size:34px; color:#30D158; display:block; margin-bottom:12px; }
         .estado { font-size:12px; color:var(--l3); display:flex; align-items:center; gap:8px; }
         .estado .pulso { width:8px; height:8px; border-radius:50%; background:#30D158; }
         .estado.novo .pulso { background:var(--blue); animation:pulsar 1s infinite; }
         @keyframes pulsar { 0%,100%{opacity:1} 50%{opacity:.3} }
         .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
-        .btn-acao.primario { background:var(--blue); color:#fff; border-color:transparent; }
-        .aviso-novo { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; background:var(--blue); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.28); z-index:60; display:none; align-items:center; gap:8px; }
+        .aviso-novo { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; background:var(--blue); color:#fff; padding:11px 20px; border-radius:999px;
+            font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.28); z-index:60; display:none; align-items:center; gap:8px; }
+        /* No estreito o quadrado aperta demais: solta a altura */
+        @media (max-width:560px) { .lista { grid-template-columns:1fr; } .item { aspect-ratio:auto; } }
     </style>
 </head>
 <body>
@@ -80,7 +252,7 @@
         <nav class="topbar">
             <div>
                 <h4 class="mb-0">Feed</h4>
-                <small class="text-secondary">O que o estoque precisa de você agora — em ordem de dinheiro</small>
+                <small class="text-secondary">Suas decisões de estoque, por ordem de dinheiro</small>
             </div>
             <div class="topbar-right" style="gap:12px">
                 <span class="estado" id="estado"><span class="pulso"></span><span id="estadoTexto">—</span></span>
@@ -88,14 +260,12 @@
             </div>
         </nav>
 
-        <div style="padding:24px">
-            <div class="topo">
-                <div class="kpi"><div class="r">Precisam de você</div><div class="v" id="kAcoes">—</div><div class="s" id="kBase">—</div></div>
-                <div class="kpi"><div class="r">Dinheiro em jogo</div><div class="v" id="kDinheiro">—</div><div class="s">por mês, somando as filas</div></div>
-                <div class="kpi"><div class="r">Fila mais urgente</div><div class="v" id="kFila" style="font-size:18px">—</div><div class="s" id="kFilaSub">—</div></div>
+        <div class="envelope">
+            <div class="manha">
+                <h2 id="saudacao">Bom dia</h2>
+                <p id="frase">—</p>
             </div>
-
-            <div class="abas" id="abas"></div>
+            <div class="bolhas" id="bolhas"></div>
             <div id="conteudo"><div class="vazio">Carregando...</div></div>
         </div>
     </main>
@@ -104,71 +274,257 @@
 <div class="aviso-novo" id="avisoNovo" onclick="aplicarNovo()"><i class="bi bi-arrow-repeat"></i> <span>Novidades no estoque — clique para ver</span></div>
 
 <script>
-let dados = null, filaAtiva = null, pendente = null, assinaturaAtual = '';
+let dados = null, vendo = 'manha', pendente = null, assinaturaAtual = '';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const hora = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
-function render() {
-    const f = dados.filas;
-    document.getElementById('kAcoes').textContent = dados.em_acao;
-    document.getElementById('kBase').textContent = `de ${dados.base_total} anúncios · o resto está em ordem`;
-    document.getElementById('kDinheiro').textContent = brl(dados.dinheiro_em_jogo);
-    document.getElementById('kFila').textContent = f.length ? f[0].titulo : '—';
-    document.getElementById('kFilaSub').textContent = f.length ? `${f[0].total} anúncios · ${brl(f[0].dinheiro)}` : 'nada pendente';
-    document.getElementById('estadoTexto').textContent = 'Coleta de ' + hora(dados.coletado_em) + ' · feed ' + hora(dados.gerado_em);
-
-    if (!f.length) {
-        document.getElementById('abas').innerHTML = '';
-        document.getElementById('conteudo').innerHTML = '<div class="vazio">Nada precisa de você agora. O estoque está em ordem.</div>';
-        return;
-    }
-    if (!filaAtiva || !f.some(x => x.id === filaAtiva)) filaAtiva = f[0].id;
-
-    document.getElementById('abas').innerHTML = f.map(x => `
-        <div class="aba ${x.id === filaAtiva ? 'ativa' : ''}" onclick="abrirFila('${x.id}')">
-            <i class="bi ${esc(x.icone)}" style="color:${esc(x.cor)}"></i>
-            <div><div class="n">${x.total}</div><div class="t">${esc(x.titulo)}</div><div class="d">${brl(x.dinheiro)}</div></div>
-        </div>`).join('');
-
-    const fila = f.find(x => x.id === filaAtiva);
-    document.getElementById('conteudo').innerHTML = `
-        <div class="fila-cab">
-            <h5><i class="bi ${esc(fila.icone)}" style="color:${esc(fila.cor)}"></i> ${esc(fila.titulo)} <span style="color:var(--l3);font-weight:400">${fila.total}</span></h5>
-            <p>${esc(fila.porque)}</p>
-        </div>
-        <div class="cartoes">${fila.itens.map(p => cartao(p, fila)).join('')}</div>`;
+function saudacao() {
+    const h = new Date().getHours();
+    return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 }
 
-function cartao(p, fila) {
-    const bloq = (p.bloqueado_detalhe || []).map(d => `${d.quantidade} ${d.status}`).join(', ');
-    return `<div class="cartao" style="--marca:${esc(fila.cor)}">
-        <div style="min-width:0">
-            <div class="c-tit" title="${esc(p.titulo)}">${esc(p.titulo)}</div>
-            <div class="c-sub">
-                <span>${esc(p.sku)}</span>
-                <span class="chip ${p.eFull ? 'full' : ''}">${p.eFull ? 'Full' : 'Fora do Full'}</span>
-                ${p.curvaAbc ? `<span class="chip abc">${esc(p.curvaAbc)}</span>` : ''}
-                <span>${p.vendas30} un/30 d</span>
-                <span>estoque ${p.estoque}</span>
-                ${p.preco ? `<span>${brl(p.preco)}</span>` : ''}
-                ${bloq ? `<span title="detalhe do galpão">${esc(bloq)}</span>` : ''}
-            </div>
-            <div class="c-acao"><i class="bi bi-arrow-right-short"></i> ${esc(p.acao)}</div>
+function render() {
+    const f = dados.filas;
+    document.getElementById('estadoTexto').textContent = 'Coleta de ' + hora(dados.coletado_em);
+    document.getElementById('saudacao').textContent = saudacao();
+
+    if (!f.length) {
+        document.getElementById('frase').textContent = 'Nada precisa de você agora — o estoque está em ordem.';
+        document.getElementById('bolhas').innerHTML = '';
+        document.getElementById('conteudo').innerHTML = '<div class="vazio"><i class="bi bi-check-circle"></i>Nenhuma decisão pendente nos ' + dados.base_total + ' anúncios.</div>';
+        return;
+    }
+
+    const dezena = dados.prioridades || [];
+    document.getElementById('frase').innerHTML =
+        `Comece por estas <b>${dezena.length}</b> — elas valem <b>${brl(dezena.reduce((s, p) => s + p.peso, 0))}</b>. ` +
+        `No total são <b>${dados.em_acao}</b> pendências de ${dados.base_total} anúncios, <b>${brl(dados.dinheiro_em_jogo)}</b> em jogo.`;
+
+    // bolhas: a manhã primeiro, depois cada fila
+    document.getElementById('bolhas').innerHTML = `
+        <button class="bolha ativa" id="bolha-manha" style="--marca:var(--blue)" onclick="abrirDaBolha('manha')">
+            <div class="circulo"><i class="bi bi-sunrise"></i><span class="selo">${dezena.length}</span></div>
+            <div class="nome">Resolver agora</div><div class="val">${brl(dezena.reduce((s, p) => s + p.peso, 0))}</div>
+        </button>` + f.map(x => `
+        <button class="bolha" id="bolha-${x.id}" style="--marca:${esc(x.cor)}" onclick="abrirDaBolha('${x.id}')">
+            <div class="circulo"><i class="bi ${esc(x.icone)}"></i><span class="selo">${x.total}</span></div>
+            <div class="nome">${esc(x.titulo)}</div><div class="val">${brl(x.dinheiro)}</div>
+        </button>`).join('');
+
+    const top3 = dezena.slice(0, 3).map(p => modelo(p.titulo)).join(' · ');
+    document.getElementById('conteudo').innerHTML = `
+        <div class="capa" id="capa" onclick="abrirDaBolha('manha')">
+            <div class="abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</div>
+            <div class="rotulo"><i class="bi bi-fire"></i> Mais urgentes</div>
+            <h3>${dezena.length} decisões</h3>
+            <p class="sub">Valem <b>${brl(dezena.reduce((s, p) => s + p.peso, 0))}</b> por mês. Começam por ${esc(top3)}.</p>
+            <div class="fitas">${filasNaDezena(dezena).map(t => `<span class="fita">${esc(t)}</span>`).join('')}</div>
         </div>
-        <div class="c-peso">
-            <div class="v">${brl(p.peso)}</div>
-            <div class="r">${esc(fila.rotulo_peso)}</div>
-            ${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" style="font-size:11px">abrir anúncio ↗</a>` : ''}
+        <div class="secao-tit" style="margin-top:26px"><i class="bi bi-collection"></i> Por fila — clique na bolinha acima para abrir</div>
+        <div class="atalhos">${f.map(x => `
+            <button class="atalho" style="--marca:${esc(x.cor)}" onclick="abrirDaBolha('${x.id}')">
+                <i class="bi ${esc(x.icone)}"></i>
+                <div><div class="a-tit">${esc(x.titulo)}</div><div class="a-sub">${x.total} anúncios · ${brl(x.dinheiro)}</div></div>
+                <i class="bi bi-chevron-right seta"></i>
+            </button>`).join('')}</div>`;
+}
+
+function item(p, pos, cor, filaTitulo, icone, rotulo) {
+    return `<div class="item revela" data-chave="${esc(p.chave)}" onclick="irAoProduto('${esc(p.chave)}')" role="button" style="--marca:${esc(cor)}">
+        <div class="cab">
+            <span class="marca-fila"><i class="bi ${esc(icone)}"></i> <span>${esc(filaTitulo)}</span></span>
+            <span class="pos">${pos}</span>
+        </div>
+        <div class="corpo">
+            <div class="acao">${esc(p.acao)}</div>
+            ${p.acao_detalhe ? `<div class="acao-det">${esc(p.acao_detalhe)}</div>` : ''}
+            ${p.motivo ? `<div class="motivo">${esc(p.motivo)}</div>` : ''}
+            <h4 title="${esc(p.titulo)}">${esc(p.sku)} · ${esc(p.titulo)}</h4>
+            <div class="meta">
+                <span class="chip ${p.eFull ? 'full' : ''}">${p.eFull ? 'Full' : 'Fora do Full'}</span>
+                ${p.curvaAbc ? `<span class="chip abc">curva ${esc(p.curvaAbc)}</span>` : ''}
+            </div>
+            <div class="nums">${(p.metricas || []).map(m => `
+                <div class="num ${/travado|transfer/i.test(m.rotulo) ? 'alerta' : ''}">
+                    <div class="v">${esc(m.valor)}</div>
+                    <div class="r">${esc(m.rotulo)}</div>
+                    <div class="n">${esc(m.nota)}</div>
+                </div>`).join('')}</div>
+        </div>
+        <div class="rodape">
+            <div class="valor">
+                <div>
+                    <div class="v">${brl(p.peso)}</div>
+                    <div class="r">${esc(rotulo)}</div>
+                </div>
+                ${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">abrir ↗</a>` : ''}
+            </div>
         </div>
     </div>`;
 }
 
-function abrirFila(id) { filaAtiva = id; render(); }
+// Clique no card: leva direto pra linha exata do produto no painel principal.
+function irAoProduto(chave) {
+    window.location.href = '/painel?chave=' + encodeURIComponent(chave);
+}
 
-// Tempo real: o feed se vigia sozinho. Só avisa quando a coleta muda de verdade
-// (assinatura diferente) — recarregar a tela por conta própria no meio de uma
-// leitura é pior que não atualizar.
+function ver(id) { vendo = id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+// "Kit Tapete Bandeja Fiat Toro 2016..." -> "Fiat Toro". Sem isso a capa repete
+// tres vezes o mesmo comeco de titulo e nao diz nada.
+const GENERICO = /^(kit|jogo|par|tapete|bandeja|premium|lanterna|traseira|dianteiro|farol|borracha|inteiriço|inteirico|de|do|da|p|com)$/i;
+function modelo(titulo) {
+    const palavras = String(titulo || '').split(/\s+/).filter(Boolean);
+    const util = palavras.filter(x => !GENERICO.test(x) && !/^\d{4}$/.test(x) && !/^\d/.test(x));
+    return util.slice(0, 2).join(' ') || palavras.slice(0, 2).join(' ');
+}
+
+// Quais filas aparecem na dezena — vira as fitas da capa
+function filasNaDezena(dezena) {
+    const conta = {};
+    for (const p of dezena) conta[p.fila_titulo] = (conta[p.fila_titulo] || 0) + 1;
+    return Object.entries(conta).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t} · ${n}`);
+}
+
+// Abertura estilo macOS: a folha nasce EXATAMENTE onde a capa esta e cresce
+// ate quase a tela toda. Fechar faz o caminho inverso, terminando no card.
+let palco = null, origemId = null;
+
+// Descobre o que abrir a partir do id: 'manha' = a dezena; senao, a fila.
+function conteudoDe(id) {
+    const dezena = dados.prioridades || [];
+    if (id === 'manha') {
+        return { titulo: 'Mais urgentes', itens: dezena,
+            sub: `${dezena.length} decisões · ${brl(dezena.reduce((s, p) => s + p.peso, 0))} por mês`,
+            nota: 'As mais caras de todas as filas, na ordem do dinheiro.' };
+    }
+    const fila = (dados.filas || []).find(x => x.id === id);
+    if (!fila) return null;
+    return { titulo: fila.titulo, nota: fila.porque,
+        sub: `${fila.total} anúncios · ${brl(fila.dinheiro)}`,
+        itens: fila.itens.map((p, i) => ({ ...p, posicao: i + 1, cor: fila.cor, icone: fila.icone,
+            fila_titulo: fila.titulo, rotulo_peso: fila.rotulo_peso })) };
+}
+
+// A folha nasce no elemento clicado — a capa ou a bolinha — e cresce dali.
+function abrirDaBolha(id) {
+    const origem = document.getElementById(id === 'manha' ? 'capa' : 'bolha-' + id)
+        || document.getElementById('bolha-' + id) || document.getElementById('capa');
+    abrirPalco(id, origem);
+}
+
+function abrirPalco(id = 'manha', origem = null) {
+    if (palco) return;
+    const conf = conteudoDe(id);
+    if (!conf) return;
+    origemId = id;
+    const alvo = origem || document.getElementById('capa');
+    const r = alvo.getBoundingClientRect();
+
+    palco = document.createElement('div');
+    palco.className = 'palco';
+    palco.innerHTML = `
+        <div class="fundo"></div>
+        <div class="folha" style="top:${r.top}px; left:${r.left}px; width:${r.width}px; height:${r.height}px; border-radius:${Math.min(r.width, r.height) / 2}px">
+            <div class="folha-cab">
+                <button class="voltar" onclick="fecharPalco()" title="Voltar (Esc)"><i class="bi bi-chevron-left"></i></button>
+                <div>
+                    <h3>${esc(conf.titulo)}</h3>
+                    <small>${esc(conf.sub)}</small>
+                </div>
+            </div>
+            <div class="folha-corpo">
+                ${conf.nota ? `<div class="folha-nota">${esc(conf.nota)}</div>` : ''}
+                <div class="lista">${conf.itens.map(p => item(p, p.posicao, p.cor, p.fila_titulo, p.icone, p.rotulo_peso)).join('')}</div>
+            </div>
+        </div>`;
+    document.body.appendChild(palco);
+    const folha = palco.querySelector('.folha');
+
+    // um quadro depois: o navegador ja registrou o retangulo de origem e a
+    // transicao tem de onde sair
+    requestAnimationFrame(() => {
+        palco.classList.add('aberto');
+        const m = Math.min(40, innerWidth * .04);
+        folha.style.top = m + 'px';
+        folha.style.left = m + 'px';
+        folha.style.width = (innerWidth - m * 2) + 'px';
+        folha.style.height = (innerHeight - m * 2) + 'px';
+        folha.style.borderRadius = '22px';
+    });
+    // transitionend nem sempre dispara (se o navegador agrupar os dois quadros,
+    // nao ha transicao e nao ha evento). O relogio garante que o conteudo
+    // aparece de qualquer jeito; o que chegar primeiro vale.
+    let chegou = false;
+    const aoChegar = () => {
+        if (chegou || !palco) return;
+        chegou = true;
+        palco.classList.add('pronto');
+        revelar();
+    };
+    folha.addEventListener('transitionend', (e) => { if (e.propertyName === 'height') aoChegar(); });
+    setTimeout(aoChegar, 560);
+    document.addEventListener('keydown', escFecha);
+    document.body.style.overflow = 'hidden';
+}
+
+function escFecha(e) { if (e.key === 'Escape') fecharPalco(); }
+
+function fecharPalco() {
+    if (!palco) return;
+    const capa = document.getElementById(origemId === 'manha' ? 'capa' : 'bolha-' + origemId)
+        || document.getElementById('capa');
+    const folha = palco.querySelector('.folha');
+    const r = capa ? capa.getBoundingClientRect() : { top: innerHeight / 2, left: innerWidth / 2, width: 0, height: 0 };
+    palco.classList.remove('pronto', 'aberto');
+    folha.style.top = r.top + 'px';
+    folha.style.left = r.left + 'px';
+    folha.style.width = r.width + 'px';
+    folha.style.height = r.height + 'px';
+    folha.style.borderRadius = capa && origemId !== 'manha' ? '50%' : '24px';
+    const ir = palco;
+    palco = null;
+    document.removeEventListener('keydown', escFecha);
+    document.body.style.overflow = '';
+    setTimeout(() => ir.remove(), 540);
+}
+
+// Revelacao no scroll. Um observador so, recriado a cada render: o cartao entra
+// quando encosta na area visivel, partindo do canto da tela mais proximo da sua
+// posicao final e deslizando ate alinhar no grid central (os cards chegam ao
+// centro). Atraso por posicao faz a fila "cair" em cascata.
+let olho = null;
+function revelar() {
+    if (olho) olho.disconnect();
+    const alvos = [...document.querySelectorAll('.revela')];
+    if (!('IntersectionObserver' in window)) { alvos.forEach(e => e.classList.add('dentro')); return; }
+    olho = new IntersectionObserver((entradas) => {
+        for (const e of entradas) {
+            if (!e.isIntersecting) continue;
+            const i = Number(e.target.dataset.ordem || 0);
+            // so escalona o primeiro lote; o resto entra assim que aparece
+            e.target.style.transitionDelay = (i < 6 ? i * 70 : 0) + 'ms';
+            olho.unobserve(e.target);
+            requestAnimationFrame(() => e.target.classList.add('dentro'));
+        }
+    }, { rootMargin: '0px 0px -8% 0px', threshold: .06 });
+    alvos.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        // o cartao nasce fora da tela, num dos quatro cantos (o mais proximo
+        // do seu lugar no grid) e desliza ate o centro
+        const dx = cx < innerWidth / 2 ? '-62vw' : '62vw';
+        const dy = cy < innerHeight / 2 ? '-46vh' : '46vh';
+        el.style.setProperty('--dx', dx);
+        el.style.setProperty('--dy', dy);
+        el.dataset.ordem = i;
+        olho.observe(el);
+    });
+}
+
+// Tempo real: só avisa quando a coleta muda de verdade. Recarregar sozinho no
+// meio da leitura é pior que não atualizar.
 async function checar() {
     try {
         const a = await fetch('/api/feed/assinatura').then(r => r.json());
