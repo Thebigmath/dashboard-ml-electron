@@ -118,8 +118,12 @@
                 <div class="sv-view" id="view-vendas">
                     <div class="sv-titulo">
                         <div><h3>Vendas de ontem x mês anterior</h3><small id="vdSub"></small></div>
-                        <button class="btn-acao" onclick="baixar('vendas')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn-acao" id="btnRankMt" onclick="coletarRanking()" title="Roda o bot do Mercado Turbo em segundo plano"><i class="bi bi-trophy"></i> Coletar ranking MT</button>
+                            <button class="btn-acao" onclick="baixar('vendas')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
+                        </div>
                     </div>
+                    <div class="sv-aviso" id="rkEstado" style="display:none"></div>
                     <div class="sv-tiles" id="vdTiles"></div>
                     <div class="sv-filtros" id="vdFiltros">
                         <button class="sv-chip ativo" data-f="todos">Todos</button>
@@ -258,6 +262,35 @@ function desenharConc() {
 }
 $('ccBusca').addEventListener('input', desenharConc);
 
+// ranking do Mercado Turbo: dispara o bot e acompanha
+let rkTimer = null;
+async function coletarRanking() {
+    const r = await api('/api/seven/ranking_mt/coletar', { method: 'POST' }).catch(e => ({ ok: false, erro: e.message }));
+    if (!r.ok) { mostrarRk(r.erro, true); return; }
+    acompanharRanking();
+}
+function mostrarRk(txt, erro) {
+    const el = $('rkEstado');
+    el.style.display = txt ? '' : 'none';
+    el.style.color = erro ? '#ff453a' : '';
+    el.innerHTML = txt || '';
+}
+async function acompanharRanking() {
+    clearTimeout(rkTimer);
+    let e;
+    try { e = await api('/api/seven/ranking_mt/estado'); } catch { return; }
+    $('btnRankMt').disabled = e.rodando;
+    if (e.rodando) {
+        const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
+        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking no Mercado Turbo em segundo plano (${e.janelas} janela(s))${p}. Pode continuar usando o computador; não feche nem minimize as janelas do MT.`);
+        rkTimer = setTimeout(acompanharRanking, 5000);
+    } else if (e.iniciado_em && $('rkEstado').style.display !== 'none') {
+        mostrarRk('<i class="bi bi-check2-circle"></i> ' + esc(e.resumo || 'Coleta do ranking terminada.'));
+        delete cache.vendas; delete cache.noticias;
+        carregar('vendas', true);
+    }
+}
+
 // planilha
 function baixar(tipo) { location.href = '/api/seven/planilha?tipo=' + tipo; }
 
@@ -299,6 +332,7 @@ async function recarregarTudo() {
 }
 
 mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias');
+acompanharRanking();
 requestAnimationFrame(() => document.body.classList.add('page-ready'));
 setTimeout(() => document.body.classList.add('page-ready'), 150);
 </script>
