@@ -12,6 +12,7 @@ const avisos = require('../lib/avisos');
 const perguntas = require('../lib/perguntas');
 const parados = require('../lib/parados');
 const feed = require('../lib/feed');
+const seven = require('../lib/seven');
 const mercado = require('../lib/mercado');
 const nubimetrics = require('../lib/nubimetrics');
 const reputacao = require('../lib/reputacao');
@@ -1112,6 +1113,25 @@ router.get('/feed', auth, (req, res) => {
 router.get('/feed/assinatura', auth, (req, res) => {
     try { res.json(feed.assinatura()); }
     catch (e) { res.status(500).json({ erro: String(e.message || e) }); }
+});
+
+// ── Seven: noticias, vendas de ontem e concorrentes ─────────────────────────
+const erroJson = (res) => (e) => res.status(500).json({ erro: String(e.message || e) });
+router.get('/seven/noticias', auth, (req, res) => { seven.noticias().then(d => res.json(d)).catch(erroJson(res)); });
+router.get('/seven/vendas', auth, (req, res) => { seven.tabelaVendas(false).then(d => res.json(d)).catch(erroJson(res)); });
+router.get('/seven/concorrentes', auth, (req, res) => {
+    try { res.json(seven.tabelaConcorrentes()); } catch (e) { erroJson(res)(e); }
+});
+// Rebusca os pedidos de ontem (a coleta de estoque roda antes, pelo /atualizar).
+router.post('/seven/recarregar', auth, (req, res) => {
+    seven.vendasOntem(true).then(d => res.json({ ok: true, dia: d.dia, pedidos: d.pedidos })).catch(erroJson(res));
+});
+router.get('/seven/planilha', auth, (req, res) => {
+    seven.planilha(req.query.tipo === 'concorrentes' ? 'concorrentes' : 'vendas').then(({ nome, buffer }) => {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="seven_${nome.replace(/[^\w-]+/g, '_')}.xlsx"`);
+        res.send(buffer);
+    }).catch(erroJson(res));
 });
 
 // ── Produtos parados ────────────────────────────────────────────────────────
