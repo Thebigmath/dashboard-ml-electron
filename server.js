@@ -56,6 +56,8 @@ module.exports = {
         require('./lib/reputacao').iniciarAgendador();
         // notificações globais: feed dos próximos projetos, 45 s depois e a cada 30 min
         require('./lib/avisos').iniciarAgendador();
+        // ranking do Mercado Turbo (bot Python): toda segunda a partir das 7h
+        require('./lib/ranking_mt').iniciarAgendador();
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
         setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
@@ -66,6 +68,7 @@ module.exports = {
         require('./lib/envios_alerta').pararAgendador();
         require('./lib/reputacao').pararAgendador();
         require('./lib/avisos').pararAgendador();
+        require('./lib/ranking_mt').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };
