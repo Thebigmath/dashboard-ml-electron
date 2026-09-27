@@ -215,7 +215,8 @@ const COR_SIT = { 'Acima da média': '#30D158', 'Na média': '#8E8E93', 'Abaixo 
 function renderVendas(d) {
     const r = d.resumo;
     const varTxt = r.variacao == null ? '' : `<span class="${r.variacao >= 0 ? 'sv-up' : 'sv-down'}">${r.variacao >= 0 ? '+' : ''}${Math.round(r.variacao * 100)}%</span>`;
-    $('vdSub').textContent = `Ontem = ${diaBR(d.dia)} · ${d.pedidos} pedidos · base: ${d.base.nome} (${d.base.pedidos} pedidos em ${d.base.dias} dias)`;
+    $('vdSub').textContent = `Ontem = ${diaBR(d.dia)} · ${d.pedidos} pedidos · base: ${d.base.nome} (${d.base.pedidos} pedidos em ${d.base.dias} dias)`
+        + (d.ranking_mt.disponivel ? ` · Ranking MT de ${diaBR(d.ranking_mt.coletado_em)}` : ' · Ranking MT indisponível');
     $('vdTiles').innerHTML = `
         <div class="sv-tile"><div class="n">${r.unidades_ontem}</div><div class="r">unidades ontem ${varTxt}</div></div>
         <div class="sv-tile"><div class="n">${r.media_dia_base}</div><div class="r">média/dia em ${esc(d.base.nome)}</div></div>
@@ -228,13 +229,15 @@ function desenharVendas() {
     const q = $('vdBusca').value.trim().toLowerCase();
     let ls = d.linhas.filter(l => (vdFiltro === 'todos' || l.situacao === vdFiltro) && (!q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q)));
     const { campo, desc } = vdOrdem;
-    ls = ls.slice().sort((a, b) => { const x = a[campo] ?? -Infinity, y = b[campo] ?? -Infinity; return (x > y ? 1 : x < y ? -1 : 0) * (desc ? -1 : 1); });
+    const valor = (l, c) => c === 'rank' ? (l.rank_mt ? -l.rank_mt.posicao : null) : l[c];
+    ls = ls.slice().sort((a, b) => { const x = valor(a, campo) ?? -Infinity, y = valor(b, campo) ?? -Infinity; return (x > y ? 1 : x < y ? -1 : 0) * (desc ? -1 : 1); });
     const col = (c, t, cls) => `<th class="${cls || ''}" data-c="${c}">${t}${vdOrdem.campo === c ? (vdOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
-    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas_mes', 'Vendas em ' + esc(d.base.nome), 'num')}${col('variacao', 'Variação', 'num')}${col('situacao', 'Situação')}</tr></thead>
+    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas_mes', 'Vendas em ' + esc(d.base.nome), 'num')}${col('variacao', 'Variação', 'num')}${col('rank', 'Ranking MT', 'num')}${col('situacao', 'Situação')}</tr></thead>
         <tbody>${ls.slice(0, LIMITE).map(l => `<tr>
             <td>${esc(l.sku)}</td><td>${esc(l.titulo)}${l.status !== 'active' ? ` <small style="color:var(--l3)">(${esc(l.status)})</small>` : ''}</td>
             <td class="num"><b>${l.ontem}</b></td><td class="num">${l.media_dia.toFixed(1)}</td><td class="num">${l.vendas_mes}</td>
             <td class="num ${l.variacao == null ? '' : l.variacao >= 0 ? 'sv-up' : 'sv-down'}">${l.variacao == null ? '—' : (l.variacao >= 0 ? '+' : '') + Math.round(l.variacao * 100) + '%'}</td>
+            <td class="num" title="${l.rank_mt ? esc('termo: ' + l.rank_mt.termo) : 'não apareceu nos termos buscados'}">${l.rank_mt ? `pág. ${l.rank_mt.pagina} · <b>${l.rank_mt.posicao}º</b>` : '—'}</td>
             <td><span class="sv-sit" style="color:${COR_SIT[l.situacao] || 'var(--l2)'};background:color-mix(in srgb, ${COR_SIT[l.situacao] || '#888'} 14%, transparent)">${esc(l.situacao)}</span></td></tr>`).join('')}</tbody>`;
     $('vdMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios`;
     $('vdTabela').querySelectorAll('th').forEach(th => th.onclick = () => { const c = th.dataset.c; vdOrdem = { campo: c, desc: vdOrdem.campo === c ? !vdOrdem.desc : true }; desenharVendas(); });
