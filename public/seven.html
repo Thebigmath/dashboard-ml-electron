@@ -14,12 +14,45 @@
            coluna de 220px onde nao se le nada. */
         .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
         .btn-acao:disabled { opacity:.5; cursor:default; }
-        .sv-palco { min-height: calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px; }
-        .sv-cartao { width:min(520px, 100%); padding:40px 36px; border-radius:20px; border:1px solid var(--sep); background:var(--s1); text-align:center; }
-        .sv-marca { font-size:13px; font-weight:700; letter-spacing:.14em; color:var(--l3); display:inline-flex; align-items:center; gap:8px; }
-        .sv-status { font-size:56px; font-weight:800; color:var(--l1); margin:18px 0 22px; letter-spacing:-.02em; }
-        .sv-barra { height:10px; border-radius:99px; background:color-mix(in srgb, var(--l1) 10%, transparent); overflow:hidden; }
-        .sv-cheio { height:100%; border-radius:99px; background:var(--accent, #0a84ff); }
+        .sv-wrap { display:grid; grid-template-columns:230px minmax(0,1fr); gap:22px; padding:22px 24px 40px; }
+        @media (max-width: 900px) { .sv-wrap { grid-template-columns:1fr; } }
+        .sv-nav { display:flex; flex-direction:column; gap:8px; position:sticky; top:16px; align-self:start; }
+        .sv-nav button, .sv-nav a { display:flex; align-items:center; gap:10px; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); font-size:13px; font-weight:600; text-align:left; cursor:pointer; text-decoration:none; }
+        .sv-nav button:hover, .sv-nav a:hover { border-color:color-mix(in srgb, var(--accent, #0a84ff) 55%, var(--sep)); }
+        .sv-nav button.ativo { background:color-mix(in srgb, var(--accent, #0a84ff) 14%, var(--s1)); border-color:var(--accent, #0a84ff); }
+        .sv-nav i { font-size:16px; opacity:.85; }
+        .sv-nav .sv-sep { height:1px; background:var(--sep); margin:6px 2px; }
+        .sv-view { display:none; } .sv-view.ativo { display:block; }
+        .sv-titulo { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+        .sv-titulo h3 { font-size:20px; font-weight:700; margin:0; }
+        .sv-titulo small { color:var(--l3); }
+        .sv-cat { margin-bottom:26px; }
+        .sv-cat h4 { font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+        .sv-cat h4 .ponto { width:8px; height:8px; border-radius:50%; }
+        .sv-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
+        .sv-card { border:1px solid var(--sep); border-left:3px solid var(--marca); background:var(--s1); border-radius:12px; padding:14px 16px; cursor:pointer; transition:transform .15s; }
+        .sv-card:hover { transform:translateY(-2px); }
+        .sv-card .t { font-weight:700; font-size:14px; margin-bottom:4px; color:var(--l1); }
+        .sv-card .x { font-size:13px; color:var(--l2); margin-bottom:6px; }
+        .sv-card .p { font-size:12px; color:var(--l3); }
+        .sv-card .v { font-size:13px; font-weight:700; margin-top:6px; color:var(--marca); }
+        .sv-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px; margin-bottom:16px; }
+        .sv-tile { border:1px solid var(--sep); background:var(--s1); border-radius:12px; padding:12px 14px; }
+        .sv-tile .n { font-size:22px; font-weight:800; } .sv-tile .r { font-size:11px; color:var(--l3); text-transform:uppercase; letter-spacing:.06em; }
+        .sv-filtros { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+        .sv-chip { padding:6px 12px; border-radius:99px; border:1px solid var(--sep); background:none; color:var(--l2); font-size:12px; font-weight:600; cursor:pointer; }
+        .sv-chip.ativo { background:var(--accent, #0a84ff); border-color:var(--accent, #0a84ff); color:#fff; }
+        .sv-busca { margin-left:auto; padding:7px 12px; border-radius:10px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); font-size:13px; min-width:220px; }
+        .sv-tabela { width:100%; border-collapse:collapse; font-size:13px; }
+        .sv-tabela th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--l3); padding:9px 10px; border-bottom:1px solid var(--sep); position:sticky; top:0; background:var(--s1); cursor:pointer; white-space:nowrap; }
+        .sv-tabela td { padding:9px 10px; border-bottom:1px solid var(--sep); vertical-align:top; }
+        .sv-tabela td.num, .sv-tabela th.num { text-align:right; }
+        .sv-caixa { border:1px solid var(--sep); background:var(--s1); border-radius:12px; overflow:auto; max-height:calc(100vh - 330px); }
+        .sv-sit { font-size:11px; font-weight:700; padding:3px 8px; border-radius:99px; white-space:nowrap; }
+        .sv-up { color:#30D158; } .sv-down { color:#FF453A; }
+        .sv-aviso { border:1px dashed var(--sep); border-radius:12px; padding:12px 14px; color:var(--l2); font-size:13px; margin-bottom:14px; }
+        .sv-vazio { color:var(--l3); padding:30px; text-align:center; }
+        .sv-mais { font-size:12px; color:var(--l3); padding:10px; text-align:center; }
     </style>
 </head>
 <body>
@@ -58,21 +91,213 @@
         <nav class="topbar">
             <div>
                 <h4 class="mb-0">SEVEN</h4>
-                <small class="text-secondary">App de manutenção de anúncios</small>
+                <small class="text-secondary">Notícias urgentes, vendas e concorrentes</small>
+            </div>
+            <div class="topbar-right" style="gap:12px">
+                <small class="text-secondary" id="svEstado">—</small>
+                <button class="btn-acao" id="svRecarregar" onclick="recarregarTudo()" title="Coleta tudo de novo no Mercado Livre"><i class="bi bi-arrow-clockwise"></i> Recarregar</button>
             </div>
         </nav>
 
-        <div class="sv-palco">
-            <div class="sv-cartao">
-                <div class="sv-marca"><i class="bi bi-7-circle"></i> SEVEN</div>
-                <div class="sv-status">Em 45%</div>
-                <div class="sv-barra"><div class="sv-cheio" style="width:45%"></div></div>
-            </div>
+        <div class="sv-wrap">
+            <aside class="sv-nav">
+                <button data-view="noticias" class="ativo"><i class="bi bi-lightning-charge"></i> Notícias urgentes</button>
+                <div class="sv-sep"></div>
+                <button data-view="concorrentes"><i class="bi bi-people"></i> Análise de concorrentes</button>
+                <button data-view="vendas"><i class="bi bi-graph-up-arrow"></i> Análise por tempo de vendas</button>
+                <button data-view="ia"><i class="bi bi-stars"></i> Análise com IA</button>
+                <a href="/feed"><i class="bi bi-box-seam"></i> Inteligência de estoque</a>
+            </aside>
+
+            <section>
+                <div class="sv-view ativo" id="view-noticias">
+                    <div class="sv-titulo"><div><h3>Notícias urgentes</h3><small id="nvSub"></small></div></div>
+                    <div id="nvConteudo"><div class="sv-vazio">Carregando...</div></div>
+                </div>
+
+                <div class="sv-view" id="view-vendas">
+                    <div class="sv-titulo">
+                        <div><h3>Vendas de ontem x média de 30 dias</h3><small id="vdSub"></small></div>
+                        <button class="btn-acao" onclick="baixar('vendas')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
+                    </div>
+                    <div class="sv-tiles" id="vdTiles"></div>
+                    <div class="sv-aviso">A coluna <b>Meta</b> fica vazia até a planilha de metas ser importada (hoje só existem metas para os tapetes).</div>
+                    <div class="sv-filtros" id="vdFiltros">
+                        <button class="sv-chip ativo" data-f="todos">Todos</button>
+                        <button class="sv-chip" data-f="Não vendeu">Não venderam</button>
+                        <button class="sv-chip" data-f="Acima da média">Acima da média</button>
+                        <button class="sv-chip" data-f="Abaixo da média">Abaixo da média</button>
+                        <button class="sv-chip" data-f="Na média">Na média</button>
+                        <input class="sv-busca" id="vdBusca" placeholder="Buscar SKU ou produto...">
+                    </div>
+                    <div class="sv-caixa"><table class="sv-tabela" id="vdTabela"></table></div>
+                    <div class="sv-mais" id="vdMais"></div>
+                </div>
+
+                <div class="sv-view" id="view-concorrentes">
+                    <div class="sv-titulo">
+                        <div><h3>Análise de concorrentes</h3><small>MP = meu preço · PC = preço do concorrente · DF% = diferença · RANK NUB = ranking Nubimetrics</small></div>
+                        <button class="btn-acao" onclick="baixar('concorrentes')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
+                    </div>
+                    <div class="sv-aviso">PC, DF% e RANK NUB entram quando o Nubimetrics e o Mercado Turbo forem ligados. Por enquanto a tabela mostra o seu preço de cada anúncio ativo.</div>
+                    <div class="sv-filtros"><input class="sv-busca" id="ccBusca" placeholder="Buscar SKU ou produto..." style="margin-left:0"></div>
+                    <div class="sv-caixa"><table class="sv-tabela" id="ccTabela"></table></div>
+                    <div class="sv-mais" id="ccMais"></div>
+                </div>
+
+                <div class="sv-view" id="view-ia">
+                    <div class="sv-titulo"><div><h3>Análise com IA</h3></div></div>
+                    <div class="sv-aviso">Em breve: sugestões e conversa sobre os dados de cada feed.</div>
+                </div>
+            </section>
         </div>
     </main>
 </div>
 
 <script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const diaBR = (d) => d ? d.split('-').reverse().join('/') : '';
+const LIMITE = 300;
+const cache = {};
+
+async function api(url, opts) {
+    const r = await fetch(url, opts);
+    const d = await r.json();
+    if (!r.ok || d.erro) throw new Error(d.erro || ('erro ' + r.status));
+    return d;
+}
+
+// navegacao entre as telas do Seven
+function mostrar(view) {
+    document.querySelectorAll('.sv-nav button').forEach(b => b.classList.toggle('ativo', b.dataset.view === view));
+    document.querySelectorAll('.sv-view').forEach(v => v.classList.toggle('ativo', v.id === 'view-' + view));
+    if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+    carregar(view);
+}
+document.querySelectorAll('.sv-nav button').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.view)));
+
+async function carregar(view, forcar) {
+    try {
+        if (view === 'noticias') renderNoticias(forcar || !cache.noticias ? (cache.noticias = await api('/api/seven/noticias')) : cache.noticias);
+        if (view === 'vendas') renderVendas(forcar || !cache.vendas ? (cache.vendas = await api('/api/seven/vendas')) : cache.vendas);
+        if (view === 'concorrentes') { if (forcar || !cache.conc) cache.conc = await api('/api/seven/concorrentes'); desenharConc(); }
+    } catch (e) {
+        const alvo = { noticias: 'nvConteudo', vendas: 'vdTabela', concorrentes: 'ccTabela' }[view];
+        if (alvo) $(alvo).innerHTML = `<tr><td><div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div></td></tr>`;
+    }
+}
+
+// noticias urgentes
+function renderNoticias(d) {
+    $('nvSub').textContent = 'Vendas de ' + diaBR(d.dia_vendas) + ' · gerado às ' + new Date(d.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('nvConteudo').innerHTML = d.categorias.map(c => `
+        <div class="sv-cat" style="--marca:${esc(c.cor)}">
+            <h4 style="color:${esc(c.cor)}"><span class="ponto" style="background:${esc(c.cor)}"></span>${esc(c.titulo)}</h4>
+            <div class="sv-cards">${c.itens.map(i => `
+                <div class="sv-card" data-link="${esc(i.link)}">
+                    <div class="t">${esc(i.titulo)}</div>
+                    ${i.texto ? `<div class="x">${esc(i.texto)}</div>` : ''}
+                    ${i.produto ? `<div class="p">${esc(i.produto)}</div>` : ''}
+                    ${i.valor ? `<div class="v">${esc(i.valor)}</div>` : ''}
+                </div>`).join('') || '<div class="sv-vazio">Nada urgente aqui.</div>'}
+            </div>
+        </div>`).join('');
+    $('nvConteudo').querySelectorAll('.sv-card').forEach(el => el.addEventListener('click', () => {
+        const link = el.dataset.link;
+        if (link.startsWith('#')) mostrar(link.slice(1)); else location.href = link;
+    }));
+}
+
+// vendas de ontem x media
+let vdFiltro = 'todos', vdOrdem = { campo: 'ontem', desc: true };
+const COR_SIT = { 'Acima da média': '#30D158', 'Na média': '#8E8E93', 'Abaixo da média': '#FF9F0A', 'Não vendeu': '#FF453A', 'Sem giro': '#636366', 'Vendeu (raro)': '#5AC8FA' };
+function renderVendas(d) {
+    const r = d.resumo;
+    const varTxt = r.variacao == null ? '' : `<span class="${r.variacao >= 0 ? 'sv-up' : 'sv-down'}">${r.variacao >= 0 ? '+' : ''}${Math.round(r.variacao * 100)}%</span>`;
+    $('vdSub').textContent = `Ontem = ${diaBR(d.dia)} · ${d.pedidos} pedidos`;
+    $('vdTiles').innerHTML = `
+        <div class="sv-tile"><div class="n">${r.unidades_ontem}</div><div class="r">unidades ontem ${varTxt}</div></div>
+        <div class="sv-tile"><div class="n">${r.media_dia_30}</div><div class="r">média/dia (30d)</div></div>
+        <div class="sv-tile"><div class="n">${r.venderam}</div><div class="r">anúncios venderam</div></div>
+        <div class="sv-tile"><div class="n sv-down">${r.nao_venderam}</div><div class="r">costumam vender e não venderam</div></div>`;
+    desenharVendas();
+}
+function desenharVendas() {
+    const d = cache.vendas; if (!d) return;
+    const q = $('vdBusca').value.trim().toLowerCase();
+    let ls = d.linhas.filter(l => (vdFiltro === 'todos' || l.situacao === vdFiltro) && (!q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q)));
+    const { campo, desc } = vdOrdem;
+    ls = ls.slice().sort((a, b) => { const x = a[campo] ?? -Infinity, y = b[campo] ?? -Infinity; return (x > y ? 1 : x < y ? -1 : 0) * (desc ? -1 : 1); });
+    const col = (c, t, cls) => `<th class="${cls || ''}" data-c="${c}">${t}${vdOrdem.campo === c ? (vdOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
+    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas30', 'Vendas 30d', 'num')}${col('variacao', 'Variação', 'num')}${col('meta', 'Meta', 'num')}${col('situacao', 'Situação')}</tr></thead>
+        <tbody>${ls.slice(0, LIMITE).map(l => `<tr>
+            <td>${esc(l.sku)}</td><td>${esc(l.titulo)}${l.status !== 'active' ? ` <small style="color:var(--l3)">(${esc(l.status)})</small>` : ''}</td>
+            <td class="num"><b>${l.ontem}</b></td><td class="num">${l.media_dia.toFixed(1)}</td><td class="num">${l.vendas30}</td>
+            <td class="num ${l.variacao == null ? '' : l.variacao >= 0 ? 'sv-up' : 'sv-down'}">${l.variacao == null ? '—' : (l.variacao >= 0 ? '+' : '') + Math.round(l.variacao * 100) + '%'}</td>
+            <td class="num">${l.meta ?? '—'}</td>
+            <td><span class="sv-sit" style="color:${COR_SIT[l.situacao] || 'var(--l2)'};background:color-mix(in srgb, ${COR_SIT[l.situacao] || '#888'} 14%, transparent)">${esc(l.situacao)}</span></td></tr>`).join('')}</tbody>`;
+    $('vdMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios`;
+    $('vdTabela').querySelectorAll('th').forEach(th => th.onclick = () => { const c = th.dataset.c; vdOrdem = { campo: c, desc: vdOrdem.campo === c ? !vdOrdem.desc : true }; desenharVendas(); });
+}
+$('vdFiltros').querySelectorAll('.sv-chip').forEach(b => b.addEventListener('click', () => {
+    vdFiltro = b.dataset.f; $('vdFiltros').querySelectorAll('.sv-chip').forEach(x => x.classList.toggle('ativo', x === b)); desenharVendas();
+}));
+$('vdBusca').addEventListener('input', desenharVendas);
+
+// concorrentes
+function desenharConc() {
+    const d = cache.conc; if (!d) return;
+    const q = $('ccBusca').value.trim().toLowerCase();
+    const ls = d.linhas.filter(l => !q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q));
+    $('ccTabela').innerHTML = `<thead><tr><th>SKU</th><th>Produto</th><th class="num">MP</th><th class="num">PC</th><th class="num">DF%</th><th class="num">RANK NUB</th></tr></thead>
+        <tbody>${ls.slice(0, LIMITE).map(l => `<tr><td>${esc(l.sku)}</td><td>${esc(l.titulo)}</td><td class="num"><b>${brl(l.mp)}</b></td><td class="num">${brl(l.pc)}</td><td class="num">${l.df == null ? '—' : l.df + '%'}</td><td class="num">${l.rank_nub ?? '—'}</td></tr>`).join('')}</tbody>`;
+    $('ccMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios ativos`;
+}
+$('ccBusca').addEventListener('input', desenharConc);
+
+// planilha
+function baixar(tipo) { location.href = '/api/seven/planilha?tipo=' + tipo; }
+
+// recarregar: coleta de estoque (a mesma do Dashboard) + pedidos de ontem
+async function recarregarTudo() {
+    const btn = $('svRecarregar'), txt = $('svEstado');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    try {
+        txt.textContent = 'coletando no Mercado Livre...';
+        const resp = await fetch('/api/atualizar', { method: 'POST' });
+        if (!resp.ok) throw new Error('a coleta respondeu ' + resp.status);
+        const reader = resp.body.getReader(), dec = new TextDecoder();
+        let resto = '', erro = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            resto += dec.decode(value, { stream: true });
+            const linhas = resto.split(String.fromCharCode(10));
+            resto = linhas.pop();
+            for (const l of linhas) {
+                const m = l.match(/^\[PROGRESSO\]\s*(\S+)\s+(\d+)\/(\d+)/);
+                if (m) txt.textContent = `coletando ${m[1]}: ${m[2]} de ${m[3]}`;
+                if (l.startsWith('ERRO:')) erro = l.slice(5).trim();
+            }
+        }
+        if (erro) throw new Error(erro);
+        txt.textContent = 'buscando pedidos de ontem...';
+        await api('/api/seven/recarregar', { method: 'POST' });
+        Object.keys(cache).forEach(k => delete cache[k]);
+        const view = document.querySelector('.sv-view.ativo').id.replace('view-', '');
+        await carregar(view, true);
+        txt.textContent = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        txt.textContent = 'falhou: ' + e.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias');
 requestAnimationFrame(() => document.body.classList.add('page-ready'));
 setTimeout(() => document.body.classList.add('page-ready'), 150);
 </script>
