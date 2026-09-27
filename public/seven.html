@@ -117,7 +117,7 @@
 
                 <div class="sv-view" id="view-vendas">
                     <div class="sv-titulo">
-                        <div><h3>Vendas de ontem x média de 30 dias</h3><small id="vdSub"></small></div>
+                        <div><h3>Vendas de ontem x mês anterior</h3><small id="vdSub"></small></div>
                         <button class="btn-acao" onclick="baixar('vendas')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
                     </div>
                     <div class="sv-tiles" id="vdTiles"></div>
@@ -212,14 +212,14 @@ function renderNoticias(d) {
 
 // vendas de ontem x media
 let vdFiltro = 'todos', vdOrdem = { campo: 'ontem', desc: true };
-const COR_SIT = { 'Acima da média': '#30D158', 'Na média': '#8E8E93', 'Abaixo da média': '#FF9F0A', 'Não vendeu': '#FF453A', 'Sem giro': '#636366', 'Vendeu (raro)': '#5AC8FA' };
+const COR_SIT = { 'Acima da média': '#30D158', 'Na média': '#8E8E93', 'Abaixo da média': '#FF9F0A', 'Não vendeu': '#FF453A', 'Sem giro': '#636366', 'Vendeu (raro)': '#5AC8FA', 'Sem base no mês': '#BF5AF2' };
 function renderVendas(d) {
     const r = d.resumo;
     const varTxt = r.variacao == null ? '' : `<span class="${r.variacao >= 0 ? 'sv-up' : 'sv-down'}">${r.variacao >= 0 ? '+' : ''}${Math.round(r.variacao * 100)}%</span>`;
-    $('vdSub').textContent = `Ontem = ${diaBR(d.dia)} · ${d.pedidos} pedidos`;
+    $('vdSub').textContent = `Ontem = ${diaBR(d.dia)} · ${d.pedidos} pedidos · base: ${d.base.nome} (${d.base.pedidos} pedidos em ${d.base.dias} dias)`;
     $('vdTiles').innerHTML = `
         <div class="sv-tile"><div class="n">${r.unidades_ontem}</div><div class="r">unidades ontem ${varTxt}</div></div>
-        <div class="sv-tile"><div class="n">${r.media_dia_30}</div><div class="r">média/dia (30d)</div></div>
+        <div class="sv-tile"><div class="n">${r.media_dia_base}</div><div class="r">média/dia em ${esc(d.base.nome)}</div></div>
         <div class="sv-tile"><div class="n">${r.venderam}</div><div class="r">anúncios venderam</div></div>
         <div class="sv-tile"><div class="n sv-down">${r.nao_venderam}</div><div class="r">costumam vender e não venderam</div></div>`;
     desenharVendas();
@@ -231,10 +231,10 @@ function desenharVendas() {
     const { campo, desc } = vdOrdem;
     ls = ls.slice().sort((a, b) => { const x = a[campo] ?? -Infinity, y = b[campo] ?? -Infinity; return (x > y ? 1 : x < y ? -1 : 0) * (desc ? -1 : 1); });
     const col = (c, t, cls) => `<th class="${cls || ''}" data-c="${c}">${t}${vdOrdem.campo === c ? (vdOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
-    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas30', 'Vendas 30d', 'num')}${col('variacao', 'Variação', 'num')}${col('meta', 'Meta', 'num')}${col('situacao', 'Situação')}</tr></thead>
+    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas_mes', 'Vendas em ' + esc(d.base.nome), 'num')}${col('variacao', 'Variação', 'num')}${col('meta', 'Meta', 'num')}${col('situacao', 'Situação')}</tr></thead>
         <tbody>${ls.slice(0, LIMITE).map(l => `<tr>
             <td>${esc(l.sku)}</td><td>${esc(l.titulo)}${l.status !== 'active' ? ` <small style="color:var(--l3)">(${esc(l.status)})</small>` : ''}</td>
-            <td class="num"><b>${l.ontem}</b></td><td class="num">${l.media_dia.toFixed(1)}</td><td class="num">${l.vendas30}</td>
+            <td class="num"><b>${l.ontem}</b></td><td class="num">${l.media_dia.toFixed(1)}</td><td class="num">${l.vendas_mes}</td>
             <td class="num ${l.variacao == null ? '' : l.variacao >= 0 ? 'sv-up' : 'sv-down'}">${l.variacao == null ? '—' : (l.variacao >= 0 ? '+' : '') + Math.round(l.variacao * 100) + '%'}</td>
             <td class="num">${l.meta ?? '—'}</td>
             <td><span class="sv-sit" style="color:${COR_SIT[l.situacao] || 'var(--l2)'};background:color-mix(in srgb, ${COR_SIT[l.situacao] || '#888'} 14%, transparent)">${esc(l.situacao)}</span></td></tr>`).join('')}</tbody>`;
