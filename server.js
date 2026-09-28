@@ -1,0 +1,74 @@
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+
+const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, 'storage');
+
+const app = express();
+let httpServer = null;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Rotas API e Auth (sem autenticação)
+app.use('/api', require('./routes/api'));
+app.use('/auth', require('./routes/auth'));
+
+// Dashboard principal (sem login)
+// O app abre no Feed: e a tela que diz o que fazer hoje. O painel completo
+// continua inteiro em /painel (e no menu), so deixou de ser a porta de entrada.
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
+app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
+app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
+app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/envio_full.html')));
+app.get('/valor_estoque', (req, res) => res.sendFile(path.join(__dirname, 'public/valor_estoque.html')));
+app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.html')));
+app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
+app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
+app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
+app.get('/perguntas', (req, res) => res.sendFile(path.join(__dirname, 'public/perguntas.html')));
+app.get('/parados', (req, res) => res.sendFile(path.join(__dirname, 'public/parados.html')));
+
+// Arquivos estáticos
+// etag: true + maxAge 0 faz o navegador revalidar a cada carga em vez de
+// reusar o arquivo em cache as cegas. Sem isso, depois de uma atualizacao o
+// Electron continuava rodando o app.js antigo — a tela nova ficava parada
+// porque o codigo que a movia nem estava carregado.
+app.use(express.static(path.join(__dirname, 'public'), {
+    etag: true,
+    lastModified: true,
+    maxAge: 0,
+    setHeaders: (res, caminho) => {
+        if (/\.(html|js|css)$/i.test(caminho)) res.setHeader('Cache-Control', 'no-cache');
+    },
+}));
+
+module.exports = {
+    start: (port, cb) => {
+        httpServer = app.listen(port, '127.0.0.1', cb);
+        // monitor de frete: 90 s depois de abrir e de hora em hora
+        require('./lib/frete').iniciarAgendador();
+        // perguntas do ML: a cada 10 s, desde que o app sobe (com o PC)
+        require('./lib/perguntas').iniciarAgendador();
+        // envio ao Full esquecido em aberto: aviso 2 min depois de subir e a cada 12 h
+        require('./lib/envios_alerta').iniciarAgendador();
+        // reputação: 40 s depois de subir e a cada 4 min
+        require('./lib/reputacao').iniciarAgendador();
+        // notificações globais: feed dos próximos projetos, 45 s depois e a cada 30 min
+        require('./lib/avisos').iniciarAgendador();
+        // ranking ML (Issacar direto na busca do ML): todo dia a partir das 7h, para as duas contas
+        require('./lib/ranking_mt').iniciarAgendador();
+        // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
+        // janela já existir quando o clique na notificação quiser abri-la.
+        setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
+    },
+    stop: () => {
+        require('./lib/frete').pararAgendador();
+        require('./lib/perguntas').pararAgendador();
+        require('./lib/envios_alerta').pararAgendador();
+        require('./lib/reputacao').pararAgendador();
+        require('./lib/avisos').pararAgendador();
+        require('./lib/ranking_mt').pararAgendador();
+        if (httpServer) httpServer.close();
+    }
+};
