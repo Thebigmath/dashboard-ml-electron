@@ -14,9 +14,20 @@
            coluna de 220px onde nao se le nada. */
         .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
         .btn-acao:disabled { opacity:.5; cursor:default; }
-        .sv-wrap { display:grid; grid-template-columns:230px minmax(0,1fr); gap:22px; padding:22px 24px 40px; }
-        @media (max-width: 900px) { .sv-wrap { grid-template-columns:1fr; } }
-        .sv-nav { display:flex; flex-direction:column; gap:8px; position:sticky; top:16px; align-self:start; }
+        .sv-wrap { position:relative; padding:16px 24px 40px; }
+        .sv-barra-menu { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+        .sv-menu-btn { display:inline-flex; align-items:center; gap:10px; padding:9px 14px; border-radius:12px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); font-size:14px; font-weight:700; cursor:pointer; }
+        .sv-menu-btn i { font-size:18px; }
+        .sv-menu-btn:hover { border-color:color-mix(in srgb, var(--accent, #0a84ff) 55%, var(--sep)); }
+        .sv-nav { display:none; flex-direction:column; gap:8px; position:absolute; top:62px; left:24px; z-index:60; width:280px; padding:12px;
+                  background:var(--s1); border:1px solid var(--sep); border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.35); }
+        .sv-nav.aberto { display:flex; }
+        .sv-falha { display:none; margin-bottom:14px; padding:12px 16px; border-radius:12px; border:1px solid rgba(255,69,58,.45);
+                    background:color-mix(in srgb, #FF453A 12%, var(--s1)); color:var(--l1); font-size:13px; }
+        .sv-falha b { color:#FF453A; }
+        .sv-falha button { background:none; border:0; color:var(--accent, #0a84ff); font-size:12px; font-weight:600; cursor:pointer; padding:0; margin-left:8px; }
+        .sv-hist { margin-top:10px; font-size:12px; color:var(--l2); display:none; }
+        .sv-hist div { padding:3px 0; border-top:1px solid var(--sep); }
         .sv-nav button, .sv-nav a { display:flex; align-items:center; gap:10px; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); font-size:13px; font-weight:600; text-align:left; cursor:pointer; text-decoration:none; }
         .sv-nav button:hover, .sv-nav a:hover { border-color:color-mix(in srgb, var(--accent, #0a84ff) 55%, var(--sep)); }
         .sv-nav button.ativo { background:color-mix(in srgb, var(--accent, #0a84ff) 14%, var(--s1)); border-color:var(--accent, #0a84ff); }
@@ -100,7 +111,11 @@
         </nav>
 
         <div class="sv-wrap">
-            <aside class="sv-nav">
+            <div class="sv-falha" id="svFalha"></div>
+            <div class="sv-barra-menu">
+                <button class="sv-menu-btn" id="svMenuBtn" aria-expanded="false" title="Menu do SEVEN"><i class="bi bi-list"></i> <span id="svViewNome">Notícias urgentes</span> <i class="bi bi-chevron-down" style="font-size:12px;opacity:.6"></i></button>
+            </div>
+            <aside class="sv-nav" id="svNav">
                 <button data-view="noticias" class="ativo"><i class="bi bi-lightning-charge"></i> Notícias urgentes</button>
                 <div class="sv-sep"></div>
                 <button data-view="concorrentes"><i class="bi bi-people"></i> Análise de concorrentes</button>
@@ -176,11 +191,24 @@ async function api(url, opts) {
 // navegacao entre as telas do Seven
 function mostrar(view) {
     document.querySelectorAll('.sv-nav button').forEach(b => b.classList.toggle('ativo', b.dataset.view === view));
+    const botao = document.querySelector(`.sv-nav button[data-view="${view}"]`);
+    if (botao) $('svViewNome').textContent = botao.textContent.trim();
+    fecharMenu();
     document.querySelectorAll('.sv-view').forEach(v => v.classList.toggle('ativo', v.id === 'view-' + view));
     if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
     carregar(view);
 }
 document.querySelectorAll('.sv-nav button').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.view)));
+
+// menu hamburguer: os botoes do Seven ficam num painel que abre e fecha
+function fecharMenu() { $('svNav').classList.remove('aberto'); $('svMenuBtn').setAttribute('aria-expanded', 'false'); }
+$('svMenuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const aberto = $('svNav').classList.toggle('aberto');
+    $('svMenuBtn').setAttribute('aria-expanded', String(aberto));
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('#svNav')) fecharMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
 
 async function carregar(view, forcar) {
     try {
@@ -288,6 +316,7 @@ async function acompanharRanking() {
     let e;
     try { e = await api('/api/seven/ranking_ml/estado'); } catch { return; }
     $('btnRankMt').disabled = e.rodando;
+    mostrarFalha(e.rodando ? null : e.ultima);
     if (e.rodando) {
         const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
         mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.abas} abas)${p}. Leva até 5 minutos.`);
@@ -298,6 +327,25 @@ async function acompanharRanking() {
         carregar('vendas', true);
         if ($('nvFrame').src) $('nvFrame').contentWindow.location.reload();
     }
+}
+
+// tarja de falha da coleta do Ranking ML + historico das ultimas coletas
+const dataHora = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+function mostrarFalha(u) {
+    const el = $('svFalha');
+    if (!u || u.status === 'ok') { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = `<i class="bi bi-exclamation-octagon-fill" style="color:#FF453A"></i> <b>Coleta do Ranking ML ${u.status === 'falhou' ? 'falhou' : 'incompleta'}</b> em ${dataHora(u.fim)} (${u.origem}): ${esc(u.motivo)}.
+        ${u.total ? `${u.pesquisados} de ${u.total} termos pesquisados.` : ''} O ranking anterior continua valendo.
+        <button onclick="verHistorico()">ver histórico</button><div class="sv-hist" id="svHist"></div>`;
+}
+async function verHistorico() {
+    const el = $('svHist');
+    if (el.style.display === 'block') { el.style.display = 'none'; return; }
+    const h = await api('/api/seven/ranking_ml/historico').catch(() => []);
+    const ic = { ok: '<i class="bi bi-check-circle" style="color:#30D158"></i>', parcial: '<i class="bi bi-exclamation-triangle" style="color:#FF9F0A"></i>', falhou: '<i class="bi bi-x-circle" style="color:#FF453A"></i>' };
+    el.innerHTML = h.map(r => `<div>${ic[r.status] || ''} ${dataHora(r.inicio)} · ${esc(r.origem)} · ${r.pesquisados}/${r.total} termos${r.barrados ? ` · ${r.barrados} barrados` : ''}${r.motivo ? ' · ' + esc(r.motivo) : ''}</div>`).join('') || '<div>Sem coletas registradas.</div>';
+    el.style.display = 'block';
 }
 
 // planilha
