@@ -1,5 +1,7 @@
 # Dashboard ML — Documentação
 
+> SEVEN, Ranking ML (Issacar) e as mudanças do Feed de setembro/2026: ver [DOCUMENTACAO_SEVEN.md](DOCUMENTACAO_SEVEN.md).
+
 Dois apps irmãos, mesmo código, contas diferentes do Mercado Livre:
 
 | App | Pasta | Porta | Repositório | Versão atual |
