@@ -113,6 +113,7 @@ Geradas com **ExcelJS** (`planilha()` em `lib/seven.js`): título e resumo no to
 | Issacar original (preços de concorrentes) | `C:\Users\Matheus Prata\Desktop\issacar.py` |
 | Módulos de apoio (Chrome, CDP) | `C:\Users\Matheus Prata\.dotnet\MLScraper\` (`bot_cdp.py`) |
 | Perfil do Chrome do Issacar | `C:\Users\Matheus Prata\.dotnet\MLScraper\perfil_chrome` |
+| Termos das duas contas juntos (93, usados na coleta diária) | `C:\Users\Matheus Prata\Desktop\termos_ranking_todos.txt` |
 | Termos da Flavia (65, da lista do MT) | `C:\Users\Matheus Prata\Desktop\termos_ranking.txt` |
 | Termos da Cordeiro (30, gerados dos anúncios do Full que mais vendem — revisar) | `C:\Users\Matheus Prata\Desktop\termos_ranking_cordeiro.txt` |
 | Resultado lido pelo SEVEN | `C:\Users\Matheus Prata\.dotnet\MLScraper\saidas\ranking_issacar_flavia.json` e `..._cordeiro.json` |
@@ -137,16 +138,19 @@ Não reproduz exatamente o Mercado Turbo: o MT provavelmente usa a API de busca 
 ### 4.3 Comando que o app roda
 
 ```
-py -u issacar_posicao.py --arquivo <termos> --conta flavia|cordeiro --modo-mt --max-paginas 3
-   --abas 3 --delay-min 1 --delay-max 2 --tempo-max 280 --saida-fixa <ranking_issacar_<conta>.json>
+py -u issacar_posicao.py --arquivo termos_ranking_todos.txt --contas flavia,cordeiro --modo-mt --max-paginas 2
+   --abas 3 --delay-min 1 --delay-max 2 --tempo-max 280 --saida-fixa <saidas>/ranking_issacar_{conta}.json
 ```
+
+Uma busca serve às duas contas: cada anúncio achado leva a marca da conta dele (lista de MLB do `reposicao.json` de cada uma), e o Issacar grava um JSON por conta.
 
 Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Desktop`. Configuração opcional em `<storage>\config.json`: `ranking_ml_pasta`, `ranking_ml_script`, `ranking_ml_termos`, `ranking_ml_arquivo`, `ranking_ml_abas`, `ranking_ml_python`.
 
 ### 4.4 Quando roda
 
-- **Semanal:** toda segunda com o app aberto. Flavia a partir das **7h**, Cordeiro a partir das **8h** (as duas usam o mesmo Chrome do Issacar e não podem rodar juntas). Uma vez por dia; se o app abrir mais tarde, roda na abertura.
-- **Manual:** botão **Coletar ranking ML** na tela "Análise por tempo de vendas" do SEVEN.
+- **Diária, pelo app da Flavia, para as duas contas:** todo dia a partir das **7h**, uma vez por dia; se o app da Flavia abrir mais tarde, roda na abertura. Assim o Chrome do Issacar faz uma rodada por dia, não duas.
+- **O app da Cordeiro só lê** `ranking_issacar_cordeiro.json` e mostra o andamento e o histórico lidos do storage da Flavia (`lib/ranking_mt.js` da Cordeiro é só leitura; o botão aparece como "Coletado pelo app da Flavia").
+- **Manual:** botão **Coletar ranking ML** no SEVEN da Flavia (tela "Análise por tempo de vendas").
 - Leva até 5 minutos (`--tempo-max 280`).
 
 ### 4.5 Bloqueio do Mercado Livre e avisos
