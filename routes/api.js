@@ -1118,6 +1118,7 @@ router.get('/feed/assinatura', auth, (req, res) => {
 
 // ── Seven: noticias, vendas de ontem e concorrentes ─────────────────────────
 const erroJson = (res) => (e) => res.status(500).json({ erro: String(e.message || e) });
+router.get('/seven/feed', auth, (req, res) => { seven.feedSeven().then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/noticias', auth, (req, res) => { seven.noticias().then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/vendas', auth, (req, res) => { seven.tabelaVendas(false).then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/concorrentes', auth, (req, res) => {

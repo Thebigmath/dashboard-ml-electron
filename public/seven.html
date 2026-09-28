@@ -111,8 +111,7 @@
 
             <section>
                 <div class="sv-view ativo" id="view-noticias">
-                    <div class="sv-titulo"><div><h3>Notícias urgentes</h3><small id="nvSub"></small></div></div>
-                    <div id="nvConteudo"><div class="sv-vazio">Carregando...</div></div>
+                    <iframe id="nvFrame" title="Notícias urgentes" style="width:100%;height:calc(100vh - 110px);border:0;border-radius:14px;background:transparent"></iframe>
                 </div>
 
                 <div class="sv-view" id="view-vendas">
@@ -185,7 +184,12 @@ document.querySelectorAll('.sv-nav button').forEach(b => b.addEventListener('cli
 
 async function carregar(view, forcar) {
     try {
-        if (view === 'noticias') renderNoticias(forcar || !cache.noticias ? (cache.noticias = await api('/api/seven/noticias')) : cache.noticias);
+        if (view === 'noticias') {
+            // o feed do Seven e a propria tela do Feed, lendo as filas do Seven
+            const fr = $('nvFrame');
+            if (forcar && fr.src) fr.contentWindow.location.reload();
+            else if (!fr.src) fr.src = '/feed?fonte=seven&embed=1';
+        }
         if (view === 'vendas') renderVendas(forcar || !cache.vendas ? (cache.vendas = await api('/api/seven/vendas')) : cache.vendas);
         if (view === 'concorrentes') { if (forcar || !cache.conc) cache.conc = await api('/api/seven/concorrentes'); desenharConc(); }
     } catch (e) {
@@ -292,6 +296,7 @@ async function acompanharRanking() {
         mostrarRk('<i class="bi bi-check2-circle"></i> ' + esc(e.resumo || 'Coleta do ranking terminada.'));
         delete cache.vendas; delete cache.noticias;
         carregar('vendas', true);
+        if ($('nvFrame').src) $('nvFrame').contentWindow.location.reload();
     }
 }
 
