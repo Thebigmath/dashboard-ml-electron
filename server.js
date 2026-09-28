@@ -56,7 +56,7 @@ module.exports = {
         require('./lib/reputacao').iniciarAgendador();
         // notificações globais: feed dos próximos projetos, 45 s depois e a cada 30 min
         require('./lib/avisos').iniciarAgendador();
-        // ranking do Mercado Turbo (bot Python): toda segunda a partir das 7h
+        // ranking ML (Issacar direto na busca do ML): toda segunda a partir das 7h
         require('./lib/ranking_mt').iniciarAgendador();
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.

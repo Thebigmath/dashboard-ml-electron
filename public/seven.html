@@ -119,7 +119,7 @@
                     <div class="sv-titulo">
                         <div><h3>Vendas de ontem x mês anterior</h3><small id="vdSub"></small></div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap">
-                            <button class="btn-acao" id="btnRankMt" onclick="coletarRanking()" title="Roda o bot do Mercado Turbo em segundo plano"><i class="bi bi-trophy"></i> Coletar ranking MT</button>
+                            <button class="btn-acao" id="btnRankMt" onclick="coletarRanking()" title="Pesquisa os termos direto no Mercado Livre, em segundo plano (até 5 min)"><i class="bi bi-trophy"></i> Coletar ranking ML</button>
                             <button class="btn-acao" onclick="baixar('vendas')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
                         </div>
                     </div>
@@ -131,6 +131,8 @@
                         <button class="sv-chip" data-f="Acima da média">Acima da média</button>
                         <button class="sv-chip" data-f="Abaixo da média">Abaixo da média</button>
                         <button class="sv-chip" data-f="Na média">Na média</button>
+                        <button class="sv-chip" data-f="__rank">Rankeados</button>
+                        <button class="sv-chip" data-f="__semrank">Sem ranking</button>
                         <input class="sv-busca" id="vdBusca" placeholder="Buscar SKU ou produto...">
                     </div>
                     <div class="sv-caixa"><table class="sv-tabela" id="vdTabela"></table></div>
@@ -220,28 +222,30 @@ function renderVendas(d) {
     const r = d.resumo;
     const varTxt = r.variacao == null ? '' : `<span class="${r.variacao >= 0 ? 'sv-up' : 'sv-down'}">${r.variacao >= 0 ? '+' : ''}${Math.round(r.variacao * 100)}%</span>`;
     $('vdSub').textContent = `Ontem = ${diaBR(d.dia)} · ${d.pedidos} pedidos · base: ${d.base.nome} (${d.base.pedidos} pedidos em ${d.base.dias} dias)`
-        + (d.ranking_mt.disponivel ? ` · Ranking MT de ${diaBR(d.ranking_mt.coletado_em)}` : ' · Ranking MT indisponível');
+        + (d.ranking_ml.disponivel ? ` · Ranking ML de ${esc(d.ranking_ml.coletado_em)}` : ' · Ranking ML ainda não coletado');
     $('vdTiles').innerHTML = `
         <div class="sv-tile"><div class="n">${r.unidades_ontem}</div><div class="r">unidades ontem ${varTxt}</div></div>
         <div class="sv-tile"><div class="n">${r.media_dia_base}</div><div class="r">média/dia em ${esc(d.base.nome)}</div></div>
         <div class="sv-tile"><div class="n">${r.venderam}</div><div class="r">anúncios venderam</div></div>
-        <div class="sv-tile"><div class="n sv-down">${r.nao_venderam}</div><div class="r">costumam vender e não venderam</div></div>`;
+        <div class="sv-tile"><div class="n sv-down">${r.nao_venderam}</div><div class="r">costumam vender e não venderam</div></div>
+        <div class="sv-tile"><div class="n">${r.rankeados}</div><div class="r">rankeados · ${r.pagina1} na 1ª página</div></div>`;
     desenharVendas();
 }
 function desenharVendas() {
     const d = cache.vendas; if (!d) return;
     const q = $('vdBusca').value.trim().toLowerCase();
-    let ls = d.linhas.filter(l => (vdFiltro === 'todos' || l.situacao === vdFiltro) && (!q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q)));
+    const passa = (l) => vdFiltro === 'todos' || (vdFiltro === '__rank' ? !!l.rank_ml : vdFiltro === '__semrank' ? !l.rank_ml : l.situacao === vdFiltro);
+    let ls = d.linhas.filter(l => passa(l) && (!q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q)));
     const { campo, desc } = vdOrdem;
-    const valor = (l, c) => c === 'rank' ? (l.rank_mt ? -l.rank_mt.posicao : null) : l[c];
+    const valor = (l, c) => c === 'rank' ? (l.rank_ml ? -l.rank_ml.posicao : null) : l[c];
     ls = ls.slice().sort((a, b) => { const x = valor(a, campo) ?? -Infinity, y = valor(b, campo) ?? -Infinity; return (x > y ? 1 : x < y ? -1 : 0) * (desc ? -1 : 1); });
     const col = (c, t, cls) => `<th class="${cls || ''}" data-c="${c}">${t}${vdOrdem.campo === c ? (vdOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
-    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas_mes', 'Vendas em ' + esc(d.base.nome), 'num')}${col('variacao', 'Variação', 'num')}${col('rank', 'Ranking MT', 'num')}${col('situacao', 'Situação')}</tr></thead>
+    $('vdTabela').innerHTML = `<thead><tr>${col('sku', 'SKU')}${col('titulo', 'Produto')}${col('ontem', 'Ontem', 'num')}${col('media_dia', 'Média/dia', 'num')}${col('vendas_mes', 'Vendas em ' + esc(d.base.nome), 'num')}${col('variacao', 'Variação', 'num')}${col('rank', 'Ranking ML', 'num')}${col('situacao', 'Situação')}</tr></thead>
         <tbody>${ls.slice(0, LIMITE).map(l => `<tr>
             <td>${esc(l.sku)}</td><td>${esc(l.titulo)}${l.status !== 'active' ? ` <small style="color:var(--l3)">(${esc(l.status)})</small>` : ''}</td>
             <td class="num"><b>${l.ontem}</b></td><td class="num">${l.media_dia.toFixed(1)}</td><td class="num">${l.vendas_mes}</td>
             <td class="num ${l.variacao == null ? '' : l.variacao >= 0 ? 'sv-up' : 'sv-down'}">${l.variacao == null ? '—' : (l.variacao >= 0 ? '+' : '') + Math.round(l.variacao * 100) + '%'}</td>
-            <td class="num" title="${l.rank_mt ? esc('termo: ' + l.rank_mt.termo) : 'não apareceu nos termos buscados'}">${l.rank_mt ? `pág. ${l.rank_mt.pagina} · <b>${l.rank_mt.posicao}º</b>` : '—'}</td>
+            <td class="num" title="${l.rank_ml ? esc('termo: ' + l.rank_ml.termo) : 'não apareceu nas 3 primeiras páginas dos termos pesquisados'}">${l.rank_ml ? `pág. ${l.rank_ml.pagina} · <b>${l.rank_ml.posicao}º</b>` : '—'}</td>
             <td><span class="sv-sit" style="color:${COR_SIT[l.situacao] || 'var(--l2)'};background:color-mix(in srgb, ${COR_SIT[l.situacao] || '#888'} 14%, transparent)">${esc(l.situacao)}</span></td></tr>`).join('')}</tbody>`;
     $('vdMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios`;
     $('vdTabela').querySelectorAll('th').forEach(th => th.onclick = () => { const c = th.dataset.c; vdOrdem = { campo: c, desc: vdOrdem.campo === c ? !vdOrdem.desc : true }; desenharVendas(); });
@@ -262,10 +266,10 @@ function desenharConc() {
 }
 $('ccBusca').addEventListener('input', desenharConc);
 
-// ranking do Mercado Turbo: dispara o bot e acompanha
+// ranking ML: dispara o Issacar e acompanha
 let rkTimer = null;
 async function coletarRanking() {
-    const r = await api('/api/seven/ranking_mt/coletar', { method: 'POST' }).catch(e => ({ ok: false, erro: e.message }));
+    const r = await api('/api/seven/ranking_ml/coletar', { method: 'POST' }).catch(e => ({ ok: false, erro: e.message }));
     if (!r.ok) { mostrarRk(r.erro, true); return; }
     acompanharRanking();
 }
@@ -278,11 +282,11 @@ function mostrarRk(txt, erro) {
 async function acompanharRanking() {
     clearTimeout(rkTimer);
     let e;
-    try { e = await api('/api/seven/ranking_mt/estado'); } catch { return; }
+    try { e = await api('/api/seven/ranking_ml/estado'); } catch { return; }
     $('btnRankMt').disabled = e.rodando;
     if (e.rodando) {
         const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
-        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking no Mercado Turbo em segundo plano (${e.janelas} janela(s))${p}. Pode continuar usando o computador; não feche nem minimize as janelas do MT.`);
+        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.abas} abas)${p}. Leva até 5 minutos.`);
         rkTimer = setTimeout(acompanharRanking, 5000);
     } else if (e.iniciado_em && $('rkEstado').style.display !== 'none') {
         mostrarRk('<i class="bi bi-check2-circle"></i> ' + esc(e.resumo || 'Coleta do ranking terminada.'));
