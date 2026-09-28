@@ -64,7 +64,8 @@
         .sv-aviso { border:1px dashed var(--sep); border-radius:12px; padding:12px 14px; color:var(--l2); font-size:13px; margin-bottom:14px; }
         .sv-vazio { color:var(--l3); padding:30px; text-align:center; }
         .sv-mais { font-size:12px; color:var(--l3); padding:10px; text-align:center; }
-    </style>
+        body.astra-leitura .sv-reload-grupo { display:none; }
+</style>
 </head>
 <body>
 
@@ -156,8 +157,12 @@
                 <div class="sv-view" id="view-concorrentes">
                     <div class="sv-titulo">
                         <div><h3>Análise de concorrentes</h3><small>MP = meu preço · PC = preço do concorrente que mais vende no grupo · DF% = MP x PC · RANK NUB = nossa posição no grupo</small></div>
-                        <button class="btn-acao" onclick="baixar('concorrentes')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn-acao" id="btnAstra" onclick="rodarAstra()" title="Atualiza no Nubimetrics (via Astra/MCP) os grupos que têm anúncio nosso — só o que venceu"><i class="bi bi-arrow-repeat"></i> Atualizar concorrentes</button>
+                            <button class="btn-acao" onclick="baixar('concorrentes')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
+                        </div>
                     </div>
+                    <div class="sv-aviso" id="astraEstado" style="display:none"></div>
                     <div class="sv-aviso" id="ccAviso">Carregando os dados do Astra...</div>
                     <div class="sv-filtros"><input class="sv-busca" id="ccBusca" placeholder="Buscar SKU ou produto..." style="margin-left:0"></div>
                     <div class="sv-caixa"><table class="sv-tabela" id="ccTabela"></table></div>
@@ -301,7 +306,7 @@ function desenharConc() {
         <tbody>${ls.slice(0, LIMITE).map(l => `<tr><td>${esc(l.sku)}</td><td>${esc(l.titulo)}</td><td class="num"><b>${brl(l.mp)}</b></td>
             <td class="num" title="${l.lider ? esc('líder: ' + l.lider + (l.lider_vendas != null ? ' · ' + l.lider_vendas + ' vendas' : '')) : ''}">${brl(l.pc)}</td>
             <td class="num ${l.df == null ? '' : l.df > 0 ? 'sv-down' : 'sv-up'}">${l.df == null ? '—' : (l.df > 0 ? '+' : '') + l.df + '%'}</td>
-            <td class="num">${l.rank_nub ? `<b>${l.rank_nub}º</b>${l.grupo_anuncios ? ` <small style="color:var(--l3)">de ${l.grupo_anuncios}</small>` : ''}` : '—'}</td>
+            <td class="num">${l.rank_nub ? `<b>${l.rank_nub}º</b>${l.grupo_anuncios ? ` <small style="color:var(--l3)">de ${l.grupo_anuncios}</small>` : ''}` : '—'}${l.group_id ? ` <i class="bi bi-arrow-clockwise sv-reload-grupo" title="Atualizar só o grupo ${esc(l.grupo)}" onclick="rodarAstra([${l.group_id}])" style="cursor:pointer;color:var(--l3)"></i>` : ''}</td>
             <td style="color:var(--l2)">${esc(l.grupo || '—')}</td></tr>`).join('')}</tbody>`;
     $('ccMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios ativos`;
 }
@@ -358,6 +363,45 @@ async function verHistorico() {
     el.style.display = 'block';
 }
 
+// Astra: coleta de concorrentes no Nubimetrics (MCP) + ponte para o Dashboard
+let astraTimer = null, astraRodava = false;
+async function rodarAstra(grupos) {
+    const r = await api('/api/seven/astra/rodar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupos: grupos || [] }) }).catch(e => ({ ok: false, erro: e.message }));
+    if (!r.ok) { mostrarAstra(`<span style="color:#ff453a">${esc(r.erro)}</span>`); return; }
+    acompanharAstra();
+}
+function mostrarAstra(html) { const el = $('astraEstado'); el.style.display = html ? '' : 'none'; el.innerHTML = html || ''; }
+async function acompanharAstra() {
+    clearTimeout(astraTimer);
+    let e;
+    try { e = await api('/api/seven/astra/estado'); } catch { return; }
+    const btn = $('btnAstra');
+    btn.disabled = e.rodando || e.coletor === false;
+    if (e.coletor === false) {   // Cordeiro: so le o que o app da Flavia coletou
+        btn.title = e.aviso; btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizado pelo app da Flavia';
+        document.body.classList.add('astra-leitura');
+    }
+    const log = (e.log || []).map(l => `<div style="font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--l3)">${esc(l)}</div>`).join('');
+    if (e.rodando) {
+        astraRodava = true;
+        const p = e.progresso ? ` — chamada ${e.progresso.feitos} de até ${e.progresso.total}` : '';
+        mostrarAstra(`<i class="bi bi-hourglass-split"></i> <b>Astra rodando</b>${p}. Só busca o que venceu; dá para continuar usando o app.<div style="margin-top:8px">${log}</div>`);
+        astraTimer = setTimeout(acompanharAstra, 5000);
+        return;
+    }
+    if (astraRodava || (e.iniciado_em && $('astraEstado').style.display !== 'none')) {
+        const alerta = e.parou ? `<div style="color:#FF9F0A;margin-top:4px">${esc(e.parou)}</div>` : '';
+        mostrarAstra(`<i class="bi bi-check2-circle"></i> <b>Astra terminou.</b> ${esc(e.resumo || '')} ${esc(e.ponte || '')}${alerta}<div style="margin-top:8px">${log}</div>`);
+        if (astraRodava) {
+            astraRodava = false;
+            delete cache.conc;
+            carregar('concorrentes', true);
+            if ($('nvFrame').src) $('nvFrame').contentWindow.location.reload();
+        }
+    }
+}
+
 // planilha
 function baixar(tipo) { location.href = '/api/seven/planilha?tipo=' + tipo; }
 
@@ -400,6 +444,7 @@ async function recarregarTudo() {
 
 mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias');
 acompanharRanking();
+acompanharAstra();
 requestAnimationFrame(() => document.body.classList.add('page-ready'));
 setTimeout(() => document.body.classList.add('page-ready'), 150);
 </script>

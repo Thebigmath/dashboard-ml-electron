@@ -284,12 +284,18 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&
 const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const hora = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
-// ?fonte=seven: o mesmo feed, com as filas do Seven (vendas, ranking ML, estoque).
+// ?fonte=seven: o mesmo feed, com as filas do Seven (anuncios pelo Ranking ML e concorrentes).
 // ?embed=1: dentro do Seven (iframe) - sem menu lateral, clique abre na janela de cima.
 const PARAMS = new URLSearchParams(location.search);
 const SEVEN = PARAMS.get('fonte') === 'seven';
 const EMBED = PARAMS.get('embed') === '1';
 if (EMBED) document.body.classList.add('embed');
+// No Seven nada de estoque: so anuncios (Ranking ML) e concorrentes (Nubimetrics).
+if (SEVEN) {
+    document.querySelector('.topbar small').textContent = 'Seus anúncios e concorrentes, por ordem de dinheiro';
+    document.querySelector('#avisoNovo span').textContent = 'Novidades — clique para ver';
+    document.getElementById('btnAtualizar').title = 'Relê o Ranking ML e os concorrentes do Astra';
+}
 
 function saudacao() {
     const h = new Date().getHours();
@@ -302,7 +308,7 @@ function render() {
     document.getElementById('saudacao').textContent = saudacao();
 
     if (!f.length) {
-        document.getElementById('frase').textContent = 'Nada precisa de você agora — o estoque está em ordem.';
+        document.getElementById('frase').textContent = SEVEN ? 'Nada precisa de você agora — anúncios e concorrentes em ordem.' : 'Nada precisa de você agora — o estoque está em ordem.';
         document.getElementById('bolhas').innerHTML = '';
         document.getElementById('conteudo').innerHTML = '<div class="vazio"><i class="bi bi-check-circle"></i>Nenhuma decisão pendente nos ' + dados.base_total + ' anúncios.</div>';
         return;
@@ -354,7 +360,7 @@ function item(p, pos, cor, filaTitulo, icone, rotulo) {
             ${p.motivo ? `<div class="motivo">${esc(p.motivo)}</div>` : ''}
             <h4 title="${esc(p.titulo)}">${esc(p.sku)} · ${esc(p.titulo)}</h4>
             <div class="meta">
-                <span class="chip ${p.eFull ? 'full' : ''}">${p.eFull ? 'Full' : 'Fora do Full'}</span>
+                ${SEVEN ? '' : `<span class="chip ${p.eFull ? 'full' : ''}">${p.eFull ? 'Full' : 'Fora do Full'}</span>`}
                 ${p.curvaAbc ? `<span class="chip abc">curva ${esc(p.curvaAbc)}</span>` : ''}
             </div>
             <div class="nums">${(p.metricas || []).map(m => `
@@ -571,6 +577,13 @@ async function coletarAgora() {
     const txt = document.getElementById('estadoTexto');
     if (btn.disabled) return;
     btn.disabled = true;
+    if (SEVEN) {   // no Seven, sem coleta de estoque: rele ranking e concorrentes
+        txt.textContent = 'atualizando...';
+        try { await fetch('/api/seven/recarregar', { method: 'POST' }); await recarregar(false); }
+        catch (e) { txt.textContent = 'falhou: ' + e.message; }
+        finally { btn.disabled = false; }
+        return;
+    }
     txt.textContent = 'coletando no Mercado Livre...';
     try {
         const resp = await fetch('/api/atualizar', { method: 'POST' });

@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.53",
+    "data": "2026-09-28",
+    "titulo": "SEVEN: concorrentes do Nubimetrics na tabela e no Feed",
+    "texto": "Análise de concorrentes preenchida com os 72 grupos do Nubimetrics.\n\n- PC (preço do concorrente que mais vende), DF% (seu preço x PC) e RANK NUB (sua posição no grupo) para cada anúncio que tem grupo.\n- Botão \"Atualizar concorrentes\": busca no Nubimetrics (pelo Astra, via MCP) só os grupos que têm anúncio nosso e só o que venceu — no dia a dia leva poucos minutos. O andamento aparece na tela.\n- Ícone ↻ em cada linha: atualiza só o grupo daquele anúncio.\n- O anúncio é ligado ao grupo pelo título que o próprio Nubimetrics devolve (mesma conta, preço mais próximo).\n- Sem preço no cadastro, o MP usa o preço médio dos últimos 30 dias.\n- Feed do SEVEN só com anúncios e concorrentes: saiu tudo de estoque (fila, chips Full, e o Atualizar agora relê ranking e concorrentes)."
+  },
+  {
     "versao": "1.9.52",
     "data": "2026-09-27",
     "titulo": "SEVEN: notícias, vendas e ranking num lugar só",

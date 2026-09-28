@@ -14,6 +14,7 @@ const parados = require('../lib/parados');
 const feed = require('../lib/feed');
 const seven = require('../lib/seven');
 const rankingMt = require('../lib/ranking_mt');
+const astra = require('../lib/astra');
 const mercado = require('../lib/mercado');
 const nubimetrics = require('../lib/nubimetrics');
 const reputacao = require('../lib/reputacao');
@@ -1128,6 +1129,8 @@ router.get('/seven/concorrentes', auth, (req, res) => {
 router.post('/seven/recarregar', auth, (req, res) => {
     seven.vendasOntem(true).then(d => res.json({ ok: true, dia: d.dia, pedidos: d.pedidos })).catch(erroJson(res));
 });
+router.get('/seven/astra/estado', auth, (req, res) => res.json(astra.estado()));
+router.post('/seven/astra/rodar', auth, (req, res) => res.json(astra.iniciar((req.body && req.body.grupos) || [])));
 router.get('/seven/ranking_ml/estado', auth, (req, res) => res.json(rankingMt.estado()));
 router.post('/seven/ranking_ml/coletar', auth, (req, res) => res.json(rankingMt.iniciar('manual')));
 router.get('/seven/ranking_ml/historico', auth, (req, res) => res.json(rankingMt.historico(20)));
