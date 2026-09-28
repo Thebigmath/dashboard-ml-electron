@@ -1,5 +1,29 @@
 [
   {
+    "versao": "1.9.52",
+    "data": "2026-09-27",
+    "titulo": "SEVEN: notícias, vendas e ranking num lugar só",
+    "texto": "Novo botão SEVEN no menu, logo abaixo de Renovar Token.\n\n- Notícias urgentes: a mesma tela do Feed, com as filas Parou de vender, Fora do ranking, Na 1ª página sem venda, Em alta e Estoque. A capa junta as 10 mais urgentes e cada bolinha abre a sua fila em tela cheia.\n- Análise por tempo de vendas: o que cada anúncio vendeu ontem contra a média diária do mês anterior, com filtros (Não venderam, Acima da média, Rankeados, Sem ranking…) e o botão Gerar planilha.\n- Análise de concorrentes: o seu preço de cada anúncio ativo. Preço do concorrente e diferença % entram quando o Nubimetrics for ligado.\n- Inteligência de estoque leva direto ao Feed. Anúncios de empilhadeira ficam de fora.\n- Recarregar puxa tudo de novo no Mercado Livre.",
+    "video": "",
+    "imagens": []
+  },
+  {
+    "versao": "1.9.52",
+    "data": "2026-09-27",
+    "titulo": "Ranking ML: em que página e posição cada anúncio aparece",
+    "texto": "Na tela de vendas do SEVEN, a coluna Ranking ML mostra a página e a posição de cada anúncio na busca do Mercado Livre.\n\n- A coleta pesquisa os termos direto no Mercado Livre, em segundo plano, e leva até 5 minutos.\n- A contagem pula os patrocinados e conta cada anúncio uma vez, até a 3ª página.\n- Roda sozinha toda segunda a partir das 7h, ou na hora pelo botão Coletar ranking ML.\n- Se o Mercado Livre barrar a coleta, o ranking anterior é mantido.",
+    "video": "",
+    "imagens": []
+  },
+  {
+    "versao": "1.9.52",
+    "data": "2026-09-27",
+    "titulo": "Feed: ação em primeiro e botão Atualizar de verdade",
+    "texto": "- Cada card diz primeiro o que fazer, depois o porquê e os números, cada um com a sua janela de tempo.\n- Em transferência não conta mais como disponível: o card não manda reativar o que ainda está a caminho do galpão.\n- Unidades em processamento no galpão (internalProcess) viram \"Aguardar o ML\". Abrir chamado fica só para retenção de verdade.\n- O botão Atualizar do Feed agora busca os dados no Mercado Livre, mostrando o progresso.",
+    "video": "",
+    "imagens": []
+  },
+  {
     "versao": "1.9.46",
     "data": "2026-09-17",
     "titulo": "Monitor de reputação (risco de perder o Platinum)",
