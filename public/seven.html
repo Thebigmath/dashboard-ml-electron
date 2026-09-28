@@ -238,7 +238,7 @@ function renderVendas(d) {
 function desenharVendas() {
     const d = cache.vendas; if (!d) return;
     const q = $('vdBusca').value.trim().toLowerCase();
-    const passa = (l) => vdFiltro === 'todos' || (vdFiltro === '__rank' ? !!l.rank_ml : vdFiltro === '__semrank' ? !l.rank_ml : l.situacao === vdFiltro);
+    const passa = (l) => vdFiltro === 'todos' || (vdFiltro === '__rank' ? !!l.rank_ml : vdFiltro === '__semrank' ? (l.coberto && !l.rank_ml) : l.situacao === vdFiltro);
     let ls = d.linhas.filter(l => passa(l) && (!q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q)));
     const { campo, desc } = vdOrdem;
     const valor = (l, c) => c === 'rank' ? (l.rank_ml ? -l.rank_ml.posicao : null) : l[c];
@@ -249,7 +249,7 @@ function desenharVendas() {
             <td>${esc(l.sku)}</td><td>${esc(l.titulo)}${l.status !== 'active' ? ` <small style="color:var(--l3)">(${esc(l.status)})</small>` : ''}</td>
             <td class="num"><b>${l.ontem}</b></td><td class="num">${l.media_dia.toFixed(1)}</td><td class="num">${l.vendas_mes}</td>
             <td class="num ${l.variacao == null ? '' : l.variacao >= 0 ? 'sv-up' : 'sv-down'}">${l.variacao == null ? '—' : (l.variacao >= 0 ? '+' : '') + Math.round(l.variacao * 100) + '%'}</td>
-            <td class="num" title="${l.rank_ml ? esc('termo: ' + l.rank_ml.termo) : 'não apareceu nas 3 primeiras páginas dos termos pesquisados'}">${l.rank_ml ? `pág. ${l.rank_ml.pagina} · <b>${l.rank_ml.posicao}º</b>` : '—'}</td>
+            <td class="num" title="${l.rank_ml ? esc('termo: ' + l.rank_ml.termo) : l.coberto ? 'não apareceu nas 3 primeiras páginas' : 'nenhum termo pesquisado descreve este anúncio'}">${l.rank_ml ? `pág. ${l.rank_ml.pagina} · <b>${l.rank_ml.posicao}º</b>` : l.coberto ? '<span class="sv-down">fora</span>' : '—'}</td>
             <td><span class="sv-sit" style="color:${COR_SIT[l.situacao] || 'var(--l2)'};background:color-mix(in srgb, ${COR_SIT[l.situacao] || '#888'} 14%, transparent)">${esc(l.situacao)}</span></td></tr>`).join('')}</tbody>`;
     $('vdMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios`;
     $('vdTabela').querySelectorAll('th').forEach(th => th.onclick = () => { const c = th.dataset.c; vdOrdem = { campo: c, desc: vdOrdem.campo === c ? !vdOrdem.desc : true }; desenharVendas(); });
