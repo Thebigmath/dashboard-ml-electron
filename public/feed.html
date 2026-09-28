@@ -219,6 +219,9 @@
             font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.28); z-index:60; display:none; align-items:center; gap:8px; }
         /* No estreito o quadrado aperta demais: solta a altura */
         @media (max-width:560px) { .lista { grid-template-columns:1fr; } .item { aspect-ratio:auto; } }
+        body.embed .sidebar, body.embed .topbar, body.embed #canvas-bg, body.embed .aurora, body.embed .deco-art, body.embed .deco-art-bl { display:none !important; }
+        body.embed .content { margin-left:0 !important; width:100% !important; }
+        body.embed { background:transparent; }
     </style>
 </head>
 <body>
@@ -280,6 +283,13 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&
 const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const hora = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
+// ?fonte=seven: o mesmo feed, com as filas do Seven (vendas, ranking ML, estoque).
+// ?embed=1: dentro do Seven (iframe) - sem menu lateral, clique abre na janela de cima.
+const PARAMS = new URLSearchParams(location.search);
+const SEVEN = PARAMS.get('fonte') === 'seven';
+const EMBED = PARAMS.get('embed') === '1';
+if (EMBED) document.body.classList.add('embed');
+
 function saudacao() {
     const h = new Date().getHours();
     return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
@@ -300,7 +310,7 @@ function render() {
     const dezena = dados.prioridades || [];
     document.getElementById('frase').innerHTML =
         `Comece por estas <b>${dezena.length}</b> — elas valem <b>${brl(dezena.reduce((s, p) => s + p.peso, 0))}</b>. ` +
-        `No total são <b>${dados.em_acao}</b> pendências de ${dados.base_total} anúncios, <b>${brl(dados.dinheiro_em_jogo)}</b> em jogo.`;
+        `No total são <b>${dados.em_acao}</b> ${SEVEN ? 'pontos de atenção' : 'pendências'} de ${dados.base_total} anúncios, <b>${brl(dados.dinheiro_em_jogo)}</b> em jogo.`;
 
     // bolhas: a manhã primeiro, depois cada fila
     document.getElementById('bolhas').innerHTML = `
@@ -367,7 +377,7 @@ function item(p, pos, cor, filaTitulo, icone, rotulo) {
 
 // Clique no card: leva direto pra linha exata do produto no painel principal.
 function irAoProduto(chave) {
-    window.location.href = '/painel?chave=' + encodeURIComponent(chave);
+    (EMBED ? window.top : window).location.href = '/painel?chave=' + encodeURIComponent(chave);
 }
 
 function ver(id) { vendo = id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -548,7 +558,7 @@ function aplicarNovo() {
 
 async function recarregar(manual) {
     if (manual) document.getElementById('estadoTexto').textContent = 'atualizando...';
-    dados = await fetch('/api/feed').then(r => r.json());
+    dados = await fetch(SEVEN ? '/api/seven/feed' : '/api/feed').then(r => r.json());
     if (dados.erro) throw new Error(dados.erro);
     render();
 }
@@ -591,7 +601,7 @@ async function coletarAgora() {
 recarregar(false).then(() => {
     document.body.classList.add('page-ready');
     checar();
-    setInterval(checar, 30000);
+    if (!SEVEN) setInterval(checar, 30000);
 }).catch(e => {
     document.getElementById('conteudo').innerHTML = `<div class="vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
     document.body.classList.add('page-ready');
