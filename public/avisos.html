@@ -35,6 +35,9 @@
         /* Imagem unica e quase sempre a arte do anuncio: cabe inteira, nao numa
            coluna de 220px onde nao se le nada. */
         .nv-imagens.unica { grid-template-columns:1fr; }
+        .nv-audio { display:flex; align-items:center; gap:12px; margin:14px 0; padding:12px 16px; border:1px solid var(--sep); border-radius:12px; background:var(--s1); max-width:860px; }
+        .nv-audio i { font-size:20px; color:var(--accent, #0a84ff); }
+        .nv-audio audio { flex:1; min-width:0; }
         .nv-imagens img { width:100%; border-radius:10px; border:1px solid var(--sep); cursor:zoom-in; background:var(--s2); }
         .nv-vazio { text-align:center; padding:40px; color:var(--l3); font-size:13px; line-height:1.6; }
         .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
@@ -110,6 +113,8 @@ function videoHtml(url) {
     if (!url) return '';
     const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
     if (yt) return `<div class="nv-video"><iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+    // audio (podcast): player compacto, sem a caixa preta do video
+    if (/\.(m4a|mp3|aac|ogg|oga|wav)(\?|#|$)/i.test(url)) return `<div class="nv-audio"><i class="bi bi-mic-fill"></i><audio controls preload="metadata" src="${esc(url)}"></audio></div>`;
     return `<div class="nv-video"><video controls preload="metadata" src="${esc(url)}"></video></div>`;
 }
 
