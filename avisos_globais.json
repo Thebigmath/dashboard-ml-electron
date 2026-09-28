@@ -5,9 +5,11 @@
     "tag": "Projeto novo",
     "titulo": "Projeto Issacar",
     "resumo": "O robô que pesquisa o Mercado Livre como uma pessoa e diz onde cada anúncio aparece.",
-    "texto": "O Issacar nasceu para coletar preços de concorrentes e agora também mede o Ranking ML: em que página e posição cada anúncio aparece na busca do Mercado Livre. É ele que alimenta a coluna Ranking ML e as notícias do SEVEN.\n\nPontos fortes:\n\n- Rápido: pesquisa dezenas de termos em poucos minutos, com várias abas trabalhando ao mesmo tempo\n- Invisível: roda em segundo plano, num Chrome próprio, sem aparecer na tela nem atrapalhar quem está usando o computador\n- Conta como o Mercado Livre conta: ignora anúncios patrocinados e conta cada anúncio uma vez só\n- Ritmo humano: pausas variadas entre as buscas, para não sobrecarregar o Mercado Livre\n- Seguro: se o Mercado Livre pedir verificação, ele para sozinho e não tenta forçar\n- Não perde dado: se uma coleta for barrada, o ranking anterior continua valendo\n- Transparente: cada coleta fica registrada, e uma falha vira aviso no Windows e no SEVEN\n\nA coleta roda sozinha toda segunda-feira e também pode ser disparada pelo botão Coletar ranking ML, no SEVEN.",
-    "video": "",
-    "imagens": [],
+    "texto": "O Issacar nasceu para coletar preços de concorrentes e agora também mede o Ranking ML: em que página e posição cada anúncio aparece na busca do Mercado Livre. É ele que alimenta a coluna Ranking ML e as notícias do SEVEN.\n\nPontos fortes:\n\n- Rápido: pesquisa dezenas de termos em poucos minutos, com várias abas trabalhando ao mesmo tempo\n- Invisível: roda em segundo plano, num Chrome próprio, sem aparecer na tela nem atrapalhar quem está usando o computador\n- Conta como o Mercado Livre conta: ignora anúncios patrocinados e conta cada anúncio uma vez só\n- Ritmo humano: pausas variadas entre as buscas, para não sobrecarregar o Mercado Livre\n- Seguro: se o Mercado Livre pedir verificação, ele para sozinho e não tenta forçar\n- Não perde dado: se uma coleta for barrada, o ranking anterior continua valendo\n- Transparente: cada coleta fica registrada, e uma falha vira aviso no Windows e no SEVEN\n\nA coleta roda sozinha toda segunda-feira e também pode ser disparada pelo botão Coletar ranking ML, no SEVEN.\n\nPodcast: \"O robô que aprendeu a tropeçar\" (27 min) conta a história do Issacar. É só dar play acima.",
+    "video": "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/issacar_podcast.m4a",
+    "imagens": [
+      "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/issacar.webp"
+    ],
     "link": ""
   },
   {
