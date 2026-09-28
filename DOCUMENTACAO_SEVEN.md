@@ -171,13 +171,16 @@ Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Deskto
 | O quê | Caminho |
 |---|---|
 | Astra (conexão MCP: ritmo, disjuntor, prazo) | `C:\Users\Matheus Prata\Documents\business_Intelligence\seven\sala_de_maquinas\Astra.py` |
-| Astra V2 (planejamento, fila, banco, exportação) | `...\seven\sala_de_maquinas\astra_v2.py` (backup: `astra_v2_antes_exportar_20260928.py.bak`) |
+| Astra V2 (planejamento, fila e banco — só coleta) | `...\seven\sala_de_maquinas\astra_v2.py` |
+| **Ponte Astra → Dashboard** (script intermediário) | `...\seven\sala_de_maquinas\ponte_dashboard.py` |
 | Banco de dados | `...\seven\saidas\astra.db` (SQLite: grupos, membros, snapshots, fila, execucoes) |
 | Contador de cota e bloqueio | `...\seven\saidas\cache\astra\` (`chamadas.json`, `bloqueio.json`) |
 | **Arquivo que o Dashboard lê** | `...\seven\saidas\astra_concorrentes.json` |
 | Token | `C:\Users\Matheus Prata\Documents\MCP_Nubimetrics\.mcp.json` |
 
-**Exportar** (não gasta cota): `py -X utf8 astra_v2.py exportar --dias 7`. Por grupo de concorrência grava o ranking por vendas, a nossa melhor posição, os nossos anúncios (vendedor e preço) e o concorrente que mais vende (preço dele).
+**Fluxo:** Nubimetrics → (MCP) → **Astra** → `astra.db` → **`ponte_dashboard.py`** → `astra_concorrentes.json` → **Dashboard**.
+
+**Ponte** (não gasta cota, abre o banco só para leitura): `py -X utf8 ponte_dashboard.py --dias 7`. Por grupo de concorrência de produto grava o ranking por vendas, a nossa melhor posição, os nossos anúncios (vendedor e preço) e o concorrente que mais vende (preço dele).
 
 **Como o Dashboard usa** (`concorrentesAstra()`, `grupoDoAnuncio()` e `tabelaConcorrentes()` em `lib/seven.js`):
 
@@ -186,7 +189,7 @@ Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Deskto
 - **PC** = preço do concorrente ativo que mais vende no grupo; **DF%** = (MP − PC) ÷ PC; **RANK NUB** = nossa posição no grupo por vendas;
 - configuração opcional: `concorrentes_arquivo` no `config.json` do storage.
 
-**Situação em 28/09:** 78 grupos cadastrados, **1 com dado** (TORO; na Cordeiro: 2º de 12, PC R$ 339,90, DF% −6,8%). O Astra roda **só manualmente**, com teto de 30 chamadas por dia (90 s entre elas). Pendente: agendar uma execução diária (`atualizar` + `exportar`) e subir o teto.
+**Situação em 28/09:** 78 grupos cadastrados, **1 com dado** (TORO; na Cordeiro: 2º de 12, PC R$ 339,90, DF% −6,8%). O Astra roda **só manualmente**, com teto de 30 chamadas por dia (90 s entre elas). Os catálogos de vendedores concorrentes (`nubi_competition_seller_items`: 5 grupos de vendedor, 40 lojas) **não entram** no SEVEN: não estão ligados a um produto e o vendedor vem como código. Na fila do Astra: 72 pedidos de membros dos grupos de produto. Pendente: agendar o Astra (`atualizar`) e a ponte todos os dias e subir o teto.
 
 **Ponte do Dashboard desligada:** `lib/nubimetrics.js` tem `DESLIGADA = true` e devolve só um aviso. Ela fazia JSON-RPC à mão (como se fosse uma API) e contava a cota em `%APPDATA%\nubimetrics-cota\`, separada do Astra.
 
@@ -227,7 +230,7 @@ Publicação: `npx electron-builder --win --x64 --publish never`, renomear para 
 
 ## 9. Pendências
 
-- **Astra diário:** agendar `atualizar` + `exportar` todo dia e subir o teto diário (hoje 30) para completar os 77 grupos sem dado.
+- **Astra diário:** agendar `astra_v2.py atualizar` + `ponte_dashboard.py` todo dia e subir o teto diário (hoje 30) para completar os 77 grupos sem dado.
 - **Publicar** a próxima versão das duas contas, com uma nota nas Novidades.
 - **Revisar os termos da Cordeiro** (`termos_ranking_cordeiro.txt`), gerados automaticamente.
 - **Primeira coleta de ranking da Cordeiro:** ainda não houve (o ML estava bloqueando).
