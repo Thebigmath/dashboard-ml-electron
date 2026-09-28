@@ -1130,6 +1130,7 @@ router.post('/seven/recarregar', auth, (req, res) => {
 });
 router.get('/seven/ranking_ml/estado', auth, (req, res) => res.json(rankingMt.estado()));
 router.post('/seven/ranking_ml/coletar', auth, (req, res) => res.json(rankingMt.iniciar('manual')));
+router.get('/seven/ranking_ml/historico', auth, (req, res) => res.json(rankingMt.historico(20)));
 router.get('/seven/planilha', auth, (req, res) => {
     seven.planilha(req.query.tipo === 'concorrentes' ? 'concorrentes' : 'vendas').then(({ nome, buffer }) => {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
