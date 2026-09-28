@@ -315,7 +315,8 @@ async function acompanharRanking() {
     clearTimeout(rkTimer);
     let e;
     try { e = await api('/api/seven/ranking_ml/estado'); } catch { return; }
-    $('btnRankMt').disabled = e.rodando;
+    $('btnRankMt').disabled = e.rodando || e.coletor === false;
+    if (e.coletor === false) { $('btnRankMt').title = e.aviso; $('btnRankMt').innerHTML = '<i class="bi bi-trophy"></i> Coletado pelo app da Flavia'; }
     mostrarFalha(e.rodando ? null : e.ultima);
     if (e.rodando) {
         const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
