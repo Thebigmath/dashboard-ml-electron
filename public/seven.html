@@ -155,10 +155,10 @@
 
                 <div class="sv-view" id="view-concorrentes">
                     <div class="sv-titulo">
-                        <div><h3>Análise de concorrentes</h3><small>MP = meu preço · PC = preço do concorrente · DF% = diferença · RANK NUB = ranking Nubimetrics</small></div>
+                        <div><h3>Análise de concorrentes</h3><small>MP = meu preço · PC = preço do concorrente que mais vende no grupo · DF% = MP x PC · RANK NUB = nossa posição no grupo</small></div>
                         <button class="btn-acao" onclick="baixar('concorrentes')"><i class="bi bi-file-earmark-spreadsheet"></i> Gerar planilha</button>
                     </div>
-                    <div class="sv-aviso">PC, DF% e RANK NUB entram quando o Nubimetrics e o Mercado Turbo forem ligados. Por enquanto a tabela mostra o seu preço de cada anúncio ativo.</div>
+                    <div class="sv-aviso" id="ccAviso">Carregando os dados do Astra...</div>
                     <div class="sv-filtros"><input class="sv-busca" id="ccBusca" placeholder="Buscar SKU ou produto..." style="margin-left:0"></div>
                     <div class="sv-caixa"><table class="sv-tabela" id="ccTabela"></table></div>
                     <div class="sv-mais" id="ccMais"></div>
@@ -292,8 +292,17 @@ function desenharConc() {
     const d = cache.conc; if (!d) return;
     const q = $('ccBusca').value.trim().toLowerCase();
     const ls = d.linhas.filter(l => !q || (l.sku + ' ' + l.titulo).toLowerCase().includes(q));
-    $('ccTabela').innerHTML = `<thead><tr><th>SKU</th><th>Produto</th><th class="num">MP</th><th class="num">PC</th><th class="num">DF%</th><th class="num">RANK NUB</th></tr></thead>
-        <tbody>${ls.slice(0, LIMITE).map(l => `<tr><td>${esc(l.sku)}</td><td>${esc(l.titulo)}</td><td class="num"><b>${brl(l.mp)}</b></td><td class="num">${brl(l.pc)}</td><td class="num">${l.df == null ? '—' : l.df + '%'}</td><td class="num">${l.rank_nub ?? '—'}</td></tr>`).join('')}</tbody>`;
+    $('ccAviso').innerHTML = !d.disponivel
+        ? 'Os dados de concorrentes vêm do <b>Astra</b> (Nubimetrics via MCP) e ainda não foram exportados.'
+        : `Dados do <b>Astra</b> (Nubimetrics via MCP) de ${esc(String(d.gerado_em || '').replace('T', ' ').slice(0, 16))}: `
+          + `${d.grupos_com_dado} grupo(s) de concorrência com dado, ${d.grupos_sem_dado} ainda sem dado. `
+          + `${d.com_rank} anúncio(s) com RANK NUB. Os demais aparecem com — até o Astra coletar o grupo deles.`;
+    $('ccTabela').innerHTML = `<thead><tr><th>SKU</th><th>Produto</th><th class="num">MP</th><th class="num">PC</th><th class="num">DF%</th><th class="num">RANK NUB</th><th>Grupo Nubimetrics</th></tr></thead>
+        <tbody>${ls.slice(0, LIMITE).map(l => `<tr><td>${esc(l.sku)}</td><td>${esc(l.titulo)}</td><td class="num"><b>${brl(l.mp)}</b></td>
+            <td class="num" title="${l.lider ? esc('líder: ' + l.lider + (l.lider_vendas != null ? ' · ' + l.lider_vendas + ' vendas' : '')) : ''}">${brl(l.pc)}</td>
+            <td class="num ${l.df == null ? '' : l.df > 0 ? 'sv-down' : 'sv-up'}">${l.df == null ? '—' : (l.df > 0 ? '+' : '') + l.df + '%'}</td>
+            <td class="num">${l.rank_nub ? `<b>${l.rank_nub}º</b>${l.grupo_anuncios ? ` <small style="color:var(--l3)">de ${l.grupo_anuncios}</small>` : ''}` : '—'}</td>
+            <td style="color:var(--l2)">${esc(l.grupo || '—')}</td></tr>`).join('')}</tbody>`;
     $('ccMais').textContent = ls.length > LIMITE ? `Mostrando ${LIMITE} de ${ls.length}. A planilha traz todos.` : `${ls.length} anúncios ativos`;
 }
 $('ccBusca').addEventListener('input', desenharConc);
