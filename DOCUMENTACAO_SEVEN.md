@@ -1,6 +1,6 @@
 # SEVEN, Ranking ML (Issacar) e mudanças no Feed — Documentação
 
-Atualizado em 28/09/2026. Vale para as duas contas:
+Atualizado em 28/09/2026 (fim do dia). Vale para as duas contas:
 
 | Conta | Repositório | Porta | Storage (dados do app) |
 |---|---|---|---|
@@ -52,7 +52,7 @@ Um botão ☰ no topo mostra o nome da tela atual; clicando, abre o painel com:
 | Botão | O que faz |
 |---|---|
 | Notícias urgentes | iframe de `/feed?fonte=seven&embed=1` |
-| Análise de concorrentes | tabela MP / PC / DF% / RANK NUB (hoje só o MP é preenchido) |
+| Análise de concorrentes | tabela MP / PC / DF% / RANK NUB, com os dados do Astra (ver seção 5) |
 | Análise por tempo de vendas | tabela de comparação mensal + Ranking ML |
 | Análise com IA | "Em breve" (fora do escopo por enquanto) |
 | Inteligência de estoque | leva ao `/feed` do Dashboard |
@@ -61,13 +61,14 @@ No topo: **Recarregar** roda `/api/atualizar` (estoque) e `/api/seven/recarregar
 
 ### 3.2 Notícias urgentes (`/api/seven/feed` → `feedSeven()`)
 
-Só **anúncios, a partir do Ranking ML**. Concorrentes entram quando o Nubimetrics for ligado. Estoque fica no Feed; vendas, na tabela.
+Só **anúncios** (a partir do Ranking ML) e **concorrentes** (a partir do Nubimetrics, pelo Astra). Estoque fica no Feed; vendas, na tabela.
 
 | Fila | Regra | Peso (R$) |
 |---|---|---|
 | Fora do ranking | produto descrito por algum termo pesquisado, vendeu no mês anterior e não aparece nas 3 primeiras páginas | vendas do mês × preço |
 | Na 1ª página sem venda | Ranking ML na página 1, zero ontem, média ≥ 0,3/dia | média × 30 × preço |
 | Quase na 1ª página | Ranking ML na página 2 ou 3 e vendeu no mês anterior | vendas do mês × preço |
+| Concorrentes | no grupo de concorrência do Nubimetrics (Astra) alguém vende mais do que nós (RANK NUB > 1) | vendas 30 dias × preço |
 
 A capa junta as 10 mais caras de todas as filas. Sem coleta de ranking, nenhuma fila aparece.
 
@@ -100,6 +101,7 @@ Geradas com **ExcelJS** (`planilha()` em `lib/seven.js`): título e resumo no to
 | `GET /seven/ranking_ml/estado` | coleta rodando? progresso, última coleta |
 | `POST /seven/ranking_ml/coletar` | dispara o Issacar |
 | `GET /seven/ranking_ml/historico` | últimas 20 coletas |
+| `GET /parados`, `POST /parados/atualizar`, `GET /parados/mercado` | **standby**: só devolvem o aviso |
 
 ---
 
@@ -162,7 +164,37 @@ Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Deskto
 
 ---
 
-## 5. Bot do Mercado Turbo (pasta `bot_precos`)
+## 5. Concorrentes — Nubimetrics pelo Astra
+
+**Regra:** só o **Astra** fala com o Nubimetrics, sempre pela **biblioteca oficial do MCP** (`mcp.ClientSession`, `initialize`, `call_tool`, uma sessão por execução) e com **um único contador de cota**. O Dashboard **não chama o Nubimetrics**: só lê o que o Astra exporta.
+
+| O quê | Caminho |
+|---|---|
+| Astra (conexão MCP: ritmo, disjuntor, prazo) | `C:\Users\Matheus Prata\Documents\business_Intelligence\seven\sala_de_maquinas\Astra.py` |
+| Astra V2 (planejamento, fila, banco, exportação) | `...\seven\sala_de_maquinas\astra_v2.py` (backup: `astra_v2_antes_exportar_20260928.py.bak`) |
+| Banco de dados | `...\seven\saidas\astra.db` (SQLite: grupos, membros, snapshots, fila, execucoes) |
+| Contador de cota e bloqueio | `...\seven\saidas\cache\astra\` (`chamadas.json`, `bloqueio.json`) |
+| **Arquivo que o Dashboard lê** | `...\seven\saidas\astra_concorrentes.json` |
+| Token | `C:\Users\Matheus Prata\Documents\MCP_Nubimetrics\.mcp.json` |
+
+**Exportar** (não gasta cota): `py -X utf8 astra_v2.py exportar --dias 7`. Por grupo de concorrência grava o ranking por vendas, a nossa melhor posição, os nossos anúncios (vendedor e preço) e o concorrente que mais vende (preço dele).
+
+**Como o Dashboard usa** (`concorrentesAstra()`, `grupoDoAnuncio()` e `tabelaConcorrentes()` em `lib/seven.js`):
+
+- cada grupo é um produto ("TAPETE BANDEJA TORO"): vale para o anúncio ativo cujo título tem **todas as palavras do nome do grupo** (o mais específico vence);
+- a conta é reconhecida pelo vendedor (`STOCK` na Flavia, `CORDEIRO` na Cordeiro); havendo vários anúncios nossos no grupo, o **preço** diz qual é qual;
+- **PC** = preço do concorrente ativo que mais vende no grupo; **DF%** = (MP − PC) ÷ PC; **RANK NUB** = nossa posição no grupo por vendas;
+- configuração opcional: `concorrentes_arquivo` no `config.json` do storage.
+
+**Situação em 28/09:** 78 grupos cadastrados, **1 com dado** (TORO; na Cordeiro: 2º de 12, PC R$ 339,90, DF% −6,8%). O Astra roda **só manualmente**, com teto de 30 chamadas por dia (90 s entre elas). Pendente: agendar uma execução diária (`atualizar` + `exportar`) e subir o teto.
+
+**Ponte do Dashboard desligada:** `lib/nubimetrics.js` tem `DESLIGADA = true` e devolve só um aviso. Ela fazia JSON-RPC à mão (como se fosse uma API) e contava a cota em `%APPDATA%\nubimetrics-cota\`, separada do Astra.
+
+**Produtos parados em standby:** as rotas `/api/parados*` só devolvem `{ standby: true }` e a tela mostra o aviso. `lib/parados.js` e `lib/mercado.js` continuam no código, sem uso.
+
+---
+
+## 6. Bot do Mercado Turbo (pasta `bot_precos`)
 
 `C:\Users\Matheus Prata\Documents\business_Intelligence\bot_precos\` — **não é mais usado pelo SEVEN** (a coleta passou para o Issacar), mas continua funcionando.
 
@@ -174,28 +206,28 @@ Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Deskto
 
 ---
 
-## 6. Avisos globais e Novidades
+## 7. Avisos globais e Novidades
 
-- `avisos_globais.json` (repositório ML, branch master): lido pelos dois apps direto do GitHub, sem nova versão. Hoje: **Projeto Issacar** e **Horizon Engine**. O arquivo do repositório da Cordeiro é mantido igual, mas não é lido.
+- `avisos_globais.json` (repositório ML, branch master): lido pelos dois apps direto do GitHub, sem nova versão. Hoje: **Projeto Issacar** (com o emblema `arte/issacar.webp` e o podcast "O robô que aprendeu a tropeçar", `arte/issacar_podcast.m4a`, 27 min, comprimido para 13 MB) e **Horizon Engine**. A pasta `arte/` não entra no instalador. Na próxima versão, áudio aparece num player compacto em vez da caixa de vídeo (`public/avisos.html`). O arquivo do repositório da Cordeiro é mantido igual, mas não é lido.
 - `novidades.json` (em cada repositório): notas por versão. As da **1.9.52 / 1.6.59** falam do SEVEN, do Ranking ML e do Feed.
 
 ---
 
-## 7. Versões
+## 8. Versões
 
 | Versão | O que levou |
 |---|---|
 | ML 1.9.51 / Cordeiro 1.6.57–1.6.58 | Feed novo (capa, filas em tela cheia, ação em primeiro); 1.6.58 corrigiu o Feed da Cordeiro |
 | ML 1.9.52 / Cordeiro 1.6.59 | SEVEN, Ranking ML pelo Issacar, internalProcess = aguardar, Atualizar do Feed, Novidades |
-| próxima (não publicada) | Notícias só com anúncios, regra de "coberto", planilhas formatadas, menu hambúrguer, histórico e aviso de falha da coleta |
+| próxima (não publicada) | Notícias só com anúncios e concorrentes, regra de "coberto", planilhas formatadas, menu hambúrguer, histórico e aviso de falha da coleta, coleta diária combinada das duas contas, concorrentes pelo Astra, ponte do Nubimetrics desligada, Parados em standby, player de áudio nos avisos |
 
 Publicação: `npx electron-builder --win --x64 --publish never`, renomear para o nome com hífens, `gh release create vX.Y.Z <exe> <blockmap> latest.yml`, e conferir os 3 arquivos e a tag (detalhes em `DOCUMENTACAO.md`, seção 5).
 
 ---
 
-## 8. Pendências
+## 9. Pendências
 
-- **Nubimetrics:** preencher PC, DF% e RANK NUB na tabela de concorrentes e criar a fila de Concorrentes nas Notícias.
+- **Astra diário:** agendar `atualizar` + `exportar` todo dia e subir o teto diário (hoje 30) para completar os 77 grupos sem dado.
 - **Publicar** a próxima versão das duas contas, com uma nota nas Novidades.
 - **Revisar os termos da Cordeiro** (`termos_ranking_cordeiro.txt`), gerados automaticamente.
 - **Primeira coleta de ranking da Cordeiro:** ainda não houve (o ML estava bloqueando).
