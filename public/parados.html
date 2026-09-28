@@ -340,6 +340,11 @@ function desenhar(id) {
 async function carregar(forcar) {
     const r = await fetch('/api/parados' + (forcar ? '?forcar=1' : ''));
     dados = await r.json();
+    if (dados.standby) {
+        document.getElementById('tabela').innerHTML = `<tr><td colspan="9" class="vazio"><i class="bi bi-pause-circle"></i> ${esc(dados.mensagem)}</td></tr>`;
+        const b = document.getElementById('btnAtualizar'); if (b) b.disabled = true;
+        return;
+    }
     if (dados.erro) throw new Error(dados.erro);
     render();
     if (dados.estado && dados.estado.rodando) { if (!poll) poll = setInterval(() => carregar(false).catch(() => {}), 3000); }
