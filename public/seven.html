@@ -65,6 +65,84 @@
         .sv-vazio { color:var(--l3); padding:30px; text-align:center; }
         .sv-mais { font-size:12px; color:var(--l3); padding:10px; text-align:center; }
         body.astra-leitura .sv-reload-grupo { display:none; }
+
+        /* ---- Painel da IA: cards limpos ---- */
+        .pia-sec { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--l3); margin:22px 0 10px; }
+        .pia-grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
+        .pia-grade-prio { grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
+        .pia-grade-2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); margin-top:22px; }
+        .pia-card { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:8px;
+                    transition:transform .15s, border-color .15s; }
+        .pia-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--l3) 45%, transparent); }
+        @keyframes piaEntra { from { opacity:0; transform:translateY(8px); } }
+        .pia-largo { grid-column:span 2; } @media (max-width:640px) { .pia-largo { grid-column:auto; } }
+        .pia-rot { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--l3); }
+        .pia-grupo .pia-rot i { color:var(--ac); }
+        .pia-num { font-size:30px; font-weight:800; line-height:1.05; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+        .pia-grupo .pia-num { color:var(--ac); }
+        .pia-sub { font-size:13px; color:var(--l2); }
+        .pia-fraco { font-size:12px; color:var(--l3); }
+        .pia-selo { display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; align-self:flex-start; }
+        .pia-selo.up { color:#30D158; background:rgba(48,209,88,.12); } .pia-selo.down { color:#FF453A; background:rgba(255,69,58,.12); }
+        .pia-barras { display:flex; align-items:flex-end; gap:3px; height:54px; }
+        .pia-barras span { flex:1; background:color-mix(in srgb, #0A84FF 55%, transparent); border-radius:3px 3px 1px 1px; }
+        .pia-barras span:hover { background:#0A84FF; }
+        .pia-barra { height:6px; border-radius:3px; background:rgba(255,69,58,.35); overflow:hidden; } .pia-barra b { display:block; height:100%; background:#30D158; }
+        .pia-lista div { font-size:13px; padding:5px 0; border-top:1px solid var(--sep); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .pia-acao { font-size:13px; line-height:1.4; background:color-mix(in srgb, var(--l3) 10%, transparent); border-radius:10px; padding:9px 11px; font-weight:600; }
+        .pia-acao small { display:block; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--l3); margin-bottom:2px; }
+        .pia-topo { display:flex; align-items:center; gap:8px; }
+        .pia-pos { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800; background:#0A84FF; color:#fff; }
+        .pia-tag { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:color-mix(in srgb, var(--l3) 15%, transparent); color:var(--l2); }
+        .pia-sku { margin-left:auto; font-size:11px; color:var(--l3); }
+        .pia-tit { font-weight:700; font-size:15px; line-height:1.3; }
+        .pia-frase { font-size:14px; color:var(--l2); line-height:1.4; }
+        .pia-det summary { font-size:12px; color:var(--l3); cursor:pointer; } .pia-det div { font-size:13px; color:var(--l2); padding-top:4px; }
+        .pia-resumo { font-size:15px; line-height:1.6; white-space:pre-wrap; }
+        .pia-pergunta { width:100%; min-height:62px; resize:vertical; background:transparent; border:1px solid var(--sep); border-radius:10px; color:inherit; font:inherit; padding:8px 10px; }
+        /* ---- Retrospectiva da IA (estilo "Wrapped"): so a aba Analise com IA usa ---- */
+        .rt { position:fixed; inset:0; z-index:9999; display:none; background:rgba(3,6,10,.88); backdrop-filter:blur(6px); color:#f4f4f5; font-family:inherit; }
+        .rt.on { display:flex; align-items:center; justify-content:center; }
+        .rt-palco { position:relative; width:min(430px,100vw); height:min(780px,100vh); border-radius:24px; overflow:hidden; user-select:none;
+                    box-shadow:0 30px 80px rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.06); }
+        @media (max-width:520px) { .rt-palco { border-radius:0; } }
+        .rt-barras { position:absolute; top:14px; left:16px; right:52px; display:flex; gap:5px; z-index:3; }
+        .rt-barras i { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.18); overflow:hidden; }
+        .rt-barras i b { display:block; height:100%; width:0; background:rgba(255,255,255,.9); }
+        .rt-fechar { position:absolute; top:4px; right:10px; z-index:4; background:none; border:0; color:#fff; font-size:28px; opacity:.7; cursor:pointer; }
+        .rt-slide { position:absolute; inset:0; padding:70px 30px 44px; display:flex; flex-direction:column; justify-content:center; gap:16px; }
+        .rt-slide > * { animation:rtEntra .6s cubic-bezier(.2,.8,.2,1) backwards; }
+        .rt-slide > *:nth-child(2) { animation-delay:.08s } .rt-slide > *:nth-child(3) { animation-delay:.16s }
+        .rt-slide > *:nth-child(4) { animation-delay:.24s } .rt-slide > *:nth-child(5) { animation-delay:.32s } .rt-slide > *:nth-child(n+6) { animation-delay:.4s }
+        @keyframes rtEntra { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+        .rt-rotulo { font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--ac); font-weight:800; }
+        .rt-grande { font-size:clamp(40px,12vw,60px); line-height:1; font-weight:900; letter-spacing:-.03em; color:var(--ac); font-variant-numeric:tabular-nums; }
+        .rt-medio { font-size:23px; line-height:1.25; font-weight:800; }
+        .rt-txt { font-size:17px; line-height:1.45; }
+        .rt-fraco { opacity:.6; font-size:14px; }
+        .rt-selo { align-self:flex-start; background:color-mix(in srgb, var(--ac) 18%, transparent); color:var(--ac); border-radius:999px; padding:7px 14px; font-weight:800; font-size:14px; }
+        .rt-acao { background:rgba(255,255,255,.07); border-left:3px solid var(--ac); border-radius:12px; padding:13px 16px; font-size:17px; line-height:1.4; font-weight:700; }
+        .rt-acao small { display:block; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ac); margin-bottom:4px; }
+        .rt-lista div { padding:9px 0; border-bottom:1px solid rgba(255,255,255,.1); font-size:15px; }
+        .rt-barrinhas { display:flex; align-items:flex-end; gap:3px; height:120px; }
+        .rt-barrinhas span { flex:1; background:color-mix(in srgb, var(--ac) 55%, transparent); border-radius:4px 4px 1px 1px; min-height:4px; cursor:pointer;
+                             transform-origin:bottom; animation:rtSobe .8s cubic-bezier(.2,.8,.2,1) backwards; transition:background .15s; }
+        .rt-barrinhas span:hover, .rt-barrinhas span.sel { background:var(--ac); }
+        @keyframes rtSobe { from { transform:scaleY(0); } }
+        .rt-dica { font-size:14px; opacity:.75; min-height:20px; }
+        .rt-tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .rt-tile { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; color:inherit; text-align:left; cursor:pointer;
+                   display:flex; flex-direction:column; gap:2px; transition:transform .15s, background .15s; font:inherit; }
+        .rt-tile:hover { background:rgba(255,255,255,.12); transform:translateY(-2px); }
+        .rt-tile i { color:var(--ac); font-size:18px; } .rt-tile b { font-size:28px; font-weight:900; } .rt-tile span { font-size:13px; opacity:.8; }
+        .rt-mais { align-self:flex-start; background:none; border:1px solid rgba(255,255,255,.25); color:inherit; border-radius:999px; padding:6px 14px; font:inherit; font-size:13px; cursor:pointer; }
+        .rt-extra { display:none; font-size:15px; line-height:1.5; background:rgba(0,0,0,.25); border-radius:12px; padding:12px 14px; }
+        .rt-extra.on { display:block; animation:rtEntra .35s ease; }
+        .rt-ia { font-size:18px; line-height:1.6; white-space:pre-wrap; max-height:55vh; overflow:auto; }
+        .rt-int { position:relative; z-index:3; }
+        .rt-toque { position:absolute; top:0; bottom:0; z-index:2; cursor:pointer; }
+        .rt-toque.esq { left:0; width:30%; } .rt-toque.dir { right:0; width:70%; }
+        .rt-rodape { position:absolute; bottom:16px; right:22px; font-size:12px; opacity:.45; z-index:3; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -169,9 +247,40 @@
                     <div class="sv-mais" id="ccMais"></div>
                 </div>
 
+                <div class="rt" id="rt"><div class="rt-palco" id="rtPalco"></div></div>
                 <div class="sv-view" id="view-ia">
-                    <div class="sv-titulo"><div><h3>Análise com IA</h3></div></div>
-                    <div class="sv-aviso">Em breve: sugestões e conversa sobre os dados de cada feed.</div>
+                    <div class="sv-titulo">
+                        <div><h3>Análise com IA</h3><small><span id="piaStatus">—</span> · atualiza sozinho a cada 3 minutos</small></div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                            <button class="btn-acao" onclick="iaPainel(true)"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>
+                            <button class="btn-acao" id="rtBtn" onclick="rtAbrir()" title="A análise do dia contada em telas"><i class="bi bi-play-circle"></i> Ver retrospectiva</button>
+                        </div>
+                    </div>
+                    <div class="sv-aviso" id="iaAviso" style="display:none"></div>
+                    <div class="pia-sec">O dia em números</div>
+                    <div class="pia-grade" id="piaNumeros"><div class="sv-vazio">Carregando…</div></div>
+                    <div class="pia-sec">O que a IA encontrou</div>
+                    <div class="pia-grade" id="piaGrupos"></div>
+                    <div class="pia-sec">Prioridades de hoje</div>
+                    <div class="pia-grade pia-grade-prio" id="piaPrio"></div>
+                    <div class="pia-grade pia-grade-2">
+                        <div class="pia-card pia-ia">
+                            <div class="pia-rot"><i class="bi bi-stars"></i> A IA resume <span class="pia-fraco" id="piaResumoHora" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
+                            <div class="pia-resumo" id="piaResumo"><span class="pia-fraco">—</span></div>
+                            <button class="btn-acao" id="piaResumoBtn" onclick="piaResumo()" style="align-self:flex-start"><i class="bi bi-arrow-repeat"></i> Novo resumo</button>
+                        </div>
+                        <div class="pia-card">
+                            <div class="pia-rot"><i class="bi bi-chat-dots"></i> Pergunte à IA <small class="pia-fraco" id="iaSub" style="margin-left:auto;text-transform:none;letter-spacing:0"></small></div>
+                            <textarea id="iaPergunta" class="pia-pergunta" placeholder="Ex.: quais produtos estão mais caros que o concorrente?"></textarea>
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                                <button class="btn-acao" id="iaBtn" onclick="iaPerguntar()"><i class="bi bi-send"></i> Perguntar</button>
+                                <select class="sv-busca" id="iaModelo" style="margin-left:0;min-width:150px" title="Modelo do Ollama"></select>
+                            </div>
+                            <div class="pia-resumo" id="iaResposta"></div>
+                            <div class="pia-fraco" id="iaRodape"></div>
+                        </div>
+                    </div>
+                    <div style="display:none"><button id="iaSaudeBtn"></button><div id="iaDiag"></div><div id="iaLista"></div><div id="iaExemplos"></div></div>
                 </div>
             </section>
         </div>
@@ -225,6 +334,7 @@ async function carregar(view, forcar) {
         }
         if (view === 'vendas') renderVendas(forcar || !cache.vendas ? (cache.vendas = await api('/api/seven/vendas')) : cache.vendas);
         if (view === 'concorrentes') { if (forcar || !cache.conc) cache.conc = await api('/api/seven/concorrentes'); desenharConc(); }
+        if (view === 'ia') iaPainel();
     } catch (e) {
         const alvo = { noticias: 'nvConteudo', vendas: 'vdTabela', concorrentes: 'ccTabela' }[view];
         if (alvo) $(alvo).innerHTML = `<tr><td><div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div></td></tr>`;
@@ -449,6 +559,442 @@ async function recarregarTudo() {
     } finally {
         btn.disabled = false;
     }
+}
+
+// ---- Análise com IA: Ollama local, resposta em NDJSON (token a token) ---------------------
+let iaEstado = null;
+const iaEXEMPLOS = [
+    'Quais produtos estão com preço acima do concorrente que mais vende?',
+    'O que vendeu abaixo da média ontem?',
+    'Quais anúncios meus estão fora do ranking na página 1?',
+];
+
+async function iaCarregar() {
+    const aviso = $('iaAviso');
+    try {
+        iaEstado = await api('/api/seven/ia/estado');
+        const sel = $('iaModelo');
+        if (iaEstado.online) {
+            aviso.style.display = 'none';
+            sel.innerHTML = (iaEstado.modelos || []).map(m => `<option value="${esc(m.nome)}">${esc(m.nome)} · ${m.gb} GB</option>`).join('');
+            if (iaEstado.modelo) sel.value = iaEstado.modelo;
+            $('iaSub').textContent = `Ollama em ${iaEstado.url} · sem GPU, a 1ª pergunta carrega o modelo e demora mais`;
+        } else {
+            aviso.style.display = '';
+            aviso.innerHTML = `<b>Ollama desligado.</b> ${esc(iaEstado.erro || 'sem resposta em ' + iaEstado.url)}`
+                + ` — abra o Ollama e <button class="btn-acao" onclick="iaCarregar()">verifique de novo</button>.`;
+            sel.innerHTML = '';
+        }
+        $('iaExemplos').innerHTML = iaEXEMPLOS
+            .map(q => `<button class="sv-chip" onclick="$('iaPergunta').value=this.textContent;iaPerguntar()">${esc(q)}</button>`).join('');
+        // o diagnostico agora e desenhado pelo painel (iaPainel)
+        if (!iaEstado.online) { $('iaSaudeBtn').disabled = true; $('iaBtn').disabled = true; $('iaDiag').innerHTML = ''; }
+    } catch (e) {
+        aviso.style.display = '';
+        aviso.innerHTML = `<div style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
+    }
+}
+
+async function iaPerguntar() {
+    const pergunta = $('iaPergunta').value.trim();
+    if (!pergunta) { $('iaPergunta').focus(); return; }
+    return iaStream('/api/seven/ia/perguntar', { pergunta, modelo: $('iaModelo').value || undefined });
+}
+
+// diagnóstico montado pelo servidor: não chama o modelo, é instantâneo
+const iaSINAL_NOME = {
+    parado: 'no ar sem venda no mês', sem_ontem: 'não vendeu ontem', venda_sem_busca: 'vendeu fora da busca',
+    fora_da_pagina1: 'fora da página 1', fora_do_podio: 'fora do top 3 no grupo',
+    preco_caro_sem_venda: 'caro e sem venda', subir_preco: 'candidato a subir preço',
+    margem_curta: 'margem curta', oportunidade: 'oportunidade',
+};
+async function iaDiagnostico(abrir) {
+    try {
+        const s = await api('/api/seven/ia/saude');
+        const comSinal = s.ordem.filter(i => i.sinais.length).length;
+        const chips = Object.entries(s.contagem).sort((a, b) => b[1] - a[1])
+            .map(([k, n]) => `<span class="sv-chip" title="${esc(k)}">${n} ${esc(iaSINAL_NOME[k] || k)}</span>`).join('');
+        const lac = Object.entries(s.lacContagem || {})
+            .map(([k, n]) => `${n} sem ${esc(k.replace('sem_', '').replace('_', ' '))}`).join(' · ');
+        $('iaDiag').innerHTML = `<span class="sv-chip ativo">${s.itens.length} anúncios</span>`
+            + `<span class="sv-chip">${comSinal} com sinal</span><span class="sv-chip">${s.limpos.length} sem alerta</span>`
+            + (chips ? ' ' + chips : '')
+            + (lac ? `<span class="sv-chip" title="Lacunas de coleta: não contam como problema do anúncio">faltam dados: ${lac}</span>` : '');
+        // lista completa de quem tem problema, com a ação já calculada: não depende do modelo
+        const comS = s.ordem.filter(i => i.sinais.length);
+        $('iaLista').innerHTML = comS.length ? `<details class="sv-aviso" style="cursor:pointer"${abrir ? ' open' : ''}>
+            <summary style="cursor:pointer;font-weight:700">Ver os ${comS.length} anúncios com problema e a ação de cada um</summary>
+            <table class="sv-tabela" style="margin-top:10px">
+                <thead><tr><th>Anúncio</th><th class="num">Grav.</th><th>Problema</th><th>O que fazer</th></tr></thead>
+                <tbody>${comS.slice(0, 25).map(i => `<tr>
+                    <td><b>${esc(i.sku)}</b><br><span style="color:var(--l3);font-size:12px">${esc(String(i.titulo).slice(0, 60))}</span></td>
+                    <td class="num">${i.gravidade}</td>
+                    <td>${i.sinais.map(x => esc(x.txt)).join('<br>')}</td>
+                    <td>${i.sinais.map(x => esc(x.acao)).join('<br>')}</td></tr>`).join('')}</tbody>
+            </table>${comS.length > 25 ? `<small style="color:var(--l3)">Mostrando os 25 piores de ${comS.length}.</small>` : ''}
+        </details>` : '<div class="sv-aviso">Nenhum anúncio com sinal de alerta na base atual.</div>';
+    } catch (e) {
+        $('iaDiag').innerHTML = `<span class="sv-chip" style="color:#ff453a">diagnóstico indisponível: ${esc(e.message)}</span>`;
+    }
+}
+
+// O botão principal NAO chama o modelo: a análise sao regras sobre as duas tabelas
+// (ver lib/ia.js saude()). Sai na hora, vem completa e nunca truncada. A maquina faz
+// ~3 tokens/s, entao pedir 2 min de texto pro modelo seria trocar acerto por demora.
+function iaAnalisar() {
+    return iaDiagnostico(true).then(() => {
+        $('iaResposta').innerHTML = `<div class="sv-vazio" style="padding:18px">Análise pronta acima, com ${$('iaDiag').textContent.split(' com sinal')[0]}.`
+            + `<br>Use <b>Perguntar</b> para tirar dúvida sobre algum anúncio, ou desmarque a lista para ver só os piores.</div>`;
+        $('iaRodape').textContent = 'Análise calculada no servidor, sem gastar o modelo.';
+    });
+}
+
+// um mesmo leitor NDJSON para as duas chamadas: a resposta chega token a token
+async function iaStream(url, corpo) {
+    const alvo = $('iaResposta');
+    for (const b of [$('iaBtn'), $('iaSaudeBtn')]) if (b) b.disabled = true;
+    alvo.textContent = ''; $('iaRodape').textContent = '';
+    let texto = '';
+    try {
+        const resp = await fetch(url, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
+        });
+        if (!resp.ok) { const d = await resp.json().catch(() => ({})); throw new Error(d.erro || ('erro ' + resp.status)); }
+        const leitor = resp.body.getReader(); const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+            const { value, done } = await leitor.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let corte;
+            while ((corte = buf.indexOf('\n')) >= 0) {
+                const l = buf.slice(0, corte); buf = buf.slice(corte + 1);
+                if (!l.trim()) continue;
+                const o = JSON.parse(l);
+                if (o.tipo === 'token') {
+                    texto += o.texto;
+                    alvo.innerHTML = esc(texto).replace(/\n/g, '<br>');
+                } else if (o.tipo === 'espera') {
+                    // enquanto o modelo carrega do disco não chega token nenhum: mostra o relógio
+                    alvo.innerHTML = `<div class="sv-vazio">${o.s < 12 ? 'carregando o modelo…' : 'pensando…'} ${o.s}s</div>`;
+                } else if (o.tipo === 'contexto') {
+                    if (o.saude) {
+                        $('iaSub').textContent = `analisando ${o.saude.anuncios} anúncios · ${o.saude.com_sinal} com sinal · contexto ${o.chars} caracteres`;
+                    } else $('iaSub').textContent = `contexto: ${o.chars} caracteres · modelo ${o.modelo}`;
+                } else if (o.tipo === 'fim') {
+                    $('iaRodape').textContent = `${o.tokens} tokens em ${(o.ms / 1000).toFixed(1)}s (${o.tok_s} tokens/s)`
+                        + (o.prompt_tokens ? ` · contexto ${o.prompt_tokens} tokens` : '')
+                        + (o.cortada ? ' — resposta cortada no limite; a lista completa está acima' : '');
+                    // painel ja atualizado por iaPainel
+                } else if (o.tipo === 'erro') throw new Error(o.texto);
+            }
+        }
+    } catch (e) {
+        alvo.innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
+    } finally {
+        for (const b of [$('iaBtn'), $('iaSaudeBtn')]) if (b) b.disabled = false;
+    }
+}
+
+
+// ---- Painel da IA: cada ponto da analise em um card, sempre atualizado ---------------------
+// Le so /api/seven/ia/faturamento e /api/seven/ia/saude (nao mexe no resto do Seven).
+// Atualiza sozinho a cada 3 minutos enquanto a aba esta aberta; o resumo do Llama e refeito
+// quando os dados mudam (no maximo a cada 30 min: a maquina escreve ~3 palavras/s).
+const PIA = { f: null, s: null, timer: null, t: 0, resumoEm: 0, resumoAssin: '', escrevendo: false };
+function piaAssinatura() { return PIA.s ? PIA.s.itens.filter(i => i.sinais.length).map(i => i.item_id).slice(0, 8).join(',') : ''; }
+
+async function iaPainel(forcar) {
+    iaCarregar();   // status do Ollama e lista de modelos
+    clearTimeout(PIA.timer);
+    const st = $('piaStatus');
+    if (st) st.textContent = 'atualizando…';
+    try {
+        const [f, s] = await Promise.all([
+            api('/api/seven/ia/faturamento' + (forcar ? '?forcar=1' : '')).catch(() => null),
+            api('/api/seven/ia/saude').catch(() => null)]);
+        PIA.f = f; PIA.s = s; PIA.t = Date.now(); rt.s = s;
+        piaDesenhar();
+        if (st) st.textContent = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const mudou = piaAssinatura() !== PIA.resumoAssin;
+        if (!PIA.escrevendo && (mudou && Date.now() - PIA.resumoEm > 30 * 60 * 1000 || !PIA.resumoEm)) piaResumo();
+    } catch (e) { if (st) st.textContent = 'falhou: ' + e.message; }
+    PIA.timer = setTimeout(() => { if (document.visibilityState === 'visible' && $('view-ia').classList.contains('ativo')) iaPainel(); else PIA.timer = setTimeout(() => iaPainel(), 60000); }, 3 * 60 * 1000);
+}
+
+function piaDesenhar() {
+    const f = PIA.f, s = PIA.s;
+    // --- linha 1: o dia em numeros (a retrospectiva em cards) ---
+    let h = '';
+    if (f) {
+        const comp = f.mes_anterior.media_dia ? f.ontem.valor / f.mes_anterior.media_dia - 1 : null;
+        const max = Math.max(...f.mes.por_dia.map(x => x.valor), 1);
+        const mes = new Date(f.mes.de + 'T12:00:00Z').toLocaleDateString('pt-BR', { month: 'long', timeZone: 'UTC' });
+        const selo = (v, a, b) => v == null ? '' : `<span class="pia-selo ${v >= 0 ? 'up' : 'down'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(v * 100))}% ${v >= 0 ? a : b}</span>`;
+        h += `<div class="pia-card"><div class="pia-rot"><i class="bi bi-calendar-check"></i> Ontem</div>
+                <div class="pia-num">${rtR$(f.ontem.valor)}</div><div class="pia-sub">${f.ontem.pedidos} pedidos</div>
+                ${selo(comp, 'acima de um dia normal', 'abaixo de um dia normal')}</div>
+            <div class="pia-card"><div class="pia-rot"><i class="bi bi-lightning-charge"></i> Hoje até agora</div>
+                <div class="pia-num">${rtR$(f.hoje.valor)}</div><div class="pia-sub">o dia ainda está aberto</div></div>
+            <div class="pia-card pia-largo"><div class="pia-rot"><i class="bi bi-bar-chart"></i> ${esc(mes)} até agora</div>
+                <div class="pia-num">${rtR$(f.mes.valor)}</div>
+                <div class="pia-barras">${f.mes.por_dia.map(x => `<span title="${esc(x.dia.slice(8, 10) + '/' + x.dia.slice(5, 7))}: ${rtR$(x.valor)}" style="height:${Math.max(6, x.valor / max * 100)}%"></span>`).join('')}</div>
+                <div class="pia-sub">${selo(f.ritmo, 'melhor que ' + f.mes_anterior.nome, 'pior que ' + f.mes_anterior.nome)} · nesse ritmo fecha em <b>${rtR$(f.mes.projecao)}</b></div></div>`;
+    }
+    if (s) {
+        const com = s.itens.filter(i => i.sinais.length).length;
+        h += `<div class="pia-card"><div class="pia-rot"><i class="bi bi-heart-pulse"></i> Saúde dos anúncios</div>
+                <div class="pia-num">${com}</div><div class="pia-sub">de ${s.itens.length} precisam de ajuda hoje</div>
+                <div class="pia-barra"><b style="width:${Math.round((1 - com / Math.max(1, s.itens.length)) * 100)}%"></b></div>
+                <div class="pia-sub">${s.itens.length - com} estão bem</div></div>`;
+    }
+    $('piaNumeros').innerHTML = h || '<div class="sv-vazio">Sem dados agora.</div>';
+    if (!s) { $('piaGrupos').innerHTML = ''; $('piaPrio').innerHTML = ''; return; }
+
+    // --- linha 2: um card por tipo de problema ---
+    const acaoGrupo = ['Aproxime o preço do concorrente que mais vende.', 'Ajuste título, fotos e preço para aparecer mais.', 'Pause, faça promoção ou confira o estoque.', 'Reforce o estoque e teste subir o preço.'];
+    $('piaGrupos').innerHTML = RT_GRUPOS.map((g, k) => {
+        const L = s.ordem.filter(i => i.sinais.some(x => g.tipos.includes(x.tipo)));
+        return `<div class="pia-card pia-grupo" style="--ac:${['#FF9F0A', '#0A84FF', '#FF453A', '#30D158'][k]}">
+            <div class="pia-rot"><i class="bi ${g.icone}"></i> ${g.nome}</div>
+            <div class="pia-num">${L.length}</div><div class="pia-sub">${['anúncios com preço fora do ponto', 'anúncios com pouca visibilidade', 'anúncios sem vender', 'anúncios vendendo acima do normal'][k]}</div>
+            <div class="pia-lista">${L.slice(0, 3).map(i => `<div title="${esc(i.titulo)}">${esc(rtCurto(i.titulo, 38))}</div>`).join('') || '<div class="pia-fraco">nenhum</div>'}</div>
+            <div class="pia-acao">${acaoGrupo[k]}</div></div>`;
+    }).join('');
+
+    // --- linha 3: prioridades, um card por anuncio, com a acao pronta ---
+    const prio = s.ordem.filter(i => i.sinais.length).slice(0, 6);
+    $('piaPrio').innerHTML = prio.map((i, k) => {
+        const x = [...i.sinais].sort((a, b) => b.peso - a.peso)[0];
+        const [frase, acao] = rtProblema(i, x);
+        const outros = i.sinais.filter(y => y !== x).map(y => `<div>• ${esc(rtProblema(i, y)[0])}</div>`).join('');
+        return `<div class="pia-card pia-prio">
+            <div class="pia-topo"><span class="pia-pos">${k + 1}</span>${i.curva ? `<span class="pia-tag">curva ${esc(i.curva)}</span>` : ''}<span class="pia-sku">${esc(i.sku)}</span></div>
+            <div class="pia-tit" title="${esc(i.titulo)}">${esc(rtCurto(i.titulo, 64))}</div>
+            <div class="pia-frase">${esc(frase)}</div>
+            <div class="pia-acao"><small>Faça isto</small>${esc(acao)}</div>
+            ${outros ? `<details class="pia-det"><summary>mais ${i.sinais.length - 1} ponto(s)</summary>${outros}</details>` : ''}</div>`;
+    }).join('') || '<div class="sv-vazio">Nenhum anúncio com problema hoje.</div>';
+}
+
+// resumo do Llama em 3 frases, no card "A IA resume"
+async function piaResumo() {
+    const alvo = $('piaResumo'); if (!alvo) return;
+    if (iaEstado && !iaEstado.online) { alvo.innerHTML = '<span class="pia-fraco">Ollama desligado: o resumo volta quando ele estiver aberto. Os cards acima não dependem dele.</span>'; return; }
+    PIA.escrevendo = true; $('piaResumoBtn').disabled = true;
+    alvo.innerHTML = '<span class="pia-fraco">a IA está escrevendo… (cerca de 1 minuto nesta máquina)</span>';
+    let texto = '';
+    try {
+        const resp = await fetch('/api/seven/ia/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modelo: ($('iaModelo') && $('iaModelo').value) || undefined,
+                pergunta: 'Em no máximo 3 frases curtas e simples, sem listas e sem códigos de produto, diga o que é mais importante fazer hoje nos anúncios. Fale como um colega de trabalho.' }) });
+        if (!resp.ok) throw new Error('o Ollama não respondeu');
+        const leitor = resp.body.getReader(); const dec = new TextDecoder(); let buf = '';
+        for (;;) {
+            const { value, done } = await leitor.read(); if (done) break;
+            buf += dec.decode(value, { stream: true }); let c;
+            while ((c = buf.indexOf('\n')) >= 0) {
+                const l = buf.slice(0, c); buf = buf.slice(c + 1); if (!l.trim()) continue;
+                const o = JSON.parse(l);
+                if (o.tipo === 'token') { texto += o.texto; alvo.textContent = texto; }
+                else if (o.tipo === 'erro') throw new Error(o.texto);
+            }
+        }
+        PIA.resumoEm = Date.now(); PIA.resumoAssin = piaAssinatura(); rt.ia = texto; rt.iaFim = true;
+        $('piaResumoHora').textContent = 'escrito às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { alvo.innerHTML = `<span class="pia-fraco">A IA não respondeu agora (${esc(e.message)}).</span>`; }
+    PIA.escrevendo = false; $('piaResumoBtn').disabled = false;
+}
+
+
+// ---- Retrospectiva da IA: o dia em poucas telas, uma ideia por tela --------------------------
+// Numero grande + uma frase simples. Detalhe so aparece quando a pessoa toca.
+// Nada aqui mexe no resto do Seven: le /api/seven/ia/faturamento e /api/seven/ia/saude.
+const RT_TEMAS = [   // fundo escuro e suave + uma cor de destaque por tela
+    ['#0f2a2e', '#081417', '#5eead4'], ['#1e1b4b', '#0b0a1f', '#a5b4fc'], ['#2a1a12', '#120b07', '#fdba74'],
+    ['#10243f', '#070f1c', '#7dd3fc'], ['#2b1433', '#12081a', '#f0abfc'], ['#132a1c', '#08130c', '#86efac'],
+    ['#2e1a1a', '#140a0a', '#fca5a5'], ['#23220f', '#0f0f06', '#fde68a'],
+];
+const RT_TEMPO = 9000;
+let rt = { telas: [], i: 0, timer: null, t0: 0, pausa: false, ia: '', iaFim: false, s: null };
+const rtR$ = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+const rtCurto = (t, n = 42) => { t = String(t || ''); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; };
+
+// Frase simples e acao direta por tipo de problema (sem sigla)
+function rtProblema(i, x) {
+    const df = i.df != null ? Math.abs(Math.round(i.df)) : null;
+    switch (x.tipo) {
+        case 'preco_caro_sem_venda': return [`Está ${df}% mais caro que o concorrente que mais vende, e vendendo pouco.`, 'Baixe o preço para perto do concorrente.'];
+        case 'subir_preco': return [`Mesmo ${df}% mais caro que o concorrente, continua vendendo bem.`, 'Teste subir o preço um pouco (3% a 5%).'];
+        case 'margem_curta': return [`Está ${df}% mais barato que o concorrente que mais vende.`, 'Há espaço para subir o preço.'];
+        case 'fora_do_podio': return [`É o ${i.rank_nub}º entre ${i.grupo_anuncios} vendedores do mesmo produto.`, 'Melhore título, fotos e preço para subir.'];
+        case 'fora_da_pagina1': return [`Aparece só na página ${i.rank_ml ? i.rank_ml.pagina : 2} da busca.`, 'Ajuste título e preço para voltar à 1ª página.'];
+        case 'venda_sem_busca': return ['Vende, mas não aparece nas buscas que acompanhamos.', 'Coloque no título a palavra que o cliente procura.'];
+        case 'parado': return ['Está no ar e não vendeu nada no último mês.', 'Pause ou faça uma promoção.'];
+        case 'sem_ontem': return ['Costuma vender, mas ontem não saiu nada.', 'Confira estoque e preço hoje.'];
+        case 'oportunidade': return [`Vendeu ${i.ontem} ontem, bem acima do normal.`, 'Reforce o estoque e avalie subir o preço.'];
+        default: return [x.txt, x.acao];
+    }
+}
+const RT_GRUPOS = [
+    { nome: 'Preço', icone: 'bi-tag', tipos: ['preco_caro_sem_venda', 'subir_preco', 'margem_curta'] },
+    { nome: 'Busca', icone: 'bi-search', tipos: ['fora_do_podio', 'fora_da_pagina1', 'venda_sem_busca'] },
+    { nome: 'Parados', icone: 'bi-pause-circle', tipos: ['parado', 'sem_ontem'] },
+    { nome: 'Em alta', icone: 'bi-graph-up-arrow', tipos: ['oportunidade'] },
+];
+
+function rtTelas(f, s) {
+    const T = [];
+    const diaNome = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'UTC' });
+    if (f) {
+        const comp = f.mes_anterior.media_dia ? f.ontem.valor / f.mes_anterior.media_dia - 1 : null;
+        T.push({ html: `<div class="rt-rotulo">Ontem, ${esc(diaNome(f.ontem.dia))}</div>
+            <div class="rt-txt">vocês faturaram</div>
+            <div class="rt-grande rt-conta" data-v="${f.ontem.valor}">R$ 0</div>
+            <div class="rt-txt">em <b>${f.ontem.pedidos}</b> pedidos</div>
+            ${comp != null ? `<div class="rt-selo">${comp >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(comp * 100))}% ${comp >= 0 ? 'acima' : 'abaixo'} de um dia normal de ${esc(f.mes_anterior.nome)}</div>` : ''}` });
+        const max = Math.max(...f.mes.por_dia.map(x => x.valor), 1);
+        const mes = new Date(f.mes.de + 'T12:00:00Z').toLocaleDateString('pt-BR', { month: 'long', timeZone: 'UTC' });
+        T.push({ html: `<div class="rt-rotulo">${esc(mes)} até agora</div>
+            <div class="rt-grande rt-conta" data-v="${f.mes.valor}">R$ 0</div>
+            <div class="rt-barrinhas rt-int">${f.mes.por_dia.map((x, k) => `<span data-d="${esc(x.dia)}" data-v="${x.valor}" style="height:${Math.max(4, x.valor / max * 100)}%;animation-delay:${k * 22}ms"></span>`).join('')}</div>
+            <div class="rt-dica" id="rtDia">toque numa barra para ver o dia</div>
+            ${f.ritmo != null ? `<div class="rt-selo">${f.ritmo >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(f.ritmo * 100))}% ${f.ritmo >= 0 ? 'melhor' : 'pior'} que ${esc(f.mes_anterior.nome)}</div>` : ''}
+            <div class="rt-txt rt-fraco">Nesse ritmo, fecha o mês em ${rtR$(f.mes.projecao)}</div>` });
+    }
+    if (s) {
+        const com = s.itens.filter(i => i.sinais.length);
+        const tiles = RT_GRUPOS.map((g, k) => {
+            const n = s.ordem.filter(i => i.sinais.some(x => g.tipos.includes(x.tipo))).length;
+            return `<button class="rt-tile rt-int" onclick="rtAbrirGrupo(${k})"><i class="bi ${g.icone}"></i><b>${n}</b><span>${g.nome}</span></button>`;
+        }).join('');
+        T.push({ html: `<div class="rt-rotulo">Seus anúncios</div>
+            <div class="rt-grande rt-conta" data-v="${com.length}" data-n="1">0</div>
+            <div class="rt-medio">precisam de uma ajuda hoje</div>
+            <div class="rt-tiles">${tiles}</div>
+            <div class="rt-dica" id="rtGrupo">toque num quadrado para ver quais</div>` });
+        s.ordem.filter(i => i.sinais.length).slice(0, 3).forEach((i, k) => {
+            const x = [...i.sinais].sort((a, b) => b.peso - a.peso)[0];
+            const [frase, acao] = rtProblema(i, x);
+            const outros = i.sinais.filter(y => y !== x).map(y => '• ' + esc(rtProblema(i, y)[0])).join('<br>');
+            T.push({ html: `<div class="rt-rotulo">Prioridade ${k + 1} de 3</div>
+                <div class="rt-medio">${esc(rtCurto(i.titulo, 60))}</div>
+                <div class="rt-txt">${esc(frase)}</div>
+                <div class="rt-acao"><small>Faça isto</small>${esc(acao)}</div>
+                ${outros ? `<button class="rt-mais rt-int" onclick="this.nextElementSibling.classList.toggle('on');this.textContent=this.nextElementSibling.classList.contains('on')?'esconder':'ver mais ${i.sinais.length - 1} detalhe(s)'">ver mais ${i.sinais.length - 1} detalhe(s)</button>
+                <div class="rt-extra">${outros}<div class="rt-fraco" style="margin-top:6px">${esc(i.sku)}${i.curva ? ' · curva ' + esc(i.curva) : ''}</div></div>` : ''}` });
+        });
+        const opo = s.ordem.filter(i => i.sinais.some(x => x.tipo === 'subir_preco' || x.tipo === 'oportunidade'));
+        if (opo.length) T.push({ html: `<div class="rt-rotulo">Boa notícia</div>
+            <div class="rt-grande rt-conta" data-v="${opo.length}" data-n="1">0</div>
+            <div class="rt-medio">anúncios podem render mais</div>
+            <div class="rt-lista">${opo.slice(0, 3).map(i => `<div>${esc(rtCurto(i.titulo))}</div>`).join('')}</div>
+            <div class="rt-acao"><small>Faça isto</small>Reforce o estoque e teste subir o preço um pouco.</div>` });
+    }
+    T.push({ html: `<div class="rt-rotulo">Em poucas palavras</div><div class="rt-medio">O que a IA diz</div>
+        <div class="rt-ia rt-int" id="rtIa"></div>`, ia: true });
+    return T;
+}
+
+// numero que sobe ate o valor (efeito de retrospectiva)
+function rtContar(el) {
+    const alvo = Number(el.dataset.v || 0), inteiro = el.dataset.n === '1', t0 = performance.now(), dur = 1100;
+    const passo = (t) => {
+        const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3), v = alvo * e;
+        el.textContent = inteiro ? Math.round(v).toLocaleString('pt-BR') : rtR$(v);
+        if (p < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+}
+
+function rtMostrar(i) {
+    rt.i = Math.max(0, Math.min(i, rt.telas.length - 1));
+    const [c1, c2, ac] = RT_TEMAS[rt.i % RT_TEMAS.length];
+    const barras = rt.telas.map((_, k) => `<i><b style="width:${k < rt.i ? 100 : 0}%"></b></i>`).join('');
+    $('rtPalco').innerHTML = `<div class="rt-barras">${barras}</div><button class="rt-fechar" onclick="rtFechar()" title="Fechar (Esc)">×</button>
+        <div class="rt-slide" style="--ac:${ac};background:radial-gradient(120% 80% at 80% 0%, ${ac}22, transparent 60%),linear-gradient(170deg,${c1},${c2})">${rt.telas[rt.i].html}</div>
+        <div class="rt-toque esq" onclick="rtMostrar(rt.i-1)"></div><div class="rt-toque dir" onclick="rtProxima()"></div>
+        <div class="rt-rodape">${rt.i + 1}/${rt.telas.length}</div>`;
+    document.querySelectorAll('#rtPalco .rt-conta').forEach(rtContar);
+    document.querySelectorAll('#rtPalco .rt-barrinhas span').forEach(b => {
+        const ver = (e) => { e.stopPropagation(); document.querySelectorAll('#rtPalco .rt-barrinhas span').forEach(o => o.classList.remove('sel')); b.classList.add('sel');
+            $('rtDia').innerHTML = `<b>${new Date(b.dataset.d + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' })}</b> · ${rtR$(b.dataset.v)}`; rt.pausa = true; };
+        b.onmouseenter = ver; b.onclick = ver;
+    });
+    if (rt.telas[rt.i].ia) rtEscreverIa();
+    rt.t0 = Date.now(); rtAnimar();
+}
+function rtAbrirGrupo(k) {
+    const g = RT_GRUPOS[k];
+    const L = rt.s.ordem.filter(i => i.sinais.some(x => g.tipos.includes(x.tipo))).slice(0, 4);
+    $('rtGrupo').innerHTML = `<b>${g.nome}:</b> ` + (L.length ? L.map(i => esc(rtCurto(i.titulo, 30))).join(' · ') : 'nenhum');
+    rt.pausa = true;
+}
+function rtEscreverIa() {
+    const el = $('rtIa'); if (!el) return;
+    el.innerHTML = rt.ia ? esc(rt.ia) : '<span class="rt-fraco">a IA está escrevendo… (leva cerca de 1 minuto nesta máquina)</span>';
+}
+function rtAnimar() {
+    cancelAnimationFrame(rt.timer);
+    const barra = document.querySelectorAll('#rtPalco .rt-barras b')[rt.i];
+    const ultima = rt.i === rt.telas.length - 1;
+    const passo = () => {
+        if (!$('rt').classList.contains('on')) return;
+        if (rt.pausa) { rt.t0 += 16; rt.timer = requestAnimationFrame(passo); return; }
+        const p = Math.min(1, (Date.now() - rt.t0) / RT_TEMPO);
+        if (barra) barra.style.width = (ultima ? (rt.iaFim ? 100 : Math.min(95, p * 100)) : p * 100) + '%';
+        if (p >= 1 && !ultima) return rtProxima();
+        rt.timer = requestAnimationFrame(passo);
+    };
+    rt.timer = requestAnimationFrame(passo);
+}
+function rtProxima() { rt.pausa = false; if (rt.i < rt.telas.length - 1) rtMostrar(rt.i + 1); }
+function rtFechar() { $('rt').classList.remove('on'); cancelAnimationFrame(rt.timer); }
+document.addEventListener('keydown', (e) => {
+    if (!$('rt') || !$('rt').classList.contains('on')) return;
+    if (e.key === 'Escape') rtFechar();
+    else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); rtProxima(); }
+    else if (e.key === 'ArrowLeft') { rt.pausa = false; rtMostrar(rt.i - 1); }
+});
+
+async function rtAbrir() {
+    const btn = $('rtBtn'); btn.disabled = true; const txt = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Montando…';
+    try {
+        const recente = PIA.t && Date.now() - PIA.t < 5 * 60 * 1000;
+        const [f, s] = recente ? [PIA.f, PIA.s] : await Promise.all([api('/api/seven/ia/faturamento').catch(() => null), api('/api/seven/ia/saude').catch(() => null)]);
+        const temResumo = PIA.resumoEm && $('piaResumo') && $('piaResumo').textContent.trim();
+        rt.s = s; rt.ia = temResumo ? $('piaResumo').textContent : ''; rt.iaFim = !!temResumo; rt.pausa = false;
+        rt.telas = rtTelas(f, s);
+        $('rt').classList.add('on');
+        const palco = $('rtPalco');
+        // segurar pausa; clicar em algo interativo nao avanca
+        palco.onpointerdown = (e) => { if (e.target.closest('.rt-toque')) rt.segurando = setTimeout(() => { rt.pausa = true; }, 220); };
+        palco.onpointerup = palco.onpointerleave = () => { clearTimeout(rt.segurando); };
+        rtMostrar(0);
+        if (!rt.iaFim) rtIa();
+    } finally { btn.disabled = false; btn.innerHTML = txt; }
+}
+// resumo curto do Llama, escrito em segundo plano enquanto as outras telas passam
+async function rtIa() {
+    try {
+        const resp = await fetch('/api/seven/ia/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modelo: ($('iaModelo') && $('iaModelo').value) || undefined,
+                pergunta: 'Em no máximo 3 frases curtas e simples, sem listas e sem códigos de produto, diga o que é mais importante fazer hoje nos anúncios. Fale como um colega de trabalho.' }) });
+        if (!resp.ok) throw new Error('o Ollama não respondeu');
+        const leitor = resp.body.getReader(); const dec = new TextDecoder(); let buf = '';
+        for (;;) {
+            const { value, done } = await leitor.read(); if (done) break;
+            buf += dec.decode(value, { stream: true }); let c;
+            while ((c = buf.indexOf('\n')) >= 0) {
+                const l = buf.slice(0, c); buf = buf.slice(c + 1); if (!l.trim()) continue;
+                const o = JSON.parse(l);
+                if (o.tipo === 'token') { rt.ia += o.texto; rtEscreverIa(); }
+                else if (o.tipo === 'erro') throw new Error(o.texto);
+            }
+        }
+    } catch (e) { rt.ia = rt.ia || ('A IA não respondeu agora (' + e.message + '). As telas anteriores já mostram o que fazer.'); rtEscreverIa(); }
+    rt.iaFim = true;
 }
 
 mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias');

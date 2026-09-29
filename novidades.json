@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.55",
+    "data": "2026-09-29",
+    "titulo": "SEVEN: Análise com IA em cards e retrospectiva do dia",
+    "texto": "Nova aba Análise com IA no SEVEN, com a IA rodando no próprio computador (Llama pelo Ollama, nada sai daqui).\n\n- O dia em números: faturamento de ontem, de hoje até agora e do mês, com o ritmo contra o mês anterior e a projeção de fechamento.\n- O que a IA encontrou: cards de Preço, Busca, Parados e Em alta, com os principais anúncios e o que fazer.\n- Prioridades de hoje: os anúncios mais importantes, cada um com uma frase simples e a ação pronta.\n- A IA resume o dia em poucas frases, e dá para perguntar o que quiser.\n- Ver retrospectiva: a análise contada em telas, como uma retrospectiva.\n- Tudo se atualiza sozinho a cada 3 minutos.\n\nPrecisa do Ollama aberto no computador para o resumo e as perguntas; os cards funcionam sem ele."
+  },
+  {
     "versao": "1.9.54",
     "data": "2026-09-29",
     "titulo": "SEVEN: tabela e Feed sempre com a coleta mais recente",

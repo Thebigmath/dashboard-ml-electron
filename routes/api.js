@@ -15,6 +15,7 @@ const feed = require('../lib/feed');
 const seven = require('../lib/seven');
 const rankingMt = require('../lib/ranking_mt');
 const astra = require('../lib/astra');
+const ia = require('../lib/ia');
 const mercado = require('../lib/mercado');
 const nubimetrics = require('../lib/nubimetrics');
 const reputacao = require('../lib/reputacao');
@@ -1134,6 +1135,28 @@ router.post('/seven/astra/rodar', auth, (req, res) => res.json(astra.iniciar((re
 router.get('/seven/ranking_ml/estado', auth, (req, res) => res.json(rankingMt.estado()));
 router.post('/seven/ranking_ml/coletar', auth, (req, res) => res.json(rankingMt.iniciar('manual')));
 router.get('/seven/ranking_ml/historico', auth, (req, res) => res.json(rankingMt.historico(20)));
+// ---- Análise com IA (Ollama na própria máquina: sem chave de API e nada sai daqui) ----
+function ndjson(res, promessa) {
+    promessa.then(stream => {
+        // NDJSON: a resposta chega token a token, como o modelo vai escrevendo.
+        res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('X-Accel-Buffering', 'no');
+        stream.on('error', () => { try { res.end(); } catch {} });
+        stream.pipe(res);
+    }).catch(erroJson(res));
+}
+router.get('/seven/ia/estado', auth, (req, res) => ia.estado().then(d => res.json(d)).catch(erroJson(res)));
+// Diagnóstico puro (regras em cima das duas tabelas): instantâneo, não gasta Ollama.
+router.get('/seven/ia/faturamento', auth, (req, res) => ia.faturamento(req.query.forcar === '1').then(d => res.json(d)).catch(erroJson(res)));
+router.get('/seven/ia/saude', auth, (req, res) => ia.saude().then(d => res.json(d)).catch(erroJson(res)));
+router.post('/seven/ia/perguntar', auth, (req, res) => {
+    ndjson(res, ia.perguntar({ pergunta: req.body && req.body.pergunta, modelo: (req.body && req.body.modelo) || undefined }));
+});
+// O mesmo diagnóstico, explicado pelo modelo em Prioridade / Oportunidades / Sem dado.
+router.post('/seven/ia/saude', auth, (req, res) => {
+    ndjson(res, ia.perguntarSaude({ modelo: (req.body && req.body.modelo) || undefined }));
+});
 router.get('/seven/planilha', auth, (req, res) => {
     seven.planilha(req.query.tipo === 'concorrentes' ? 'concorrentes' : 'vendas').then(({ nome, buffer }) => {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
