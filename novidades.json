@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.54",
+    "data": "2026-09-29",
+    "titulo": "SEVEN: tabela e Feed sempre com a coleta mais recente",
+    "texto": "- Tabela de vendas, Ranking ML e Feed de anúncios se atualizam sozinhos quando termina uma coleta — mesmo se a tela foi aberta no meio dela ou a coleta veio do outro app.\n- Coleta do Ranking ML com até 6 minutos, e lista de termos enxugada (78 termos das duas contas): cabe inteira na rodada.\n- Concorrentes: os nossos anúncios e os líderes de cada grupo são atualizados todo dia (antes, a cada 3 dias).\n- O andamento do Astra na tela ficou limpo: só o progresso, os avisos e o resumo.\n- Grupos de concorrência só contam os membros atuais (registros antigos saíram da conta)."
+  },
+  {
     "versao": "1.9.53",
     "data": "2026-09-28",
     "titulo": "SEVEN: concorrentes do Nubimetrics na tabela e no Feed",
