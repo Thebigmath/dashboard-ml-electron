@@ -325,6 +325,8 @@ function mostrarRk(txt, erro) {
     el.style.color = erro ? '#ff453a' : '';
     el.innerHTML = txt || '';
 }
+// iniciado_em da ultima coleta ja refletida na tela (undefined = pagina acabou de abrir)
+let rkVisto;
 async function acompanharRanking() {
     clearTimeout(rkTimer);
     let e;
@@ -334,14 +336,21 @@ async function acompanharRanking() {
     mostrarFalha(e.rodando ? null : e.ultima);
     if (e.rodando) {
         const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
-        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.abas} abas)${p}. Leva até 5 minutos.`);
+        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.abas} abas)${p}. Leva até 6 minutos.`);
+        if (rkVisto === undefined) rkVisto = null;   // abriu no meio: recarrega ao terminar
         rkTimer = setTimeout(acompanharRanking, 5000);
-    } else if (e.iniciado_em && $('rkEstado').style.display !== 'none') {
-        mostrarRk('<i class="bi bi-check2-circle"></i> ' + esc(e.resumo || 'Coleta do ranking terminada.'));
-        delete cache.vendas; delete cache.noticias;
-        carregar('vendas', true);
-        if ($('nvFrame').src) $('nvFrame').contentWindow.location.reload();
+    } else if (e.iniciado_em && e.iniciado_em !== rkVisto) {
+        // Terminou uma coleta que a tela ainda nao mostrou (inclusive se a pagina foi aberta
+        // no meio dela, ou se a coleta veio do app da Flavia): recarrega tabela e Feed.
+        if (rkVisto !== undefined) {
+            mostrarRk('<i class="bi bi-check2-circle"></i> ' + esc(e.resumo || 'Coleta do ranking terminada.'));
+            delete cache.vendas; delete cache.noticias;
+            carregar('vendas', true);
+            if ($('nvFrame').src) $('nvFrame').contentWindow.location.reload();
+        }
+        rkVisto = e.iniciado_em;
     }
+    if (!e.rodando) rkTimer = setTimeout(acompanharRanking, 60000);
 }
 
 // tarja de falha da coleta do Ranking ML + historico das ultimas coletas
