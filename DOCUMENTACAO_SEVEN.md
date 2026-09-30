@@ -153,7 +153,7 @@ Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Deskto
 - **Diária, pelo app da Flavia, para as duas contas:** todo dia a partir das **7h**, uma vez por dia; se o app da Flavia abrir mais tarde, roda na abertura. Assim o Chrome do Issacar faz uma rodada por dia, não duas.
 - **O app da Cordeiro só lê** `ranking_issacar_cordeiro.json` e mostra o andamento e o histórico lidos do storage da Flavia (`lib/ranking_mt.js` da Cordeiro é só leitura; o botão aparece como "Coletado pelo app da Flavia").
 - **Manual:** botão **Coletar ranking ML** no SEVEN da Flavia (tela "Análise por tempo de vendas").
-- Leva até 6 minutos (`--tempo-max 345` por parte). Dividida em 2 partes (metade dos termos a partir das 7h, metade a partir das 12h), 2 abas e 2 a 4 s entre as buscas; o botão só libera 30 min depois de qualquer coleta.
+- Só pelo botão (coleta automática desligada desde 30/09; religar com `"ranking_ml_automatico": true`). Todos os termos numa rodada de até 10 min, 2 abas, com o motor de agendamento do Issacar (`Desktopissacar_scheduler.py`, config `issacar_scheduler.json`, log JSONL em `.dotnetMLScrapersaidasogs`). Para no 1º bloqueio e abre 4 h de espera; o botão respeita a espera e 30 min entre coletas.
 
 ### 4.5 Bloqueio do Mercado Livre e avisos
 
