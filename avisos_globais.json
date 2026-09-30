@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-09-astra",
+    "data": "2026-09-30",
+    "tag": "Projeto novo",
+    "titulo": "Projeto ASTRA",
+    "resumo": "O motor que acompanha os concorrentes no Nubimetrics e mostra, para cada anúncio, o preço de quem mais vende e a nossa posição.",
+    "texto": "O ASTRA é o motor de inteligência competitiva do SEVEN. Todo dia ele consulta o Nubimetrics pelo MCP oficial e traz, para cada grupo de concorrência, quem está vendendo mais e por quanto. É ele que preenche a análise de concorrentes do SEVEN: PC (preço do concorrente que mais vende), DF% (a diferença para o nosso preço) e RANK NUB (a nossa posição no grupo).\n\nPontos fortes:\n\n- Completo: acompanha os 72 grupos de concorrência cadastrados no Nubimetrics\n- Rápido: a atualização do dia leva poucos minutos, porque só busca o que mudou\n- Oficial: conversa com o Nubimetrics pelo MCP, do jeito certo, sem atalhos\n- Respeita os limites: ritmo controlado e para sozinho se o Nubimetrics pedir\n- Não perde dado: tudo fica guardado no banco, dia a dia\n- Serve as duas contas: um ASTRA só alimenta a Flavia e a Cordeiro\n\nNo SEVEN, use o botão Atualizar concorrentes ou o ↻ de cada linha para atualizar um grupo específico.\n\nPodcast: \"Como o ASTRA automatizou a precificação competitiva\" (24 min) conta como ele foi construído. É só dar play acima.",
+    "video": "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/astra_podcast.m4a",
+    "imagens": [
+      "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/astra.webp"
+    ],
+    "link": ""
+  },
+  {
     "id": "2026-09-issacar",
     "data": "2026-09-28",
     "tag": "Projeto novo",
