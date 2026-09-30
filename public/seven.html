@@ -442,11 +442,12 @@ async function acompanharRanking() {
     let e;
     try { e = await api('/api/seven/ranking_ml/estado'); } catch { return; }
     $('btnRankMt').disabled = e.rodando || e.coletor === false;
+    if (e.coletor !== false) $('btnRankMt').title = e.espera_min ? `Liberado em ${e.espera_min} min (intervalo de 30 min entre coletas, para o ML não barrar)` : 'Coleta a próxima parte do ranking de hoje';
     if (e.coletor === false) { $('btnRankMt').title = e.aviso; $('btnRankMt').innerHTML = '<i class="bi bi-trophy"></i> Coletado pelo app da Flavia'; }
     mostrarFalha(e.rodando ? null : e.ultima);
     if (e.rodando) {
         const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
-        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.abas} abas)${p}. Leva até 6 minutos.`);
+        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.parte ? `parte ${e.parte} de 2, ` : ''}${e.abas} abas)${p}. Leva até 6 minutos.`);
         if (rkVisto === undefined) rkVisto = null;   // abriu no meio: recarrega ao terminar
         rkTimer = setTimeout(acompanharRanking, 5000);
     } else if (e.iniciado_em && e.iniciado_em !== rkVisto) {

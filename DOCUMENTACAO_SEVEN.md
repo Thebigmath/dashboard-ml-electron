@@ -153,7 +153,7 @@ Para rodar à mão, use o mesmo comando dentro de `C:\Users\Matheus Prata\Deskto
 - **Diária, pelo app da Flavia, para as duas contas:** todo dia a partir das **7h**, uma vez por dia; se o app da Flavia abrir mais tarde, roda na abertura. Assim o Chrome do Issacar faz uma rodada por dia, não duas.
 - **O app da Cordeiro só lê** `ranking_issacar_cordeiro.json` e mostra o andamento e o histórico lidos do storage da Flavia (`lib/ranking_mt.js` da Cordeiro é só leitura; o botão aparece como "Coletado pelo app da Flavia").
 - **Manual:** botão **Coletar ranking ML** no SEVEN da Flavia (tela "Análise por tempo de vendas").
-- Leva até 6 minutos (`--tempo-max 345`): cabem os 93 termos das duas contas (~3,7 s por termo).
+- Leva até 6 minutos (`--tempo-max 345` por parte). Dividida em 2 partes (metade dos termos a partir das 7h, metade a partir das 12h), 2 abas e 2 a 4 s entre as buscas; o botão só libera 30 min depois de qualquer coleta.
 
 ### 4.5 Bloqueio do Mercado Livre e avisos
 
