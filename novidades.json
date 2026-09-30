@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.57",
+    "data": "2026-09-30",
+    "titulo": "Ranking ML: coleta completa em até 10 minutos, só pelo botão",
+    "texto": "A coleta do Ranking ML agora é feita só quando você clica em Coletar: a coleta automática foi desligada até termos segurança de que o Mercado Livre não barra o Issacar.\n\n- Todos os termos das duas contas numa rodada só, em até 10 minutos.\n- Novo motor de agendamento do Issacar: ritmo calmo e constante, abas que não começam juntas e registro de cada busca.\n- Se o Mercado Livre barrar, a coleta para na hora e só libera de novo depois de algumas horas — sem insistir.\n- Continua o intervalo mínimo de 30 minutos entre coletas."
+  },
+  {
     "versao": "1.9.56",
     "data": "2026-09-30",
     "titulo": "Ranking ML: coleta mais discreta, em duas partes",
