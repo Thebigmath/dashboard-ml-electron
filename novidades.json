@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.56",
+    "data": "2026-09-30",
+    "titulo": "Ranking ML: coleta mais discreta, em duas partes",
+    "texto": "A coleta do Ranking ML ficou mais discreta para o Mercado Livre não barrar:\n\n- 2 abas e uma pausa maior entre as buscas.\n- Dividida em duas partes por dia: metade dos termos a partir das 7h e a outra metade a partir do meio-dia.\n- Intervalo mínimo de 30 minutos entre uma coleta e outra (automática ou pelo botão).\n- Termo que não for pesquisado continua com o resultado anterior."
+  },
+  {
     "versao": "1.9.55",
     "data": "2026-09-29",
     "titulo": "SEVEN: Análise com IA em cards e retrospectiva do dia",
