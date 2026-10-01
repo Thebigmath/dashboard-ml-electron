@@ -183,6 +183,10 @@
 </head>
 <body>
 <div id="svSplash"><img src="assets/img/seven_logo.webp" alt="SEVEN"></div>
+<script>
+// o logo aparece uma vez so, ao abrir o app; voltar ao SEVEN pelo menu entra direto
+try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSplash').remove(); else sessionStorage.setItem('svLogoVisto', '1'); } catch {}
+</script>
 
 <canvas id="canvas-bg"></canvas>
 <div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
