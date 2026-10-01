@@ -143,6 +143,19 @@
         .rt-toque { position:absolute; top:0; bottom:0; z-index:2; cursor:pointer; }
         .rt-toque.esq { left:0; width:30%; } .rt-toque.dir { right:0; width:70%; }
         .rt-rodape { position:absolute; bottom:16px; right:22px; font-size:12px; opacity:.45; z-index:3; pointer-events:none; }
+        /* ---- Precificador (popup estilo Mercado Turbo) ---- */
+        .pc-abrir { align-self:flex-start; margin-top:2px; }
+        .pc-fundo { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9998; display:none; align-items:center; justify-content:center; }
+        .pc-fundo.on { display:flex; }
+        .pc { width:min(760px,96vw); max-height:94vh; overflow:auto; background:var(--s1); border:1px solid var(--sep); border-radius:18px; padding:18px 20px; }
+        .pc-topo { display:flex; gap:12px; align-items:center; } .pc-topo img { width:48px; height:48px; border-radius:8px; object-fit:cover; background:#fff; }
+        .pc-sug { margin:14px 0; padding:12px 14px; border-radius:12px; background:color-mix(in srgb, #0A84FF 12%, transparent); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        .pc-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media (max-width:640px) { .pc-cols { grid-template-columns:1fr; } }
+        .pc-col { border:1px solid var(--sep); border-radius:14px; padding:14px; } .pc-col.atual { border-color:color-mix(in srgb, #0A84FF 50%, transparent); }
+        .pc-lin { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; font-size:13px; color:var(--l2); }
+        .pc-lin input { width:110px; text-align:right; background:transparent; border:1px solid var(--sep); border-radius:8px; color:inherit; padding:5px 8px; font:inherit; }
+        .pc-mg { margin-top:10px; text-align:center; border-radius:12px; padding:10px; background:color-mix(in srgb, var(--l3) 10%, transparent); }
+        .pc-mg b { font-size:24px; display:block; }
 </style>
 </head>
 <body>
@@ -248,6 +261,7 @@
                 </div>
 
                 <div class="rt" id="rt"><div class="rt-palco" id="rtPalco"></div></div>
+                <div class="pc-fundo" id="pcFundo"><div class="pc" id="pcBox"></div></div>
                 <div class="sv-view" id="view-ia">
                     <div class="sv-titulo">
                         <div><h3>Análise com IA</h3><small><span id="piaStatus">—</span> · atualiza sozinho a cada 3 minutos</small></div>
@@ -698,6 +712,75 @@ async function iaStream(url, corpo) {
 }
 
 
+// ---- Precificador: margem Classico/Premium e mudanca de preco (so depois de confirmar) ----
+let pc = null;
+const pcR$ = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+async function pcAbrir(item, sinal) {
+  $('pcFundo').classList.add('on'); $('pcBox').innerHTML = '<div class="sv-vazio">Calculando a margem com os dados do Mercado Livre…</div>';
+  try { pc = await api(`/api/seven/preco/${item}?sinal=${encodeURIComponent(sinal || '')}`); pc.sinal = sinal; pcDesenhar(pc.preco_atual); }
+  catch (e) { $('pcBox').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div><button class="btn-acao" onclick="pcFechar()">Fechar</button>`; }
+}
+function pcFechar() { $('pcFundo').classList.remove('on'); }
+$('pcFundo').addEventListener('click', (e) => { if (e.target.id === 'pcFundo') pcFechar(); });
+function pcCor(m) { return m == null ? 'var(--l2)' : m < 0 ? '#ff453a' : m < 5 ? '#FF9F0A' : '#30D158'; }
+function pcDesenhar(precoMostrado) {
+  const d = pc, sg = d.sugestao;
+  const col = (k) => { const c = d.colunas[k]; return `<div class="pc-col ${c.atual ? 'atual' : ''}">
+      <div class="pia-rot" style="justify-content:space-between"><span><i class="bi ${k === 'gold_pro' ? 'bi-gem' : 'bi-tag'}"></i> ${c.nome}</span>${c.atual ? '<span class="pia-tag">exposição atual</span>' : ''}</div>
+      <div class="pc-lin"><span>Valor de venda</span><b>${pcR$(d.preco)}</b></div>
+      <div class="pc-lin"><span>Frete (−)</span><span>${pcR$(d.frete)}</span></div>
+      <div class="pc-lin"><span>Custo (−)</span><span>${pcR$(d.custo)}</span></div>
+      <div class="pc-lin"><span>Imposto ${d.imposto_pct}% (−)</span><span>${pcR$(c.imposto)}</span></div>
+      <div class="pc-lin"><span>Tarifa de venda${c.tarifa && c.tarifa.pct != null ? ' ' + c.tarifa.pct + '%' : ''} (−)</span><span>${c.tarifa ? pcR$(c.tarifa.valor) : '—'}</span></div>
+      <div class="pc-mg"><div class="pia-rot" style="justify-content:center">Margem de contribuição</div><b style="color:${pcCor(c.margem_pct)}">${pcR$(c.margem)}</b><span style="color:${pcCor(c.margem_pct)}">(${c.margem_pct}%)</span></div></div>`; };
+  const dif = d.preco_atual ? ((d.preco - d.preco_atual) / d.preco_atual * 100) : 0;
+  $('pcBox').innerHTML = `
+    <div class="pc-topo">${d.thumbnail ? `<img src="${esc(d.thumbnail)}" alt="">` : ''}<div style="flex:1"><b>${esc(d.titulo)}</b>
+      <div class="pia-fraco">SKU ${esc(d.sku || '—')} · ${esc(d.item_id)} · preço atual ${pcR$(d.preco_atual)}${d.variacoes ? ` · ${d.variacoes} variações (o preço vale para todas)` : ''}</div></div>
+      <button class="btn-acao" onclick="pcFechar()"><i class="bi bi-x-lg"></i></button></div>
+    <div class="pc-sug"><i class="bi bi-stars" style="color:#0A84FF;font-size:18px"></i>
+      <div style="flex:1"><b>Sugestão da análise: ${sg.direcao < 0 ? 'baixar 1%' : sg.direcao > 0 ? 'subir 1%' : 'manter'} → ${pcR$(sg.preco)}</b><div class="pia-fraco">${esc(sg.motivo)}</div></div>
+      ${sg.direcao ? `<button class="btn-acao" onclick="pcRecalcular(${sg.preco})">Usar sugestão</button>` : ''}</div>
+    <div class="pc-lin" style="font-size:14px;margin-bottom:6px"><span><b>Novo preço</b></span>
+      <span><input id="pcPreco" type="number" step="0.01" min="0" value="${d.preco}"> <button class="btn-acao" onclick="pcRecalcular()">Recalcular</button></span></div>
+    <div class="pc-lin" style="margin-bottom:10px"><span>Custo usado ${d.custo_origem && d.custo_origem !== 'digitado' ? '(planilha de custos)' : d.custo == null ? '<b style="color:#FF9F0A">— não está na planilha de custos</b>' : '(digitado)'}</span>
+      <span><input id="pcCusto" type="number" step="0.01" min="0" value="${d.custo ?? ''}" placeholder="custo"></span></div>
+    <div class="pc-cols">${col('gold_special')}${col('gold_pro')}</div>
+    ${d.aviso_frete ? `<div class="sv-aviso" style="margin-top:10px">${esc(d.aviso_frete)}</div>` : ''}
+    <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+      <button class="btn-acao" id="pcAplicar" style="background:#0A84FF;color:#fff;border-color:#0A84FF" onclick="pcAplicar()" ${Math.abs(dif) < 0.005 ? 'disabled' : ''}>
+        <i class="bi bi-check2-circle"></i> Aplicar ${pcR$(d.preco)} ao anúncio</button>
+      <span class="pia-fraco">${Math.abs(dif) >= 0.005 ? `${dif > 0 ? '+' : ''}${dif.toFixed(2)}% em relação ao preço atual` : 'igual ao preço atual'}</span>
+      <span class="pia-fraco" id="pcMsg"></span></div>
+    ${(d.historico || []).length ? `<div class="pia-fraco" style="margin-top:12px">Últimas mudanças: ${d.historico.map(h => `${new Date(h.quando).toLocaleDateString('pt-BR')} ${pcR$(h.antes)} → ${pcR$(h.depois)}`).join(' · ')}</div>` : ''}
+    <div class="pia-fraco" style="margin-top:8px">Frete, tarifa e preço vêm do Mercado Livre; o custo vem da planilha de custos; o imposto é ${d.imposto_pct}% (Configurações).</div>`;
+}
+async function pcRecalcular(preco) {
+  const p = preco ?? Number($('pcPreco').value); const c = $('pcCusto').value;
+  if (!(p > 0)) return;
+  $('pcMsg').textContent = 'Recalculando…';
+  try {
+    const sinal = pc.sinal; const atual = pc;
+    pc = await api(`/api/seven/preco/${atual.item_id}?preco=${p}&sinal=${encodeURIComponent(sinal || '')}${c !== '' ? '&custo=' + c : ''}`); pc.sinal = sinal; pcDesenhar(p);
+  } catch (e) { $('pcMsg').textContent = 'Erro: ' + e.message; }
+}
+async function pcAplicar(confirmarGrande) {
+  const p = Number($('pcPreco').value);
+  if (Math.abs(p - pc.preco) > 0.005) { await pcRecalcular(p); return; }   // recalcula antes de aplicar o que foi digitado
+  const c = pc.colunas[pc.tipo_atual] || pc.colunas.gold_special;
+  const txt = `Mudar o preço no Mercado Livre?\n\n${pc.titulo}\n${pcR$(pc.preco_atual)} → ${pcR$(pc.preco)}\nMargem (${c.nome}): ${pcR$(c.margem)} (${c.margem_pct}%)`;
+  if (!confirmarGrande && !confirm(txt)) return;
+  if (c.margem < 0 && !confirm('A margem fica NEGATIVA com esse preço. Aplicar mesmo assim?')) return;
+  $('pcAplicar').disabled = true; $('pcMsg').textContent = 'Enviando ao Mercado Livre…';
+  try {
+    const r = await fetch(`/api/seven/preco/${pc.item_id}/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preco: pc.preco, confirmacao: 'APLICAR', confirmarGrande: !!confirmarGrande, motivo: pc.sugestao.motivo }) }).then(x => x.json());
+    if (r.ok) { $('pcMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${pcR$(r.antes)} → ${pcR$(r.depois)}</b>`; setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500); }
+    else if (r.precisa_confirmar) { if (confirm(r.erro)) return pcAplicar(true); $('pcMsg').textContent = 'Cancelado.'; $('pcAplicar').disabled = false; }
+    else { $('pcMsg').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; $('pcAplicar').disabled = false; }
+  } catch (e) { $('pcMsg').textContent = 'Erro: ' + e.message; $('pcAplicar').disabled = false; }
+}
+
 // ---- Painel da IA: cada ponto da analise em um card, sempre atualizado ---------------------
 // Le so /api/seven/ia/faturamento e /api/seven/ia/saude (nao mexe no resto do Seven).
 // Atualiza sozinho a cada 3 minutos enquanto a aba esta aberta; o resumo do Llama e refeito
@@ -774,6 +857,7 @@ function piaDesenhar() {
             <div class="pia-tit" title="${esc(i.titulo)}">${esc(rtCurto(i.titulo, 64))}</div>
             <div class="pia-frase">${esc(frase)}</div>
             <div class="pia-acao"><small>Faça isto</small>${esc(acao)}</div>
+            ${/preco|margem|subir|podio|pagina|parado|ontem|oportunidade/.test(x.tipo) ? `<button class="btn-acao pc-abrir" onclick="pcAbrir('${esc(i.item_id)}','${esc(x.tipo)}')"><i class="bi bi-currency-dollar"></i> Ajustar preço</button>` : ''}
             ${outros ? `<details class="pia-det"><summary>mais ${i.sinais.length - 1} ponto(s)</summary>${outros}</details>` : ''}</div>`;
     }).join('') || '<div class="sv-vazio">Nenhum anúncio com problema hoje.</div>';
 }

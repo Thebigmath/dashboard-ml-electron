@@ -1157,6 +1157,22 @@ router.post('/seven/ia/perguntar', auth, (req, res) => {
 router.post('/seven/ia/saude', auth, (req, res) => {
     ndjson(res, ia.perguntarSaude({ modelo: (req.body && req.body.modelo) || undefined }));
 });
+// Precificador do SEVEN: margem (Classico/Premium) e alteracao de preco com confirmacao
+const precificador = require('../lib/precificador');
+router.get('/seven/preco/historico', auth, (req, res) => res.json(precificador.historico(req.query.item || undefined)));
+router.get('/seven/preco/:item', auth, (req, res) => {
+    const preco = req.query.preco ? Number(req.query.preco) : undefined;
+    const custo = req.query.custo !== undefined && req.query.custo !== '' ? Number(req.query.custo) : undefined;
+    precificador.dados(req.params.item, preco, custo)
+        .then(d => res.json({ ...d, sugestao: precificador.sugestao(d.preco_atual, req.query.sinal), historico: precificador.historico(req.params.item, 5) }))
+        .catch(erroJson(res));
+});
+router.post('/seven/preco/:item/aplicar', auth, (req, res) => {
+    const b = req.body || {};
+    if (b.confirmacao !== 'APLICAR') return res.status(400).json({ ok: false, erro: 'Confirmação ausente.' });
+    precificador.aplicar(req.params.item, b.preco, { confirmarGrande: !!b.confirmarGrande, motivo: b.motivo || '' })
+        .then(r => res.status(r.ok ? 200 : 400).json(r)).catch(erroJson(res));
+});
 router.get('/seven/planilha', auth, (req, res) => {
     seven.planilha(req.query.tipo === 'concorrentes' ? 'concorrentes' : 'vendas').then(({ nome, buffer }) => {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
