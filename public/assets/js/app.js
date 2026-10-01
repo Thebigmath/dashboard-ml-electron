@@ -507,7 +507,7 @@ function renderPagina(lista, pagina) {
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
             <td><strong>${p.eFull === false ? '<span style="color:var(--l3,#8ca0b3);font-weight:400">n/a</span>' : (Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—')}</strong></td>
-            <td><span class="qtd-transito-display" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}</span></td>
+            <td><span class="qtd-transito-display transito-hover" data-chave="${chaveDe(p)}" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;cursor:help;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}${(p.transferenciaMl||0)>0?`<sup style="color:#a78bfa;font-weight:800;margin-left:3px" title="">⇄${p.transferenciaMl}</sup>`:''}</span></td>
             <td><input type="number" class="qtd-full" ${p.eFull === false ? 'title="Fora do Full: sem reposição calculada, mas você pode digitar a quantidade para enviar ao galpão"' : ''} data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`).join('');
 
@@ -1271,6 +1271,39 @@ if (btnEnviarFull) {
     });
 }
 
+/* ── Estoque fantasma: passar o mouse no número da coluna Em Trânsito ───────
+   Mostra o trânsito dos envios ao Full E as unidades que o próprio ML está
+   transferindo entre galpões (transferenciaMl). Essas já estão somadas no
+   estoque, mas ainda não estão disponíveis para venda — é o "estoque fantasma".
+   Mostra também o que está travado no Full (perdido, em processo, em retirada). */
+function htmlTransito(p) {
+    const env = transitoDe(p), transf = Number(p.transferenciaMl) || 0, trav = Number(p.bloqueado) || 0;
+    const disp = Math.max(0, (Number(p.estoque) || 0) - transf);
+    const NOMES = { lost: 'perdido', internal_process: 'em processo interno', internalProcess: 'em processo interno', withdrawal: 'em retirada', damaged: 'danificado', noFiscalCoverage: 'sem cobertura fiscal', notSupported: 'não aceito pelo Full', transfer: 'em transferência' };
+    const det = (p.bloqueado_detalhe || []).map(d => `${d.quantidade} ${NOMES[d.status] || d.status}`).join(', ');
+    return `<div style="font-weight:700;margin-bottom:6px">${(p.sku || '')}</div>
+      <div>🚚 <b>Em trânsito para o Full:</b> ${env} un<div style="opacity:.75;font-size:11px">envios que vocês mandaram e o Full ainda não recebeu</div></div>
+      <div style="margin-top:6px">⇄ <b>Transferência entre galpões (ML):</b> ${transf} un<div style="opacity:.75;font-size:11px">estoque fantasma: já conta no estoque, mas está viajando entre galpões do ML e ainda não vende</div></div>
+      ${trav ? `<div style="margin-top:6px">⛔ <b>Travado no Full:</b> ${trav} un${det ? ` (${det})` : ''}</div>` : ''}
+      <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.12);padding-top:6px">Estoque ${Number(p.estoque) || 0} un → <b>disponível para venda agora: ${disp} un</b></div>`;
+}
+document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('.transito-hover');
+    if (!el) return;
+    const p = (window.produtosReposicao || []).find(x => (x.chave || x.sku) === el.dataset.chave);
+    if (!p) return;
+    thTooltipPopup.innerHTML = htmlTransito(p);
+    thTooltipPopup.classList.add('show'); thTooltipPopup._alvo = el;
+    const r = el.getBoundingClientRect(), h = thTooltipPopup.offsetHeight, w = thTooltipPopup.offsetWidth;
+    let top = r.bottom + 6; if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+    thTooltipPopup.style.top = Math.max(8, top) + 'px';
+    thTooltipPopup.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8)) + 'px';
+});
+document.addEventListener('mouseout', (e) => {
+    const el = e.target.closest('.transito-hover');
+    if (el && !el.contains(e.relatedTarget) && thTooltipPopup._alvo === el) { thTooltipPopup.classList.remove('show'); thTooltipPopup._alvo = null; }
+});
+
 /* ── Tooltips de cabeçalho (clique, não hover) ─────────────────────────── */
 const thTooltipPopup = document.createElement('div');
 thTooltipPopup.id = 'th-tooltip-popup';
@@ -1285,7 +1318,7 @@ document.addEventListener('click', (e) => {
             thTooltipPopup._alvo = null;
             return;
         }
-        thTooltipPopup.textContent = icone.dataset.tip || '';
+        thTooltipPopup.textContent = icone.dataset.tip || '';   // textContent limpa o HTML do tooltip de trânsito
         thTooltipPopup.classList.add('show');
         thTooltipPopup._alvo = icone;
 
