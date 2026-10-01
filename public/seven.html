@@ -161,6 +161,24 @@
         #svSplash img { width:min(340px,60vw); animation:svBrilho 1.6s ease-in-out infinite; }
         #svSplash.sai { opacity:0; pointer-events:none; }
         @keyframes svBrilho { 0%,100% { opacity:.75; transform:scale(.985); } 50% { opacity:1; transform:scale(1); } }
+        /* ---- cards Rankeamento e Defesa ---- */
+        .rd-grade { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:800px) { .rd-grade { grid-template-columns:1fr; } }
+        .rd-card { display:flex; align-items:center; gap:16px; background:var(--s1); border:1px solid var(--sep); border-radius:18px; padding:22px 22px; cursor:pointer; transition:transform .15s, border-color .15s; }
+        .rd-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--l3) 45%, transparent); }
+        .rd-card.on { border-color:#0A84FF; box-shadow:0 0 0 1px #0A84FF inset; } .rd-card.on .rd-seta { transform:rotate(180deg); }
+        .rd-ico { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; font-size:24px; background:rgba(10,132,255,.14); color:#0A84FF; flex:0 0 auto; }
+        .rd-ico.def { background:rgba(48,209,88,.14); color:#30D158; }
+        .rd-tit { font-size:20px; font-weight:800; } .rd-sub { font-size:13px; color:var(--l2); margin-top:2px; }
+        .rd-seta { margin-left:auto; color:var(--l3); transition:transform .2s; }
+        .rd-painel { margin-top:14px; background:var(--s1); border:1px solid var(--sep); border-radius:18px; padding:18px 20px; }
+        .rd-abas { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+        .rd-abas button { background:transparent; border:1px solid var(--sep); color:var(--l2); border-radius:999px; padding:6px 14px; font-weight:700; font-size:13px; cursor:pointer; }
+        .rd-abas button.on { background:#0A84FF; border-color:#0A84FF; color:#fff; }
+        .rd-tab { width:100%; border-collapse:collapse; font-size:13px; } .rd-tab th { text-align:left; color:var(--l3); font-size:11px; text-transform:uppercase; letter-spacing:.05em; padding:8px; border-bottom:1px solid var(--sep); }
+        .rd-tab td { padding:8px; border-bottom:1px solid var(--sep); } .rd-tab td.n { text-align:right; font-variant-numeric:tabular-nums; }
+        .rd-dir { font-weight:800; } .rd-dir.desce { color:#FF9F0A; } .rd-dir.sobe { color:#30D158; }
+        .rd-ia { white-space:pre-wrap; line-height:1.6; font-size:14px; background:color-mix(in srgb, var(--l3) 8%, transparent); border-radius:12px; padding:12px 14px; margin-top:10px; }
+        .rd-breve { color:var(--l2); line-height:1.6; } .rd-breve b { color:var(--l1); }
 </style>
 </head>
 <body>
@@ -281,8 +299,21 @@
                     <div class="pia-grade" id="piaNumeros"><div class="sv-vazio">Carregando…</div></div>
                     <div class="pia-sec">O que a IA encontrou</div>
                     <div class="pia-grade" id="piaGrupos"></div>
-                    <div class="pia-sec">Prioridades de hoje</div>
-                    <div class="pia-grade pia-grade-prio" id="piaPrio"></div>
+                    <div class="pia-sec">Rankeamento e Defesa</div>
+                    <div class="rd-grade">
+                        <div class="rd-card" id="rdCardRank" onclick="rdAbrir('rank')">
+                            <div class="rd-ico"><i class="bi bi-graph-up-arrow"></i></div>
+                            <div><div class="rd-tit">Rankeamento</div><div class="rd-sub" id="rdRankSub">Carregando…</div></div>
+                            <i class="bi bi-chevron-down rd-seta"></i>
+                        </div>
+                        <div class="rd-card" id="rdCardDef" onclick="rdAbrir('def')">
+                            <div class="rd-ico def"><i class="bi bi-shield-check"></i></div>
+                            <div><div class="rd-tit">Defesa</div><div class="rd-sub">Análise de preço · Anúncios patrocinados (ADS) · Promoções</div></div>
+                            <i class="bi bi-chevron-down rd-seta"></i>
+                        </div>
+                    </div>
+                    <div class="rd-painel" id="rdPainel" style="display:none"></div>
+                    <div id="piaPrio" style="display:none"></div>
                     <div class="pia-grade pia-grade-2">
                         <div class="pia-card pia-ia">
                             <div class="pia-rot"><i class="bi bi-stars"></i> A IA resume <span class="pia-fraco" id="piaResumoHora" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
@@ -787,6 +818,74 @@ async function pcAplicar(confirmarGrande) {
   } catch (e) { $('pcMsg').textContent = 'Erro: ' + e.message; $('pcAplicar').disabled = false; }
 }
 
+// ---- Cards Rankeamento e Defesa (arquitetura "sistema de defesa e Rankeamento") ----
+let rd = { aberto: null, aba: 'preco', dados: null, ia: '' };
+const rdR$ = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+async function rdCarregar(forcar) { if (!rd.dados || forcar) rd.dados = await api('/api/seven/ia/rankeamento'); return rd.dados; }
+async function rdResumo() {
+  try { const d = await rdCarregar(true); $('rdRankSub').textContent = `${d.ajustar.length} produtos para ajustar preço (${d.resumo.para_baixar} baixar · ${d.resumo.para_subir} subir) · ${d.top.length} que mais faturam`; if (rd.aberto === 'rank') rdDesenhar(); }
+  catch (e) { $('rdRankSub').textContent = 'Erro: ' + e.message; }
+}
+function rdAbrir(qual) {
+  rd.aberto = rd.aberto === qual ? null : qual;
+  rd.aba = qual === 'rank' ? 'preco' : 'precos';
+  $('rdCardRank').classList.toggle('on', rd.aberto === 'rank'); $('rdCardDef').classList.toggle('on', rd.aberto === 'def');
+  $('rdPainel').style.display = rd.aberto ? '' : 'none';
+  if (rd.aberto) rdDesenhar();
+}
+function rdAba(a) { rd.aba = a; rdDesenhar(); }
+function rdDesenhar() {
+  const el = $('rdPainel');
+  if (rd.aberto === 'rank') {
+    const abas = `<div class="rd-abas"><button class="${rd.aba === 'preco' ? 'on' : ''}" onclick="rdAba('preco')"><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</button>
+      <button class="${rd.aba === 'top' ? 'on' : ''}" onclick="rdAba('top')"><i class="bi bi-trophy"></i> Produtos que mais faturam</button></div>`;
+    const d = rd.dados;
+    if (!d) { el.innerHTML = abas + '<div class="sv-vazio">Carregando…</div>'; rdCarregar().then(rdDesenhar).catch(e => el.innerHTML = abas + `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`); return; }
+    if (rd.aba === 'preco') {
+      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Produtos com sinal de preço, por faturamento. A análise sugere <b>+1%</b> ou <b>−1%</b>; você abre o precificador, vê a margem e decide (semiautomático).</div>
+        <table class="rd-tab"><tr><th>Produto</th><th>Sinal</th><th style="text-align:right">Fat. 30d</th><th style="text-align:right">Preço</th><th style="text-align:right">DF%</th><th style="text-align:right">Rank Nub</th><th style="text-align:right">Busca</th><th>Sugestão</th><th></th></tr>
+        ${d.ajustar.map(l => `<tr><td><b>${esc(l.sku)}</b><div class="pia-fraco">${esc(rtCurto(l.titulo, 46))}</div></td><td class="pia-fraco" style="max-width:240px">${esc(l.sinal_texto)}</td>
+          <td class="n">${rdR$(l.faturamento)}</td><td class="n">${l.preco ? 'R$ ' + Number(l.preco).toFixed(2).replace('.', ',') : '—'}</td><td class="n">${l.df == null ? '—' : (l.df > 0 ? '+' : '') + l.df + '%'}</td>
+          <td class="n">${l.rank_nub ? l.rank_nub + 'º/' + l.grupo_anuncios : '—'}</td><td class="n">${l.rank_busca ? l.rank_busca + 'º' : '—'}</td>
+          <td><span class="rd-dir ${l.direcao < 0 ? 'desce' : 'sobe'}">${l.direcao < 0 ? '▼ −1%' : '▲ +1%'}</span>${l.sugestao_preco ? `<div class="pia-fraco">R$ ${Number(l.sugestao_preco).toFixed(2).replace('.', ',')}</div>` : ''}</td>
+          <td><button class="btn-acao" onclick="pcAbrir('${esc(l.item_id)}','${esc(l.sinal || '')}')"><i class="bi bi-sliders"></i> Precificar</button></td></tr>`).join('') || '<tr><td colspan="9" class="sv-vazio">Nenhum produto com sinal de preço hoje.</td></tr>'}</table>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><button class="btn-acao" id="rdIaBtn" onclick="rdIA()"><i class="bi bi-stars"></i> Analisar com a IA (Ollama)</button><span class="pia-fraco">A IA decide, produto a produto, subir 1%, baixar 1% ou manter, com o motivo.</span></div>
+        <div class="rd-ia" id="rdIa" style="${rd.ia ? '' : 'display:none'}">${esc(rd.ia)}</div>`;
+    } else {
+      el.innerHTML = abas + `<table class="rd-tab"><tr><th>SKU</th><th>Produto</th><th style="text-align:right">Qtd vendida 30d</th><th style="text-align:right">Qtd concorrente</th><th style="text-align:right">Vendas R$ 30d</th><th style="text-align:right">Nosso rank (Nub)</th><th style="text-align:right">Rank na busca</th></tr>
+        ${d.top.map(l => `<tr><td><b>${esc(l.sku)}</b></td><td>${esc(rtCurto(l.titulo, 52))}</td><td class="n">${l.qtd_vendida ?? '—'}</td>
+          <td class="n" title="${esc(l.concorrente || '')}">${l.qtd_concorrente ?? '—'}</td><td class="n">${rdR$(l.faturamento)}</td>
+          <td class="n">${l.rank_nub ? l.rank_nub + 'º de ' + l.grupo_anuncios : '—'}</td><td class="n">${l.rank_busca ? l.rank_busca + 'º (pág. ' + l.pagina_busca + ')' : '—'}</td></tr>`).join('')}</table>
+        <div class="pia-fraco" style="margin-top:8px">Qtd do concorrente = vendas do concorrente que mais vende no grupo do Nubimetrics (Astra). Rank na busca = Ranking ML (Issacar).</div>`;
+    }
+  } else if (rd.aberto === 'def') {
+    const abas = `<div class="rd-abas"><button class="${rd.aba === 'precos' ? 'on' : ''}" onclick="rdAba('precos')"><i class="bi bi-tags"></i> Análise de preço</button>
+      <button class="${rd.aba === 'ads' ? 'on' : ''}" onclick="rdAba('ads')"><i class="bi bi-megaphone"></i> ADS</button>
+      <button class="${rd.aba === 'promo' ? 'on' : ''}" onclick="rdAba('promo')"><i class="bi bi-calendar-event"></i> Promoções</button></div>`;
+    const txt = { precos: '<b>Análise de preço</b> — coleta pela API do Mercado Livre para acompanhar os preços dos nossos anúncios e dos concorrentes e avisar quando alguém mexer.',
+      ads: '<b>ADS (anúncios patrocinados)</b> — análise de Product Ads por produto pela rota de ads da API: quanto cada anúncio gasta, quanto vende pelo patrocínio e onde vale investir.',
+      promo: '<b>Promoções</b> — tabela das promoções e campanhas pela API, com um bot que avisa quando uma promoção está acabando, calendário das campanhas e aviso de promoção nova.' }[rd.aba];
+    el.innerHTML = abas + `<div class="rd-breve">${txt}<div class="sv-aviso" style="margin-top:12px">Em construção — próxima etapa do SEVEN.</div></div>`;
+  }
+}
+async function rdIA() {
+  const b = $('rdIaBtn'), alvo = $('rdIa'); b.disabled = true; alvo.style.display = ''; alvo.innerHTML = '<span class="pia-fraco">a IA está analisando… (cerca de 1 minuto nesta máquina)</span>';
+  let texto = '';
+  try {
+    const resp = await fetch('/api/seven/ia/rankeamento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modelo: ($('iaModelo') && $('iaModelo').value) || undefined }) });
+    if (!resp.ok) throw new Error('a IA não respondeu');
+    const leitor = resp.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    for (;;) {
+      const { value, done } = await leitor.read(); if (done) break;
+      buf += dec.decode(value, { stream: true }); let c;
+      while ((c = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, c); buf = buf.slice(c + 1); if (!l.trim()) continue; const o = JSON.parse(l);
+        if (o.tipo === 'token') { texto += o.texto; alvo.textContent = texto; } else if (o.tipo === 'erro') throw new Error(o.texto); }
+    }
+    rd.ia = texto;
+  } catch (e) { alvo.innerHTML = `<span style="color:#ff453a">Erro: ${esc(e.message)}</span>`; }
+  b.disabled = false;
+}
+
 // ---- Painel da IA: cada ponto da analise em um card, sempre atualizado ---------------------
 // Le so /api/seven/ia/faturamento e /api/seven/ia/saude (nao mexe no resto do Seven).
 // Atualiza sozinho a cada 3 minutos enquanto a aba esta aberta; o resumo do Llama e refeito
@@ -829,7 +928,7 @@ function piaDesenhar() {
             <div class="pia-card pia-largo"><div class="pia-rot"><i class="bi bi-bar-chart"></i> ${esc(mes)} até agora</div>
                 <div class="pia-num">${rtR$(f.mes.valor)}</div>
                 <div class="pia-barras">${f.mes.por_dia.map(x => `<span title="${esc(x.dia.slice(8, 10) + '/' + x.dia.slice(5, 7))}: ${rtR$(x.valor)}" style="height:${Math.max(6, x.valor / max * 100)}%"></span>`).join('')}</div>
-                <div class="pia-sub">${selo(f.ritmo, 'melhor que ' + f.mes_anterior.nome, 'pior que ' + f.mes_anterior.nome)} · nesse ritmo fecha em <b>${rtR$(f.mes.projecao)}</b></div></div>`;
+                <div class="pia-sub">${f.mes.projecao == null ? 'primeiro dia do mês: o ritmo aparece a partir de amanhã' : `${selo(f.ritmo, 'melhor que ' + f.mes_anterior.nome, 'pior que ' + f.mes_anterior.nome)} · nesse ritmo fecha em <b>${rtR$(f.mes.projecao)}</b>`}</div></div>`;
     }
     if (s) {
         const com = s.itens.filter(i => i.sinais.length).length;
@@ -853,6 +952,7 @@ function piaDesenhar() {
     }).join('');
 
     // --- linha 3: prioridades, um card por anuncio, com a acao pronta ---
+    rdResumo();
     const prio = s.ordem.filter(i => i.sinais.length).slice(0, 6);
     $('piaPrio').innerHTML = prio.map((i, k) => {
         const x = [...i.sinais].sort((a, b) => b.peso - a.peso)[0];
@@ -951,7 +1051,7 @@ function rtTelas(f, s) {
             <div class="rt-barrinhas rt-int">${f.mes.por_dia.map((x, k) => `<span data-d="${esc(x.dia)}" data-v="${x.valor}" style="height:${Math.max(4, x.valor / max * 100)}%;animation-delay:${k * 22}ms"></span>`).join('')}</div>
             <div class="rt-dica" id="rtDia">toque numa barra para ver o dia</div>
             ${f.ritmo != null ? `<div class="rt-selo">${f.ritmo >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(f.ritmo * 100))}% ${f.ritmo >= 0 ? 'melhor' : 'pior'} que ${esc(f.mes_anterior.nome)}</div>` : ''}
-            <div class="rt-txt rt-fraco">Nesse ritmo, fecha o mês em ${rtR$(f.mes.projecao)}</div>` });
+            ${f.mes.projecao == null ? '' : `<div class="rt-txt rt-fraco">Nesse ritmo, fecha o mês em ${rtR$(f.mes.projecao)}</div>`}` });
     }
     if (s) {
         const com = s.itens.filter(i => i.sinais.length);

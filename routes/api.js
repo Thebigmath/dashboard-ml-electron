@@ -1149,6 +1149,8 @@ function ndjson(res, promessa) {
 router.get('/seven/ia/estado', auth, (req, res) => ia.estado().then(d => res.json(d)).catch(erroJson(res)));
 // Diagnóstico puro (regras em cima das duas tabelas): instantâneo, não gasta Ollama.
 router.get('/seven/ia/faturamento', auth, (req, res) => ia.faturamento(req.query.forcar === '1').then(d => res.json(d)).catch(erroJson(res)));
+router.get('/seven/ia/rankeamento', auth, (req, res) => ia.rankeamento().then(d => res.json(d)).catch(erroJson(res)));
+router.post('/seven/ia/rankeamento', auth, (req, res) => ndjson(res, ia.perguntarRankeamento({ modelo: (req.body && req.body.modelo) || undefined })));
 router.get('/seven/ia/saude', auth, (req, res) => ia.saude().then(d => res.json(d)).catch(erroJson(res)));
 router.post('/seven/ia/perguntar', auth, (req, res) => {
     ndjson(res, ia.perguntar({ pergunta: req.body && req.body.pergunta, modelo: (req.body && req.body.modelo) || undefined }));
