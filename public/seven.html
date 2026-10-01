@@ -156,9 +156,15 @@
         .pc-lin input { width:110px; text-align:right; background:transparent; border:1px solid var(--sep); border-radius:8px; color:inherit; padding:5px 8px; font:inherit; }
         .pc-mg { margin-top:10px; text-align:center; border-radius:12px; padding:10px; background:color-mix(in srgb, var(--l3) 10%, transparent); }
         .pc-mg b { font-size:24px; display:block; }
+        /* ---- abertura do SEVEN: logo enquanto a tela carrega ---- */
+        #svSplash { position:fixed; inset:0; z-index:10000; background:#000; display:flex; align-items:center; justify-content:center; transition:opacity .45s ease; }
+        #svSplash img { width:min(340px,60vw); animation:svBrilho 1.6s ease-in-out infinite; }
+        #svSplash.sai { opacity:0; pointer-events:none; }
+        @keyframes svBrilho { 0%,100% { opacity:.75; transform:scale(.985); } 50% { opacity:1; transform:scale(1); } }
 </style>
 </head>
 <body>
+<div id="svSplash"><img src="assets/img/seven_logo.webp" alt="SEVEN"></div>
 
 <canvas id="canvas-bg"></canvas>
 <div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
@@ -324,7 +330,7 @@ function mostrar(view) {
     fecharMenu();
     document.querySelectorAll('.sv-view').forEach(v => v.classList.toggle('ativo', v.id === 'view-' + view));
     if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
-    carregar(view);
+    return carregar(view);
 }
 document.querySelectorAll('.sv-nav button').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.view)));
 
@@ -1082,7 +1088,10 @@ async function rtIa() {
     rt.iaFim = true;
 }
 
-mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias');
+const svT0 = Date.now();
+function svTirarSplash() { const el = document.getElementById('svSplash'); if (!el) return; setTimeout(() => { el.classList.add('sai'); setTimeout(() => el.remove(), 500); }, Math.max(0, 1200 - (Date.now() - svT0))); }
+Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
+setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
 acompanharAstra();
 requestAnimationFrame(() => document.body.classList.add('page-ready'));

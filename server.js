@@ -17,7 +17,8 @@ app.use('/auth', require('./routes/auth'));
 // Dashboard principal (sem login)
 // O app abre no Feed: e a tela que diz o que fazer hoje. O painel completo
 // continua inteiro em /painel (e no menu), so deixou de ser a porta de entrada.
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
+// O app abre no SEVEN (decisao de 01/10/2026); o Feed continua em /feed e no menu.
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
 app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
 app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/envio_full.html')));
