@@ -158,7 +158,14 @@
         .pc-mg b { font-size:24px; display:block; }
         /* ---- abertura do SEVEN: logo enquanto a tela carrega ---- */
         #svSplash { position:fixed; inset:0; z-index:10000; background:#000; display:flex; align-items:center; justify-content:center; transition:opacity .45s ease; }
-        #svSplash img { width:min(340px,60vw); animation:svBrilho 1.6s ease-in-out infinite; }
+        #svSplash { flex-direction:column; gap:16px; }
+        #svSplash svg { width:min(170px,38vw); overflow:visible; filter:drop-shadow(0 0 10px rgba(64,224,255,.35)); }
+        #svSplash .tr { fill:none; stroke:#40e0ff; stroke-linecap:round; stroke-linejoin:round; }
+        #svSplash .circ { stroke-width:5; stroke-dasharray:540; stroke-dashoffset:540; animation:svDesenha .9s ease forwards; }
+        #svSplash .sete { stroke-width:7; stroke-dasharray:200; stroke-dashoffset:200; animation:svDesenha .6s ease .75s forwards; }
+        #svSplash .nome { color:#40e0ff; font-size:20px; font-weight:700; letter-spacing:.55em; padding-left:.55em; opacity:0; animation:svSurge .5s ease 1.2s forwards; }
+        @keyframes svDesenha { to { stroke-dashoffset:0; } }
+        @keyframes svSurge { to { opacity:1; } }
         #svSplash.sai { opacity:0; pointer-events:none; }
         @keyframes svBrilho { 0%,100% { opacity:.75; transform:scale(.985); } 50% { opacity:1; transform:scale(1); } }
         /* ---- cards Rankeamento e Defesa ---- */
@@ -199,7 +206,13 @@
 </style>
 </head>
 <body>
-<div id="svSplash"><img src="assets/img/seven_logo.webp" alt="SEVEN"></div>
+<div id="svSplash">
+  <svg viewBox="0 0 200 200" aria-label="SEVEN">
+    <circle class="tr circ" cx="100" cy="100" r="84" transform="rotate(-90 100 100)"/>
+    <path class="tr sete" d="M68 62 H134 L92 146"/>
+  </svg>
+  <div class="nome">SEVEN</div>
+</div>
 <script>
 // o logo aparece uma vez so, ao abrir o app; voltar ao SEVEN pelo menu entra direto
 try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSplash').remove(); else sessionStorage.setItem('svLogoVisto', '1'); } catch {}
@@ -1226,7 +1239,7 @@ async function rtIa() {
 }
 
 const svT0 = Date.now();
-function svTirarSplash() { const el = document.getElementById('svSplash'); if (!el) return; setTimeout(() => { el.classList.add('sai'); setTimeout(() => el.remove(), 500); }, Math.max(0, 1200 - (Date.now() - svT0))); }
+function svTirarSplash() { const el = document.getElementById('svSplash'); if (!el) return; setTimeout(() => { el.classList.add('sai'); setTimeout(() => el.remove(), 500); }, Math.max(0, 3000 - (Date.now() - svT0))); }
 Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
 setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
