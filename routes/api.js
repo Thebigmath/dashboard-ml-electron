@@ -142,7 +142,10 @@ router.post('/atualizar', auth, async (req, res) => {
         // dependem umas das outras: o que as punha em fila era so a ordem no
         // arquivo. Disparadas aqui, correm ao mesmo tempo, e cada uma e colhida
         // no ponto em que o resultado passa a ser necessario.
-        const dataInicio = new Date(Date.now() - 30 * 86400000).toISOString();
+        // Busca 90 dias de pedidos (config.dias_historico) para o filtro "Periodo observado" do Painel
+        // poder calcular a media de qualquer periodo. vendas30/faturamento30 continuam so com 30 dias.
+        const DIAS_HIST  = Math.max(30, Math.min(180, Number(config.dias_historico) || 90));
+        const dataInicio = new Date(Date.now() - DIAS_HIST * 86400000).toISOString();
         const dataFim    = new Date().toISOString();
 
         escrever('Carregando pedidos...');
@@ -237,12 +240,23 @@ router.post('/atualizar', auth, async (req, res) => {
         const faturPorItemId    = {};
         const vendasPorVariacao = {};   // chave: "itemid:variationId"
         const faturPorVariacao  = {};
+        const diaPorSku = {}, diaPorItemId = {}, diaPorVariacao = {};
+        const agoraMs = Date.now();
         for (const pedido of pedidos) {
             for (const item of pedido.order_items || []) {
                 const sku    = (item.item?.seller_sku || '').trim().toLowerCase();
                 const itemId = (item.item?.id || '').toLowerCase();
                 const varId  = item.item?.variation_id;
                 const qty    = item.quantity || 0;
+                // vendas dia a dia (0 = ultimas 24 h) para o periodo observado
+                const dia    = Math.floor((agoraMs - new Date(pedido.date_created).getTime()) / 86400000);
+                if (dia >= 0 && dia < DIAS_HIST) {
+                    const marcar = (mapa, k) => { const m = (mapa[k] = mapa[k] || {}); m[dia] = (m[dia] || 0) + qty; };
+                    if (sku) marcar(diaPorSku, sku); else if (itemId) marcar(diaPorSku, itemId);
+                    if (itemId) marcar(diaPorItemId, itemId);
+                    if (itemId && varId) marcar(diaPorVariacao, itemId + ':' + varId);
+                }
+                if (!(dia < 30)) continue;   // vendas30 e faturamento30: so os ultimos 30 dias
                 const preco  = (item.unit_price || 0) * qty;
 
                 if (sku) {
@@ -613,6 +627,8 @@ router.post('/atualizar', auth, async (req, res) => {
         const reposicao = Object.values(porSku).map(d => {
             let vendas30      = 0;
             let faturamento30 = 0;
+            let vendasDia     = {};   // { diasAtras: unidades } no historico (DIAS_HIST)
+            const somarDias = (src) => { for (const [k, v] of Object.entries(src || {})) vendasDia[k] = (vendasDia[k] || 0) + v; };
 
             // Inclui a entrada "base" (sem ~) quando há irmãos com ~ — sem isso ela
             // soma as vendas de todos os produtos que compartilham o mesmo seller_sku.
@@ -625,11 +641,13 @@ router.post('/atualizar', auth, async (req, res) => {
                 for (const id of ids) {
                     vendas30      += vendasPorItemId[id] || 0;
                     faturamento30 += faturPorItemId[id]  || 0;
+                    somarDias(diaPorItemId[id]);
                 }
             } else {
                 // Entrada normal → usa seller_sku
                 vendas30      = vendasPorSku[d.sku]      || 0;
                 faturamento30 = faturamentoPorSku[d.sku] || 0;
+                somarDias(diaPorSku[d.sku]);
             }
 
             // Fallback para variações sem SELLER_SKU
@@ -637,6 +655,7 @@ router.post('/atualizar', auth, async (req, res) => {
                 const vk = d.item_id.toLowerCase() + ':' + d.variation_id;
                 vendas30      = vendasPorVariacao[vk] || 0;
                 faturamento30 = faturPorVariacao[vk]  || 0;
+                vendasDia = {}; somarDias(diaPorVariacao[vk]);
             }
 
             faturamento30 = +faturamento30.toFixed(2);
@@ -714,7 +733,7 @@ router.post('/atualizar', auth, async (req, res) => {
                 if (!extra) extra = candidatas[0];
                 if (extra) skuLimpo = skuLimpo + '-' + extra;
             }
-            return { ...rest, sku: skuLimpo, chave, vendas30, faturamento30, mediaDia, cobertura, reposicao: rep };
+            return { ...rest, sku: skuLimpo, chave, vendas30, faturamento30, vendasDia, mediaDia, cobertura, reposicao: rep };
         }).sort((a, b) => b.reposicao - a.reposicao);
 
         if (duplicidadesEvitadas.length) {

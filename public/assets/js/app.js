@@ -317,6 +317,7 @@ window.toggleOrdemQtdFull = function () {
 
 function aplicarFiltros() {
     const periodo      = parseInt(document.getElementById('f-periodo')?.value) || 30;
+    try { localStorage.setItem('periodoObservado', String(periodo)); } catch {}
     const fRuptura     = document.getElementById('f-ruptura')?.checked;
     const fReposicao   = document.getElementById('f-reposicao')?.checked;
     const fSemVenda    = document.getElementById('f-semvenda')?.checked;
@@ -326,16 +327,9 @@ function aplicarFiltros() {
     const statusSel    = new Set([...(document.getElementById('f-status')?.selectedOptions || [])].map(o => o.value));
     const fornecedoresSel = getFiltrosFornecedores();
 
-    let lista = window.produtosReposicao.map(p => {
-        if (periodo !== 30) {
-            const mediaDia  = p.vendas30 / periodo;
-            // conta o trânsito e usa a média em precisão total — mesma regra do backend
-            const coberto   = Number(p.estoque) + transitoDe(p);
-            const cobertura = coberto === 0 ? 0 : (mediaDia > 0 ? parseFloat((coberto / mediaDia).toFixed(1)) : 999);
-            return { ...p, mediaDia: Math.round(mediaDia * 100) / 100, cobertura };
-        }
-        return p;
-    });
+    // período observado: vendas, média, cobertura e reposição recalculadas com os últimos N dias
+    if (periodo !== window.periodoEfetivo) recalcularComTransito();
+    let lista = window.produtosReposicao.slice();
 
     // Full x fora do Full. A tela é de reposição do Full; os de fora entram só quando
     // pedidos, senão os ~500 anúncios sem galpão poluiriam o uso diário. Produtos de
@@ -503,7 +497,7 @@ function renderPagina(lista, pagina) {
                  ao FULL, então não pode ser subtraído daqui (subtrair mostrava 0 em produto
                  com estoque real, ex. 35063d com 48 un e 86 em trânsito) -->
             <td>${Number(p.estoque)}</td>
-            <td>${p.vendas30}</td>
+            <td>${p.vendasPeriodo ?? p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
             <td><strong>${p.eFull === false ? '<span style="color:var(--l3,#8ca0b3);font-weight:400">n/a</span>' : (Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—')}</strong></td>
@@ -1022,6 +1016,9 @@ function carregarProdutos() {
             });
             const produtos = Object.values(mapa);
             window.produtosReposicao = produtos;
+            window.diasHistorico = resp.dias_historico || (produtos.some(p => p.vendasDia) ? 90 : 30);
+            window.periodoEfetivo = null;
+            try { const salvo = localStorage.getItem('periodoObservado'); const f = document.getElementById('f-periodo'); if (salvo && f) f.value = salvo; } catch {}
             calcularEstrelasAuto();
             atualizarContadorEstrelas();
             // reposicao.json guarda o resultado do último motor, mas o trânsito muda a
@@ -1111,11 +1108,11 @@ if (pesquisa) {
 }
 
 /* ── Cálculo Magis5 ─────────────────────────────────────────────────────── */
-function calcularReposicaoMagis5(vendas30d, diasColeta, diasAlvo, estoqueAtualFull, transitoFull, itensPorKit, ativo) {
+function calcularReposicaoMagis5(vendasPeriodo, diasColeta, diasAlvo, estoqueAtualFull, transitoFull, itensPorKit, ativo, periodo = 30) {
     transitoFull  = transitoFull  || 0;
     itensPorKit   = itensPorKit   || 1;
     // precisão total: arredondar o vdm antes de multiplicar errava até 1 unidade
-    const vdm = vendas30d / 30;
+    const vdm = vendasPeriodo / periodo;
     // Dias de venda até a mercadoria chegar — pausado não vende nesse período
     const diasAteChegar = ativo ? diasColeta : 0;
     const coberturaNecessaria  = vdm * diasAlvo;
@@ -1132,27 +1129,56 @@ function calcularReposicaoMagis5(vendas30d, diasColeta, diasAlvo, estoqueAtualFu
 }
 
 /* ── Recalcular ─────────────────────────────────────────────────────────── */
+/* ── Período observado ──────────────────────────────────────────────────────
+   O motor guarda as vendas dia a dia (vendasDia: { diasAtras: unidades }, até
+   90 dias). Média/dia, cobertura, reposição e os filtros usam as vendas dos
+   últimos N dias ÷ N. Coleta antiga (sem vendasDia) só sabe 30 dias. */
+function periodoObservado() {
+    const n = parseInt(document.getElementById('f-periodo')?.value) || 30;
+    return Math.max(1, Math.min(window.diasHistorico || 30, n));
+}
+function vendasNoPeriodo(p, n) {
+    if (!p.vendasDia) return n === 30 ? Number(p.vendas30) || 0 : null;
+    let t = 0;
+    for (const [d, q] of Object.entries(p.vendasDia)) if (Number(d) < n) t += q;
+    return t;
+}
 function recalcularComTransito() {
     if (!window.produtosReposicao.length) return;
     const diasC = parseInt(diasColeta?.value) || 0;
     const diasA = parseInt(diasAlvo?.value)   || 35;
+    let periodo = periodoObservado();
+    // coleta antiga sem o dia a dia: só dá para calcular 30 dias
+    if (window.produtosReposicao.some(p => !p.vendasDia)) periodo = 30;
+    window.periodoEfetivo = periodo;
 
     window.produtosReposicao = window.produtosReposicao.map(p => {
         const estoque  = Number(p.estoque);
-        const vendas30 = Number(p.vendas30);
+        const vendasP  = vendasNoPeriodo(p, periodo) ?? Number(p.vendas30);
         const transito = transitoDe(p);
-        const vdm      = Math.round((vendas30 / 30) * 100) / 100;
+        const vdm      = Math.round((vendasP / periodo) * 100) / 100;
         // cobertura conta o trânsito e usa a média em precisão total — igual ao backend
-        const vdmReal   = vendas30 / 30;
+        const vdmReal   = vendasP / periodo;
         const coberto   = estoque + transito;
         const cobertura = coberto === 0 ? 0 : (vdmReal > 0 ? parseFloat((coberto / vdmReal).toFixed(1)) : 999);
-        const reposicao = calcularReposicaoMagis5(vendas30, diasC, diasA, estoque, transito, 1, p.status === 'active');
+        const reposicao = calcularReposicaoMagis5(vendasP, diasC, diasA, estoque, transito, 1, p.status === 'active', periodo);
         // A coluna REPOSIÇÃO mostra a necessidade cheia; QTD FULL é ela menos o trânsito.
         // Antes a tela exibia o valor já líquido nas duas, e a conta "29 − 6 = 23" ficava
         // invisível — parecia que o trânsito não tinha sido descontado em lugar nenhum.
-        const reposicaoBruta = calcularReposicaoMagis5(vendas30, diasC, diasA, estoque, 0, 1, p.status === 'active');
-        return { ...p, mediaDia: vdm, cobertura, reposicao, reposicaoBruta };
+        const reposicaoBruta = calcularReposicaoMagis5(vendasP, diasC, diasA, estoque, 0, 1, p.status === 'active', periodo);
+        return { ...p, vendasPeriodo: vendasP, mediaDia: vdm, cobertura, reposicao, reposicaoBruta };
     });
+    atualizarCabecalhoPeriodo(periodo);
+}
+function atualizarCabecalhoPeriodo(n) {
+    const th = document.getElementById('thVendasPeriodo'), tm = document.getElementById('thMediaDia');
+    if (th) th.firstChild.textContent = `Vendas ${n}d `;
+    if (th) th.querySelector('i')?.setAttribute('data-tip', `Unidades vendidas nos últimos ${n} dias, excluindo pedidos cancelados (Período observado)`);
+    if (tm) tm.querySelector('i')?.setAttribute('data-tip', `Vendas ${n}d ÷ ${n} = média de vendas por dia`);
+    const aviso = document.getElementById('periodoAviso');
+    const pedido = parseInt(document.getElementById('f-periodo')?.value) || 30;
+    if (aviso) aviso.textContent = pedido !== n ? (window.produtosReposicao.some(p => !p.vendasDia)
+        ? 'Rode "Atualizar" uma vez: a coleta atual só tem 30 dias.' : `Máximo disponível: ${n} dias.`) : '';
 }
 
 if (btnRecalcular) {

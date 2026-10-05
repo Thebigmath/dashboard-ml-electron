@@ -228,8 +228,8 @@
                                 <th>Produto</th>
                                 <th>SKU</th>
                                 <th>Estoque <i class="bi bi-info-circle th-info-icon" data-tip="Estoque físico total no FULL (inclui unidades em transferência)"></i></th>
-                                <th>Vendas 30d <i class="bi bi-info-circle th-info-icon" data-tip="Unidades vendidas nos últimos 30 dias, excluindo pedidos cancelados"></i></th>
-                                <th>Média Dia <i class="bi bi-info-circle th-info-icon" data-tip="Vendas 30d ÷ 30 = média de vendas por dia"></i></th>
+                                <th id="thVendasPeriodo">Vendas 30d <i class="bi bi-info-circle th-info-icon" data-tip="Unidades vendidas nos últimos 30 dias, excluindo pedidos cancelados"></i></th>
+                                <th id="thMediaDia">Média Dia <i class="bi bi-info-circle th-info-icon" data-tip="Vendas 30d ÷ 30 = média de vendas por dia"></i></th>
                                 <th>Cobertura <i class="bi bi-info-circle th-info-icon" data-tip="Estoque ÷ Média Dia = quantos dias o estoque atual dura no ritmo de vendas"></i></th>
                                 <th>Reposição <i class="bi bi-info-circle th-info-icon" data-tip="Necessidade total para atingir o Estoque Alvo, ANTES de descontar o que está em trânsito. Anúncios ativos somam o buffer de dias até coleta; pausados usam só o Estoque Alvo"></i></th>
                                 <th>Em Trânsito <i class="bi bi-info-circle th-info-icon" data-tip="Unidades já enviadas para o FULL mas ainda não recebidas"></i></th>
@@ -279,7 +279,8 @@
 
             <div class="filter-section-title">Período observado:</div>
             <div class="filter-period-row">
-                Últimos <input type="number" id="f-periodo" class="filter-period-input" value="30" min="7" max="365" onchange=""> dias
+                Últimos <input type="number" id="f-periodo" class="filter-period-input" value="30" min="1" max="90" onchange="aplicarFiltros()"> dias
+                <div id="periodoAviso" style="font-size:11px;color:var(--l3,#8ca0b3);margin-top:4px"></div>
             </div>
 
             <div class="filter-divider"></div>

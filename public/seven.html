@@ -179,6 +179,23 @@
         .rd-dir { font-weight:800; } .rd-dir.desce { color:#FF9F0A; } .rd-dir.sobe { color:#30D158; }
         .rd-ia { white-space:pre-wrap; line-height:1.6; font-size:14px; background:color-mix(in srgb, var(--l3) 8%, transparent); border-radius:12px; padding:12px 14px; margin-top:10px; }
         .rd-breve { color:var(--l2); line-height:1.6; } .rd-breve b { color:var(--l1); }
+        /* cards grandes: clicar expande a tela com os topicos do card */
+        .rd-card { flex-direction:column; align-items:flex-start; min-height:230px; padding:26px; gap:14px; }
+        .rd-card .rd-tit { font-size:26px; } .rd-card .rd-ico { width:60px; height:60px; font-size:28px; }
+        .rd-topicos { display:flex; flex-direction:column; gap:6px; margin-top:auto; width:100%; }
+        .rd-topicos span { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--l2); padding:7px 10px; border-radius:10px; background:color-mix(in srgb, var(--l3) 8%, transparent); }
+        .rd-abrir { position:absolute; top:22px; right:22px; font-size:12px; font-weight:700; color:var(--l3); }
+        .rd-card { position:relative; }
+        #rdFundo { position:fixed; inset:0; background:rgba(0,0,0,.45); backdrop-filter:blur(3px); z-index:8000; display:none; }
+        #rdPainel.rd-painel { position:fixed; inset:28px; z-index:8001; margin:0; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.35); animation:rdExp .22s ease; }
+        @keyframes rdExp { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:none; } }
+        .rd-topo { display:flex; align-items:center; gap:14px; padding:18px 22px; border-bottom:1px solid var(--sep); }
+        .rd-topo .rd-tit { font-size:22px; } .rd-fechar { margin-left:auto; background:transparent; border:1px solid var(--sep); color:var(--l2); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; }
+        #rdCorpo { flex:1; overflow:auto; display:grid; grid-template-columns:250px 1fr; gap:0 24px; padding:20px 22px; align-content:start; }
+        #rdCorpo > .rd-abas { grid-column:1; grid-row:1 / span 30; flex-direction:column; flex-wrap:nowrap; position:sticky; top:0; align-self:start; margin:0; }
+        #rdCorpo > .rd-abas button { text-align:left; border-radius:12px; padding:12px 14px; font-size:14px; }
+        #rdCorpo > :not(.rd-abas) { grid-column:2; min-width:0; }
+        @media (max-width:800px) { #rdPainel.rd-painel { inset:8px; } #rdCorpo { grid-template-columns:1fr; } #rdCorpo > .rd-abas { grid-row:auto; position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:12px; } #rdCorpo > :not(.rd-abas) { grid-column:1; } }
 </style>
 </head>
 <body>
@@ -308,15 +325,21 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         <div class="rd-card" id="rdCardRank" onclick="rdAbrir('rank')">
                             <div class="rd-ico"><i class="bi bi-graph-up-arrow"></i></div>
                             <div><div class="rd-tit">Rankeamento</div><div class="rd-sub" id="rdRankSub">Carregando…</div></div>
-                            <i class="bi bi-chevron-down rd-seta"></i>
+                            <span class="rd-abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</span>
+                            <div class="rd-topicos"><span><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</span><span><i class="bi bi-trophy"></i> Produtos que mais faturam</span><span><i class="bi bi-stars"></i> Análise da IA</span></div>
                         </div>
                         <div class="rd-card" id="rdCardDef" onclick="rdAbrir('def')">
                             <div class="rd-ico def"><i class="bi bi-shield-check"></i></div>
-                            <div><div class="rd-tit">Defesa</div><div class="rd-sub">Análise de preço · Anúncios patrocinados (ADS) · Promoções</div></div>
-                            <i class="bi bi-chevron-down rd-seta"></i>
+                            <div><div class="rd-tit">Defesa</div><div class="rd-sub">Proteger o que já vende</div></div>
+                            <span class="rd-abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</span>
+                            <div class="rd-topicos"><span><i class="bi bi-tags"></i> Análise de preço</span><span><i class="bi bi-megaphone"></i> Anúncios patrocinados (ADS)</span><span><i class="bi bi-calendar-event"></i> Promoções</span></div>
                         </div>
                     </div>
-                    <div class="rd-painel" id="rdPainel" style="display:none"></div>
+                    <div id="rdFundo" onclick="rdFechar()"></div>
+                    <div class="rd-painel" id="rdPainel" style="display:none">
+                        <div class="rd-topo"><div class="rd-ico" id="rdTopoIco"></div><div><div class="rd-tit" id="rdTopoTit"></div><div class="rd-sub" id="rdTopoSub"></div></div><button class="rd-fechar" onclick="rdFechar()" title="Fechar (Esc)"><i class="bi bi-x-lg"></i></button></div>
+                        <div id="rdCorpo"></div>
+                    </div>
                     <div id="piaPrio" style="display:none"></div>
                     <div class="pia-grade pia-grade-2">
                         <div class="pia-card pia-ia">
@@ -823,7 +846,7 @@ async function pcAplicar(confirmarGrande) {
 }
 
 // ---- Cards Rankeamento e Defesa (arquitetura "sistema de defesa e Rankeamento") ----
-let rd = { aberto: null, aba: 'preco', dados: null, ia: '' };
+let rd = { aberto: null, aba: 'preco', dados: null, ia: '', rodando: false };
 const rdR$ = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 async function rdCarregar(forcar) { if (!rd.dados || forcar) rd.dados = await api('/api/seven/ia/rankeamento'); return rd.dados; }
 async function rdResumo() {
@@ -831,18 +854,23 @@ async function rdResumo() {
   catch (e) { $('rdRankSub').textContent = 'Erro: ' + e.message; }
 }
 function rdAbrir(qual) {
-  rd.aberto = rd.aberto === qual ? null : qual;
-  rd.aba = qual === 'rank' ? 'preco' : 'precos';
-  $('rdCardRank').classList.toggle('on', rd.aberto === 'rank'); $('rdCardDef').classList.toggle('on', rd.aberto === 'def');
-  $('rdPainel').style.display = rd.aberto ? '' : 'none';
-  if (rd.aberto) rdDesenhar();
+  rd.aberto = qual; rd.aba = qual === 'rank' ? 'preco' : 'precos';
+  const rank = qual === 'rank';
+  $('rdTopoIco').className = 'rd-ico' + (rank ? '' : ' def'); $('rdTopoIco').innerHTML = `<i class="bi ${rank ? 'bi-graph-up-arrow' : 'bi-shield-check'}"></i>`;
+  $('rdTopoTit').textContent = rank ? 'Rankeamento' : 'Defesa';
+  $('rdTopoSub').textContent = rank ? $('rdRankSub').textContent : 'Proteger o que já vende';
+  $('rdFundo').style.display = ''; $('rdPainel').style.display = ''; document.body.style.overflow = 'hidden';
+  rdDesenhar();
 }
+function rdFechar() { rd.aberto = null; $('rdFundo').style.display = 'none'; $('rdPainel').style.display = 'none'; document.body.style.overflow = ''; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && rd.aberto && !document.querySelector('.pc-fundo.on, #pcFundo[style*="flex"]')) rdFechar(); });
 function rdAba(a) { rd.aba = a; rdDesenhar(); }
 function rdDesenhar() {
-  const el = $('rdPainel');
+  const el = $('rdCorpo');
   if (rd.aberto === 'rank') {
     const abas = `<div class="rd-abas"><button class="${rd.aba === 'preco' ? 'on' : ''}" onclick="rdAba('preco')"><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</button>
-      <button class="${rd.aba === 'top' ? 'on' : ''}" onclick="rdAba('top')"><i class="bi bi-trophy"></i> Produtos que mais faturam</button></div>`;
+      <button class="${rd.aba === 'top' ? 'on' : ''}" onclick="rdAba('top')"><i class="bi bi-trophy"></i> Produtos que mais faturam</button>
+      <button class="${rd.aba === 'ia' ? 'on' : ''}" onclick="rdAba('ia')"><i class="bi bi-stars"></i> Análise da IA</button></div>`;
     const d = rd.dados;
     if (!d) { el.innerHTML = abas + '<div class="sv-vazio">Carregando…</div>'; rdCarregar().then(rdDesenhar).catch(e => el.innerHTML = abas + `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`); return; }
     if (rd.aba === 'preco') {
@@ -852,9 +880,11 @@ function rdDesenhar() {
           <td class="n">${rdR$(l.faturamento)}</td><td class="n">${l.preco ? 'R$ ' + Number(l.preco).toFixed(2).replace('.', ',') : '—'}</td><td class="n">${l.df == null ? '—' : (l.df > 0 ? '+' : '') + l.df + '%'}</td>
           <td class="n">${l.rank_nub ? l.rank_nub + 'º/' + l.grupo_anuncios : '—'}</td><td class="n">${l.rank_busca ? l.rank_busca + 'º' : '—'}</td>
           <td><span class="rd-dir ${l.direcao < 0 ? 'desce' : 'sobe'}">${l.direcao < 0 ? '▼ −1%' : '▲ +1%'}</span>${l.sugestao_preco ? `<div class="pia-fraco">R$ ${Number(l.sugestao_preco).toFixed(2).replace('.', ',')}</div>` : ''}</td>
-          <td><button class="btn-acao" onclick="pcAbrir('${esc(l.item_id)}','${esc(l.sinal || '')}')"><i class="bi bi-sliders"></i> Precificar</button></td></tr>`).join('') || '<tr><td colspan="9" class="sv-vazio">Nenhum produto com sinal de preço hoje.</td></tr>'}</table>
-        <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><button class="btn-acao" id="rdIaBtn" onclick="rdIA()"><i class="bi bi-stars"></i> Analisar com a IA (Ollama)</button><span class="pia-fraco">A IA decide, produto a produto, subir 1%, baixar 1% ou manter, com o motivo.</span></div>
-        <div class="rd-ia" id="rdIa" style="${rd.ia ? '' : 'display:none'}">${esc(rd.ia)}</div>`;
+          <td><button class="btn-acao" onclick="pcAbrir('${esc(l.item_id)}','${esc(l.sinal || '')}')"><i class="bi bi-sliders"></i> Precificar</button></td></tr>`).join('') || '<tr><td colspan="9" class="sv-vazio">Nenhum produto com sinal de preço hoje.</td></tr>'}</table>`;
+    } else if (rd.aba === 'ia') {
+      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:6px">A IA (Ollama, nesta máquina) lê os ${Math.min(12, d.ajustar.length)} primeiros produtos da Análise de mudança de preço e decide, um a um, subir 1%, baixar 1% ou manter. Quem aplica é você, pelo precificador.</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><button class="btn-acao" id="rdIaBtn" onclick="rdIA()" ${rd.rodando ? 'disabled' : ''}><i class="bi bi-stars"></i> Analisar com a IA (Ollama)</button><span class="pia-fraco">A IA decide, produto a produto, subir 1%, baixar 1% ou manter, com o motivo.</span></div>
+        <div class="rd-ia" id="rdIa" style="${rd.ia || rd.rodando ? '' : 'display:none'}">${rd.ia ? esc(rd.ia) : rd.rodando ? '<span class="pia-fraco">a IA está analisando… (cerca de 1 minuto nesta máquina)</span>' : ''}</div>`;
     } else {
       el.innerHTML = abas + `<table class="rd-tab"><tr><th>SKU</th><th>Produto</th><th style="text-align:right">Qtd vendida 30d</th><th style="text-align:right">Qtd concorrente</th><th style="text-align:right">Vendas R$ 30d</th><th style="text-align:right">Nosso rank (Nub)</th><th style="text-align:right">Rank na busca</th></tr>
         ${d.top.map(l => `<tr><td><b>${esc(l.sku)}</b></td><td>${esc(rtCurto(l.titulo, 52))}</td><td class="n">${l.qtd_vendida ?? '—'}</td>
@@ -873,7 +903,10 @@ function rdDesenhar() {
   }
 }
 async function rdIA() {
-  const b = $('rdIaBtn'), alvo = $('rdIa'); b.disabled = true; alvo.style.display = ''; alvo.innerHTML = '<span class="pia-fraco">a IA está analisando… (cerca de 1 minuto nesta máquina)</span>';
+  // O texto vive em rd.ia e o elemento e buscado a cada pedaco: a atualizacao automatica
+  // (3 em 3 min) redesenha o card sem apagar a resposta que a IA ainda esta escrevendo.
+  if (rd.rodando) return;
+  rd.rodando = true; rd.ia = ''; rdDesenhar();
   let texto = '';
   try {
     const resp = await fetch('/api/seven/ia/rankeamento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modelo: ($('iaModelo') && $('iaModelo').value) || undefined }) });
@@ -883,11 +916,11 @@ async function rdIA() {
       const { value, done } = await leitor.read(); if (done) break;
       buf += dec.decode(value, { stream: true }); let c;
       while ((c = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, c); buf = buf.slice(c + 1); if (!l.trim()) continue; const o = JSON.parse(l);
-        if (o.tipo === 'token') { texto += o.texto; alvo.textContent = texto; } else if (o.tipo === 'erro') throw new Error(o.texto); }
+        if (o.tipo === 'token') { texto += o.texto; rd.ia = texto; const a = $('rdIa'); if (a) { a.style.display = ''; a.textContent = texto; } } else if (o.tipo === 'erro') throw new Error(o.texto); }
     }
     rd.ia = texto;
-  } catch (e) { alvo.innerHTML = `<span style="color:#ff453a">Erro: ${esc(e.message)}</span>`; }
-  b.disabled = false;
+  } catch (e) { rd.ia = 'Erro: ' + e.message; }
+  rd.rodando = false; rdDesenhar();
 }
 
 // ---- Painel da IA: cada ponto da analise em um card, sempre atualizado ---------------------
