@@ -6,9 +6,9 @@
     "titulo": "Projeto ASTRA",
     "resumo": "O motor que acompanha os concorrentes no Nubimetrics e mostra, para cada anúncio, o preço de quem mais vende e a nossa posição.",
     "texto": "O ASTRA é o motor de inteligência competitiva do SEVEN. Todo dia ele consulta o Nubimetrics pelo MCP oficial e traz, para cada grupo de concorrência, quem está vendendo mais e por quanto. É ele que preenche a análise de concorrentes do SEVEN: PC (preço do concorrente que mais vende), DF% (a diferença para o nosso preço) e RANK NUB (a nossa posição no grupo).\n\nPontos fortes:\n\n- Completo: acompanha os 72 grupos de concorrência cadastrados no Nubimetrics\n- Rápido: a atualização do dia leva poucos minutos, porque só busca o que mudou\n- Oficial: conversa com o Nubimetrics pelo MCP, do jeito certo, sem atalhos\n- Respeita os limites: ritmo controlado e para sozinho se o Nubimetrics pedir\n- Não perde dado: tudo fica guardado no banco, dia a dia\n- Serve as duas contas: um ASTRA só alimenta a Flavia e a Cordeiro\n\nNo SEVEN, use o botão Atualizar concorrentes ou o ↻ de cada linha para atualizar um grupo específico.\n\nPodcast: \"Como o ASTRA automatizou a precificação competitiva\" (24 min) conta como ele foi construído. É só dar play acima.",
-    "video": "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/astra_podcast.m4a",
+    "video": "https://raw.githubusercontent.com/theman01-dotcom/dashboard-ml-electron/master/arte/astra_podcast.m4a",
     "imagens": [
-      "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/astra.webp"
+      "https://raw.githubusercontent.com/theman01-dotcom/dashboard-ml-electron/master/arte/astra.webp"
     ],
     "link": ""
   },
@@ -19,9 +19,9 @@
     "titulo": "Projeto Issacar",
     "resumo": "O robô que pesquisa o Mercado Livre como uma pessoa e diz onde cada anúncio aparece.",
     "texto": "O Issacar nasceu para coletar preços de concorrentes e agora também mede o Ranking ML: em que página e posição cada anúncio aparece na busca do Mercado Livre. É ele que alimenta a coluna Ranking ML e as notícias do SEVEN.\n\nPontos fortes:\n\n- Rápido: pesquisa dezenas de termos em poucos minutos, com várias abas trabalhando ao mesmo tempo\n- Invisível: roda em segundo plano, num Chrome próprio, sem aparecer na tela nem atrapalhar quem está usando o computador\n- Conta como o Mercado Livre conta: ignora anúncios patrocinados e conta cada anúncio uma vez só\n- Ritmo humano: pausas variadas entre as buscas, para não sobrecarregar o Mercado Livre\n- Seguro: se o Mercado Livre pedir verificação, ele para sozinho e não tenta forçar\n- Não perde dado: se uma coleta for barrada, o ranking anterior continua valendo\n- Transparente: cada coleta fica registrada, e uma falha vira aviso no Windows e no SEVEN\n\nA coleta roda sozinha toda segunda-feira e também pode ser disparada pelo botão Coletar ranking ML, no SEVEN.\n\nPodcast: \"O robô que aprendeu a tropeçar\" (27 min) conta a história do Issacar. É só dar play acima.",
-    "video": "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/issacar_podcast.m4a",
+    "video": "https://raw.githubusercontent.com/theman01-dotcom/dashboard-ml-electron/master/arte/issacar_podcast.m4a",
     "imagens": [
-      "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/issacar.webp"
+      "https://raw.githubusercontent.com/theman01-dotcom/dashboard-ml-electron/master/arte/issacar.webp"
     ],
     "link": ""
   },
@@ -34,7 +34,7 @@
     "texto": "Pensa nos dados do Mercado Livre. Agora pensa em coletar tudo sem erros, sem esperar, sem cair. Isso é Horizon.\n\nNão é só um collector. É um motor com parâmetros — ajusta a frequência, respeita limites, entende padrões, aprende com falhas.\n\nFoi feito para abrir porta para o Seven, o app de manutenção de anúncios. Um motor robusto que coleta, valida e entrega o dado limpo. Deixa registrado cada movimento.\n\nCada chamada tem seu log. Cada erro tem seu contexto. Você sabe o que deu certo, o que travou e exatamente por quê.",
     "video": "",
     "imagens": [
-      "https://raw.githubusercontent.com/Thebigmath/dashboard-ml-electron/master/arte/horizon.webp"
+      "https://raw.githubusercontent.com/theman01-dotcom/dashboard-ml-electron/master/arte/horizon.webp"
     ],
     "link": ""
   }
