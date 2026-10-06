@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEVEN — Dashboard ML</title>
+    <title>AD HEALTH — Dashboard ML</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link href="assets/css/style.css" rel="stylesheet">
@@ -229,20 +229,11 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
             <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
         </div>
         <ul class="menu">
-            <li onclick="window.location.href='/feed'"><i class="bi bi-lightning-charge"></i><span>Feed</span></li>
-            <li onclick="window.location.href='/painel'"><i class="bi bi-square-half"></i><span>Painel de Controle</span></li>
-            <li onclick="location.href='/painel'"><i class="bi bi-arrow-clockwise"></i><span>Atualizar Estoque</span></li>
-            <li onclick="location.href='/painel'"><i class="bi bi-arrow-down-circle"></i><span>Planilha Full</span></li>
-            <li onclick="location.href='/painel'"><i class="bi bi-cloud-arrow-up"></i><span>Enviar para Full</span></li>
-            <li onclick="window.location.href='/valor_estoque'"><i class="bi bi-chart-pie"></i><span>Valor do Estoque</span></li>
-            <li onclick="window.location.href='/envio_full'"><i class="bi bi-box-seam"></i><span>Envio Full</span></li>
-            <li onclick="window.location.href='/frete'"><i class="bi bi-truck"></i><span>Frete</span></li>
-            <li onclick="window.location.href='/perguntas'"><i class="bi bi-chat-dots"></i><span>Perguntas</span></li>
-            <li onclick="window.location.href='/parados'"><i class="bi bi-pause-circle"></i><span>Parados</span></li>
-            <li onclick="window.location.href='/novidades'"><i class="bi bi-megaphone"></i><span>Novidades</span></li>
-            <li onclick="window.location.href='/avisos'"><i class="bi bi-broadcast"></i><span>Notificações globais</span></li>
-            <li onclick="window.location.href='/auth/gerar_token'"><i class="bi bi-key"></i><span>Renovar Token</span></li>
-            <li class="active"><i class="bi bi-7-circle"></i><span>SEVEN</span></li>
+            <li onclick="window.location.href='/'"><i class="bi bi-house"></i><span>Início</span></li>
+            <li data-view="noticias" class="active"><i class="bi bi-lightning-charge"></i><span>Notícias urgentes</span></li>
+            <li data-view="concorrentes"><i class="bi bi-people"></i><span>Análise de concorrentes</span></li>
+            <li data-view="vendas"><i class="bi bi-graph-up-arrow"></i><span>Análise por tempo de vendas</span></li>
+            <li data-view="ia"><i class="bi bi-stars"></i><span>Análise com IA</span></li>
         </ul>
         <div class="sidebar-footer">v5.0</div>
         <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
@@ -251,7 +242,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
     <main class="content">
         <nav class="topbar">
             <div>
-                <h4 class="mb-0">SEVEN</h4>
+                <h4 class="mb-0">AD HEALTH</h4>
                 <small class="text-secondary">Notícias urgentes, vendas e concorrentes</small>
             </div>
             <div class="topbar-right" style="gap:12px">
@@ -262,10 +253,10 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
 
         <div class="sv-wrap">
             <div class="sv-falha" id="svFalha"></div>
-            <div class="sv-barra-menu">
+            <div class="sv-barra-menu" style="display:none">
                 <button class="sv-menu-btn" id="svMenuBtn" aria-expanded="false" title="Menu do SEVEN"><i class="bi bi-list"></i> <span id="svViewNome">Notícias urgentes</span> <i class="bi bi-chevron-down" style="font-size:12px;opacity:.6"></i></button>
             </div>
-            <aside class="sv-nav" id="svNav">
+            <aside class="sv-nav" id="svNav" style="display:none">
                 <button data-view="noticias" class="ativo"><i class="bi bi-lightning-charge"></i> Notícias urgentes</button>
                 <div class="sv-sep"></div>
                 <button data-view="concorrentes"><i class="bi bi-people"></i> Análise de concorrentes</button>
@@ -396,6 +387,7 @@ async function api(url, opts) {
 // navegacao entre as telas do Seven
 function mostrar(view) {
     document.querySelectorAll('.sv-nav button').forEach(b => b.classList.toggle('ativo', b.dataset.view === view));
+    document.querySelectorAll('.sidebar .menu li[data-view]').forEach(li => li.classList.toggle('active', li.dataset.view === view));
     const botao = document.querySelector(`.sv-nav button[data-view="${view}"]`);
     if (botao) $('svViewNome').textContent = botao.textContent.trim();
     fecharMenu();
@@ -404,6 +396,7 @@ function mostrar(view) {
     return carregar(view);
 }
 document.querySelectorAll('.sv-nav button').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.view)));
+document.querySelectorAll('.sidebar .menu li[data-view]').forEach(li => li.addEventListener('click', () => mostrar(li.dataset.view)));
 
 // menu hamburguer: os botoes do Seven ficam num painel que abre e fecha
 function fecharMenu() { $('svNav').classList.remove('aberto'); $('svMenuBtn').setAttribute('aria-expanded', 'false'); }
@@ -646,11 +639,23 @@ async function recarregarTudo() {
         const view = document.querySelector('.sv-view.ativo').id.replace('view-', '');
         await carregar(view, true);
         txt.textContent = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return true;
     } catch (e) {
         txt.textContent = 'falhou: ' + e.message;
+        return false;
     } finally {
         btn.disabled = false;
     }
+}
+
+// Primeira abertura do dia: atualiza sozinho o que alimenta os cards iniciais (coleta de
+// estoque e vendas + pedidos de ontem) e marca o dia no app. Se falhar, nao marca: tenta de
+// novo na proxima abertura. Astra (concorrentes) e Ranking ML continuam so pelos botoes.
+async function atualizarNaPrimeiraAberturaDoDia() {
+    let a; try { a = await api('/api/seven/abertura'); } catch { return; }
+    if (!a.precisa) return;
+    $('svEstado').textContent = 'primeira abertura do dia: atualizando…';
+    if (await recarregarTudo()) await fetch('/api/seven/abertura/feito', { method: 'POST' }).catch(() => {});
 }
 
 // ---- Análise com IA: Ollama local, resposta em NDJSON (token a token) ---------------------
@@ -1244,6 +1249,7 @@ Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(lo
 setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
 acompanharAstra();
+atualizarNaPrimeiraAberturaDoDia();
 requestAnimationFrame(() => document.body.classList.add('page-ready'));
 setTimeout(() => document.body.classList.add('page-ready'), 150);
 </script>

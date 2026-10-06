@@ -1139,6 +1139,7 @@ router.get('/feed/assinatura', auth, (req, res) => {
 
 // ── Seven: noticias, vendas de ontem e concorrentes ─────────────────────────
 const erroJson = (res) => (e) => res.status(500).json({ erro: String(e.message || e) });
+router.get('/inicio/faturamento', auth, (req, res) => { require('../lib/inicio').resumo(req.query.forcar === '1').then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/feed', auth, (req, res) => { seven.feedSeven().then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/noticias', auth, (req, res) => { seven.noticias().then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/vendas', auth, (req, res) => { seven.tabelaVendas(false).then(d => res.json(d)).catch(erroJson(res)); });
@@ -1148,6 +1149,18 @@ router.get('/seven/concorrentes', auth, (req, res) => {
 // Rebusca os pedidos de ontem (a coleta de estoque roda antes, pelo /atualizar).
 router.post('/seven/recarregar', auth, (req, res) => {
     seven.vendasOntem(true).then(d => res.json({ ok: true, dia: d.dia, pedidos: d.pedidos })).catch(erroJson(res));
+});
+// Primeira abertura do dia do AD HEALTH: a tela pergunta se ja atualizou hoje
+// (horario de Brasilia) e, se nao, roda a atualizacao completa e marca o dia.
+const ABERTURA_DIA = 'adhealth_abertura.json';
+const hojeBR = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+router.get('/seven/abertura', auth, (req, res) => {
+    const a = lerJson(ABERTURA_DIA, {});
+    res.json({ hoje: hojeBR(), atualizado_dia: a.dia || null, precisa: a.dia !== hojeBR() });
+});
+router.post('/seven/abertura/feito', auth, (req, res) => {
+    salvarJson(ABERTURA_DIA, { dia: hojeBR(), em: new Date().toISOString() });
+    res.json({ ok: true });
 });
 router.get('/seven/astra/estado', auth, (req, res) => res.json(astra.estado()));
 router.post('/seven/astra/rodar', auth, (req, res) => res.json(astra.iniciar((req.body && req.body.grupos) || [])));

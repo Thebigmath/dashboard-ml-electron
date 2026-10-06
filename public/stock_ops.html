@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOCK Ops — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .ini { padding:24px; display:flex; flex-direction:column; gap:22px; max-width:1280px; }
+        .ini-sec { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--l3); margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+        .ini-sec a { margin-left:auto; text-transform:none; letter-spacing:0; font-weight:500; color:var(--blue); text-decoration:none; font-size:12px; }
+
+        /* feed: os tres numeros */
+        .ini-feed { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:22px 24px; }
+        .ini-feed-cab { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+        .ini-feed-cab h2 { margin:0; font-size:22px; font-weight:600; color:var(--l1); }
+        .ini-feed-cab small { color:var(--l3); font-size:12px; display:flex; align-items:center; gap:8px; }
+        .ini-kpis { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+        @media (max-width: 900px) { .ini-kpis { grid-template-columns:1fr; } }
+        .ini-kpi { background:var(--s2); border:1px solid var(--sep); border-radius:12px; padding:16px 18px; min-width:0; }
+        .ini-kpi .r { font-size:12px; color:var(--l3); display:flex; align-items:center; gap:6px; }
+        .ini-kpi .v { font-size:28px; font-weight:700; color:var(--l1); margin-top:6px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ini-kpi .s { font-size:12px; color:var(--l3); margin-top:2px; }
+        .ini-kpi.carregando .v { color:var(--l3); }
+
+        /* portas dos ecossistemas */
+        .ini-portas { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+        @media (max-width: 900px) { .ini-portas { grid-template-columns:1fr; } }
+        .ini-porta { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:20px; cursor:pointer; transition:border-color .15s, transform .15s; display:flex; flex-direction:column; gap:10px; text-decoration:none; color:inherit; }
+        .ini-porta:hover { border-color:var(--blue); transform:translateY(-2px); }
+        .ini-porta .ic { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#fff; }
+        .ini-porta h3 { margin:0; font-size:17px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; }
+        .ini-porta p { margin:0; font-size:13px; color:var(--l2); line-height:1.5; }
+        .ini-porta ul { margin:0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:6px; }
+        .ini-porta li { font-size:11px; color:var(--l2); border:1px solid var(--sep); border-radius:999px; padding:2px 9px; }
+        .ini-porta.dev { cursor:default; opacity:.7; }
+        .ini-porta.dev:hover { border-color:var(--sep); transform:none; }
+        .ini-tag { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; border:1px solid var(--sep); color:var(--l3); border-radius:999px; padding:1px 8px; }
+
+        /* noticias e atualizacoes */
+        .ini-lista { background:var(--s1); border:1px solid var(--sep); border-radius:16px; overflow:hidden; }
+        .ini-item { display:flex; gap:14px; padding:14px 18px; border-top:1px solid var(--sep); cursor:pointer; align-items:flex-start; }
+        .ini-item:first-child { border-top:0; }
+        .ini-item:hover { background:var(--s2); }
+        .ini-item .d { font-size:12px; color:var(--l3); white-space:nowrap; min-width:78px; padding-top:1px; font-variant-numeric:tabular-nums; }
+        .ini-item .t { font-size:14px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .ini-item .x { font-size:13px; color:var(--l2); margin-top:2px; line-height:1.5; }
+        .ini-novo { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; background:var(--blue); color:#fff; border-radius:999px; padding:1px 7px; }
+        .ini-vazio { padding:22px; text-align:center; color:var(--l3); font-size:13px; }
+        .ini-erro { color:#ff453a; }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao:disabled { opacity:.5; cursor:default; }
+            .so-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+        .ini-porta .alvo { font-size:12px; color:var(--l3); border-top:1px solid var(--sep); padding-top:10px; margin-top:auto; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+
+<div class="d-flex">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="bi bi-shop-window"></i></div>
+            <div><div class="logo-title">CRC-18</div><small>Intelligence Stock</small></div>
+        </div>
+        <ul class="menu">
+            <li onclick="window.location.href='/'"><i class="bi bi-house"></i><span>Início</span></li>
+            <li class="active"><i class="bi bi-boxes"></i><span>STOCK Ops</span></li>
+        </ul>
+        <div class="sidebar-footer">v5.0</div>
+        <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
+    </aside>
+
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">STOCK Ops</h4>
+                <small class="text-secondary">Ecossistema 1 · análise e inteligência de estoque</small>
+            </div>
+        </nav>
+        <div class="ini">
+            <section>
+                <div class="ini-sec">Ferramentas</div>
+                <div class="so-grid">
+                    <a class="ini-porta" href="/feed">
+                        <div class="ic" style="background:#0a84ff"><i class="bi bi-lightning-charge"></i></div>
+                        <h3>Feed · 10 decisões</h3>
+                        <p>As decisões de estoque do dia, por ordem de dinheiro.</p>
+                        <div class="alvo">Notícia principal · produto alvo · vendas, média e cobertura</div>
+                    </a>
+                    <a class="ini-porta" href="/painel">
+                        <div class="ic" style="background:#5e5ce6"><i class="bi bi-square-half"></i></div>
+                        <h3>Dashboard Full</h3>
+                        <p>Inteligência de estoque Full com filtros auxiliares.</p>
+                        <div class="alvo">Estratégia de reposição · dashboard completo</div>
+                    </a>
+                    <a class="ini-porta" href="/painel">
+                        <div class="ic" style="background:#bf5af2"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+                        <h3>Planilha Full</h3>
+                        <p>Gera a planilha Full dos produtos escolhidos para enviar no Mercado Livre.</p>
+                        <div class="alvo">No Painel: escolha os produtos e gere a planilha no formato do ML</div>
+                    </a>
+                    <a class="ini-porta" href="/envio_full">
+                        <div class="ic" style="background:#64d2ff"><i class="bi bi-box-seam"></i></div>
+                        <h3>Envio Full</h3>
+                        <p>Acompanhe os envios para o Fulfillment do Mercado Livre.</p>
+                        <div class="alvo">Envios em andamento</div>
+                    </a>
+                    <a class="ini-porta" href="/valor_estoque">
+                        <div class="ic" style="background:#30a46c"><i class="bi bi-pie-chart"></i></div>
+                        <h3>Valor de estoque</h3>
+                        <p>Quanto vale o estoque dos produtos no Full.</p>
+                        <div class="alvo">Custos sincronizados por planilha · valor total em estoque</div>
+                    </a>
+                    <a class="ini-porta" href="/parados">
+                        <div class="ic" style="background:#ff9f0a"><i class="bi bi-pause-circle"></i></div>
+                        <h3>Produtos parados</h3>
+                        <p>Dashboard consolidado dos parados, com gráficos.</p>
+                        <div class="alvo">Capital parado · gráficos aplicados</div>
+                    </a>
+                    <div class="ini-porta dev">
+                        <div class="ic" style="background:#8e8e93"><i class="bi bi-arrow-return-left"></i></div>
+                        <h3>Análise de devoluções <span class="ini-tag">em breve</span></h3>
+                        <p>Motivos e produtos com mais devolução.</p>
+                        <div class="alvo">Próxima etapa</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+<script>document.body.classList.add('page-ready');</script>
+<script src="/assets/js/sidebar.js"></script></body>
+</html>

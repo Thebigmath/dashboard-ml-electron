@@ -1,4 +1,13 @@
 (async () => {
+    // ── "Início" no topo do menu (arquitetura SEVEN): telas antigas ainda nao tem o item ──
+    const menuUl = document.querySelector('.sidebar .menu');
+    if (menuUl && ![...menuUl.querySelectorAll('li span')].some(s => s.textContent.trim() === 'Início')) {
+        const li = document.createElement('li');
+        li.innerHTML = '<i class="bi bi-house"></i><span>Início</span>';
+        li.onclick = () => { window.location.href = '/'; };
+        menuUl.insertBefore(li, menuUl.firstChild);
+    }
+
     // ── Info do app ──────────────────────────────────────────────────────────
     let appInfo = {};
     try { appInfo = await fetch('/api/app_info').then(r => r.json()); } catch {}
@@ -207,7 +216,7 @@
 
     function montar() {
         const topbar = document.querySelector('.topbar');
-        if (!topbar) return;
+        if (!topbar || !document.querySelector(".sidebar")) return; // pagina Inicio nao tem menu lateral
 
         // Nem toda página tem o wrapper; normaliza para o botão ficar junto do título.
         let esquerda = topbar.querySelector('.topbar-left');

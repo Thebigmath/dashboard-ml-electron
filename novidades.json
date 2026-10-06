@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.62",
+    "data": "2026-10-06",
+    "titulo": "Nova página inicial e o AD HEALTH",
+    "texto": "O Dashboard foi reorganizado em ecossistemas.\n\n- Página inicial nova: faturamento do mês até agora, de ontem e do ano até agora (sem os cancelados), as portas dos ecossistemas, as notícias globais e as atualizações do app.\n- STOCK Ops: as ferramentas de estoque reunidas numa página (Feed, Dashboard Full, Planilha Full, Envio Full, Valor de estoque e Parados).\n- AD HEALTH (o antigo SEVEN): menu lateral só com as análises (notícias urgentes, concorrentes, tempo de vendas e IA).\n- Na primeira abertura do dia, o AD HEALTH atualiza sozinho os números dos cards. Concorrentes e Ranking ML continuam pelos botões.\n- Saíram o gráfico de faturamento do Painel e o atalho de Perguntas.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.57",
     "data": "2026-09-30",
     "titulo": "Ranking ML: coleta completa em até 10 minutos, só pelo botão",
