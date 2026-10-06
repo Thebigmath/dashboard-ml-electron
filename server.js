@@ -10,6 +10,29 @@ let httpServer = null;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Seguranca do servidor local (06/10/2026): so o proprio Dashboard pode usar.
+// - Host: so 127.0.0.1/localhost na porta do app (bloqueia "DNS rebinding" de sites maliciosos)
+// - pedidos que ALTERAM algo (POST/PUT/DELETE...): recusados se vierem de outro site
+//   (Origin diferente ou Sec-Fetch-Site cross-site). Sem isso, qualquer pagina aberta no PC
+//   podia mandar um formulario para o Dashboard (ex.: alterar preco).
+app.use((req, res, next) => {
+    const host = String(req.headers.host || '').toLowerCase();
+    const porta = httpServer && httpServer.address() ? String(httpServer.address().port) : null;
+    const m = host.match(/^(127\.0\.0\.1|localhost)(?::(\d+))?$/);
+    if (!m || (porta && m[2] && m[2] !== porta)) return res.status(403).send('Acesso negado.');
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        const site = req.headers['sec-fetch-site'];
+        if (site && !['same-origin', 'none'].includes(site)) return res.status(403).json({ erro: 'Pedido de outro site bloqueado.' });
+        const origin = req.headers.origin;
+        if (origin) {
+            let ok = false;
+            try { ok = new URL(origin).host.toLowerCase() === host; } catch {}
+            if (!ok) return res.status(403).json({ erro: 'Pedido de outro site bloqueado.' });
+        }
+    }
+    next();
+});
+
 // Rotas API e Auth (sem autenticação)
 app.use('/api', require('./routes/api'));
 app.use('/auth', require('./routes/auth'));

@@ -140,7 +140,8 @@ ipcMain.on('install-update', () => {
 });
 
 ipcMain.on('open-external', (_, url) => {
-    shell.openExternal(url);
+    // so endereco https (antes abria qualquer coisa: file:, programas, etc.)
+    if (/^https:\/\//i.test(String(url || ''))) shell.openExternal(url);
 });
 
 app.whenReady().then(() => {

@@ -9,3 +9,7 @@ storage/ultima_atualizacao.txt
 storage/faturamento_mensal.json
 storage/uploads/
 test_server.js
+
+# Seguranca (06/10/2026): nada da pasta de dados vai para o GitHub, exceto o config de exemplo sem segredo
+storage/*
+!storage/config.json

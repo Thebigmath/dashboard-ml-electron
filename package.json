@@ -1,6 +1,6 @@
 {
   "name": "dashboard-ml",
-  "version": "1.9.59",
+  "version": "1.9.60",
   "description": "Dashboard ML - Controle de Estoque Flavia Stock",
   "main": "main.js",
   "scripts": {
@@ -44,8 +44,6 @@
       "lib/**",
       "public/**",
       "storage/config.json",
-      "storage/usuarios.json",
-      "storage/custos.json",
       "node_modules/**"
     ],
     "extraResources": [
@@ -53,10 +51,7 @@
         "from": "storage",
         "to": "storage",
         "filter": [
-          "config.json",
-          "usuarios.json",
-          "custos.json",
-          "envios_full.json"
+          "config.json"
         ]
       }
     ],

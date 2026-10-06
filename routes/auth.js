@@ -4,13 +4,15 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const STORAGE = process.env.STORAGE_PATH || require('path').join(__dirname, '../storage');
-const config = JSON.parse(require('fs').readFileSync(require('path').join(STORAGE, 'config.json'), 'utf8'));
+const ARQ_CONFIG = path.join(STORAGE, 'config.json');
+const lerConfig = () => JSON.parse(fs.readFileSync(ARQ_CONFIG, 'utf8'));   // lida a cada pedido (Secret Key pode mudar)
 const TokenManager = require('../lib/tokenManager');
 
 const REDIRECT_URI = 'https://claude.ai/new';
 
 // Página de gerar token
 router.get('/gerar_token', (req, res) => {
+    const config = lerConfig();
     const authUrl = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${config.client_id}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=offline_access%20supply_chain`;
     res.send(`<!DOCTYPE html>
 <html lang="pt-BR">
@@ -35,6 +37,14 @@ button[type=submit]{width:100%;height:44px;margin-top:12px;background:#0a84ff;bo
 <div class="step"><div class="n">3</div><div>Cole abaixo e clique <strong>Trocar pelo Token</strong></div></div>
 <a href="${authUrl}" class="btn" target="_blank">Autorizar no Mercado Livre →</a>
 <hr>
+<details style="margin:0 0 18px"><summary style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.55)">Trocou a Secret Key no portal do Mercado Livre? Cole a nova aqui</summary>
+<form method="POST" action="/auth/app_secret" style="margin-top:10px">
+<label>App ID (client_id)</label>
+<input type="text" name="client_id" value="${String(config.client_id || '').replace(/[^0-9]/g, '')}">
+<label style="margin-top:10px">Secret Key nova (client_secret)</label>
+<input type="password" name="client_secret" placeholder="Cole a Secret Key nova" autocomplete="off">
+<button type="submit">Salvar Secret Key</button>
+</form></details>
 <form method="POST" action="/auth/callback">
 <label>Código (code)</label>
 <input type="text" name="code" placeholder="Cole o code aqui..." autofocus>
@@ -43,8 +53,18 @@ button[type=submit]{width:100%;height:44px;margin-top:12px;background:#0a84ff;bo
 </div></body></html>`);
 });
 
+// Grava a Secret Key nova (depois de trocar no portal do ML). Nunca devolve o segredo para a tela.
+router.post('/app_secret', (req, res) => {
+    const id = String(req.body.client_id || '').trim(), sec = String(req.body.client_secret || '').trim();
+    if (!/^\d{6,}$/.test(id) || sec.length < 10) return res.send('<h2 style="font-family:system-ui;color:#f85149;padding:40px">App ID ou Secret Key inválidos.<br><a href="/auth/gerar_token" style="color:#0a84ff">← Voltar</a></h2>');
+    const c = lerConfig(); c.client_id = id; c.client_secret = sec;
+    const tmp = ARQ_CONFIG + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(c, null, 4), 'utf8'); fs.renameSync(tmp, ARQ_CONFIG);
+    res.send('<h2 style="font-family:system-ui;color:#3fb950;padding:40px">✅ Secret Key salva. Agora autorize de novo no Mercado Livre.<br><a href="/auth/gerar_token" style="color:#0a84ff">→ Autorizar</a></h2>');
+});
+
 // Troca o code pelo token
 router.post('/callback', async (req, res) => {
+    const config = lerConfig();
     const code = req.body.code?.trim();
     if (!code) return res.send('Código ausente.');
 
