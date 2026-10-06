@@ -1,0 +1,15 @@
+{
+    "client_id": "459859228023536",
+    "client_secret": "",
+    "planilha_custos": "",
+    "dias_coleta": 20,
+    "dias_alvo": 35,
+    "app_nome": "Flavia Stock",
+    "app_porta": 3001,
+    "outro_app": {
+        "nome": "Cordeiro Car",
+        "porta": 3002,
+        "exe": "",
+        "exe_nome": "Dashboard Cordeiro"
+    }
+}
