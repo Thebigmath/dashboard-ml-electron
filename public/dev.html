@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do desenvolvedor — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .dv { padding:24px; display:flex; flex-direction:column; gap:18px; width:100%; box-sizing:border-box; }
+        .dv-login { max-width:380px; margin:60px auto; background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:24px; }
+        .dv-login h3 { font-size:18px; margin:0 0 6px; color:var(--l1); }
+        .dv-login p { font-size:13px; color:var(--l3); margin:0 0 14px; }
+        .dv-input { width:100%; border:1px solid var(--sep); background:var(--s2); color:var(--l1); border-radius:10px; padding:10px 12px; font-size:14px; }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:1px solid var(--sep); background:none; color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao:disabled { opacity:.5; cursor:default; }
+        .dv-abas { display:flex; gap:8px; }
+        .dv-aba { padding:8px 14px; border-radius:10px; border:1px solid var(--sep); background:var(--s1); color:var(--l2); font-weight:600; font-size:13px; cursor:pointer; }
+        .dv-aba.ativa { background:var(--blue); color:#fff; border-color:var(--blue); }
+        .dv-res { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+        .dv-card { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
+        .dv-card small { color:var(--l3); font-size:12px; display:block; }
+        .dv-card b { font-size:26px; display:block; margin-top:2px; font-variant-numeric:tabular-nums; }
+        .dv-grupo { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--l3); margin:8px 0 6px; }
+        .dv-lista { background:var(--s1); border:1px solid var(--sep); border-radius:14px; overflow:hidden; }
+        .dv-lin { display:grid; grid-template-columns:22px 260px 1fr 80px; gap:12px; align-items:center; padding:11px 16px; border-top:1px solid var(--sep); font-size:13px; }
+        .dv-lin:first-child { border-top:0; }
+        .dv-lin .n { font-weight:600; color:var(--l1); } .dv-lin .d { color:var(--l2); } .dv-lin .ms { color:var(--l3); text-align:right; font-variant-numeric:tabular-nums; }
+        @media (max-width:800px) { .dv-lin { grid-template-columns:22px 1fr; } .dv-lin .d, .dv-lin .ms { grid-column:2; text-align:left; } }
+        .ok { color:#30D158; } .atencao { color:#ff9f0a; } .falha { color:#ff453a; }
+        .dv-barras { display:flex; align-items:flex-end; gap:3px; height:90px; margin-top:10px; }
+        .dv-barras span { flex:1; background:var(--blue); border-radius:3px 3px 0 0; min-height:2px; opacity:.85; position:relative; }
+        .dv-barras span.cota { background:#ff453a; }
+        .dv-eixo { display:flex; gap:3px; font-size:10px; color:var(--l3); margin-top:4px; } .dv-eixo span { flex:1; text-align:center; }
+        .dv-tab { width:100%; border-collapse:collapse; font-size:13px; }
+        .dv-tab th, .dv-tab td { padding:9px 14px; border-top:1px solid var(--sep); text-align:left; }
+        .dv-tab th { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); font-weight:600; border-top:0; }
+        .dv-tab .num { text-align:right; font-variant-numeric:tabular-nums; }
+        .dv-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:1000px) { .dv-2 { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex">
+    <main class="content">
+        <nav class="topbar">
+            <div>
+                <h4 class="mb-0">Área do desenvolvedor</h4>
+                <small class="text-secondary">Saúde do projeto e cotas das APIs · <a href="/" style="color:var(--blue);text-decoration:none">voltar ao Início</a></small>
+            </div>
+            <div class="topbar-right" style="gap:10px" id="dvTopo" hidden>
+                <button class="btn-acao" onclick="sair()"><i class="bi bi-box-arrow-right"></i> Sair</button>
+            </div>
+        </nav>
+
+        <div class="dv">
+            <div class="dv-login" id="dvLogin">
+                <h3><i class="bi bi-shield-lock"></i> Entrar</h3>
+                <p>A mesma senha da Área do desenvolvedor do Harvey.</p>
+                <form onsubmit="entrar(event)">
+                    <input type="password" class="dv-input" id="dvSenha" placeholder="Senha" autocomplete="current-password" autofocus>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+                        <span id="dvLoginMsg" style="font-size:12px;color:#ff453a"></span>
+                        <button class="btn-acao" type="submit"><i class="bi bi-unlock"></i> Entrar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="dvConteudo" hidden>
+                <div class="dv-abas">
+                    <button class="dv-aba ativa" data-aba="saude" onclick="aba('saude')"><i class="bi bi-heart-pulse"></i> Saúde do projeto</button>
+                    <button class="dv-aba" data-aba="cotas" onclick="aba('cotas')"><i class="bi bi-speedometer2"></i> Cotas das APIs</button>
+                </div>
+
+                <section id="abaSaude" style="margin-top:16px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                        <small class="text-secondary" id="svQuando">—</small>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn-acao" onclick="saude(false)"><i class="bi bi-arrow-clockwise"></i> Conferir</button>
+                            <button class="btn-acao" onclick="saude(true)" title="Faz 1 chamada de teste em cada chave do Gemini"><i class="bi bi-stars"></i> Testar o Gemini</button>
+                        </div>
+                    </div>
+                    <div class="dv-res">
+                        <div class="dv-card"><small>Funcionando</small><b class="ok" id="svOk">—</b></div>
+                        <div class="dv-card"><small>Atenção</small><b class="atencao" id="svAt">—</b></div>
+                        <div class="dv-card"><small>Com falha</small><b class="falha" id="svFa">—</b></div>
+                    </div>
+                    <div id="svLista" style="margin-top:6px"></div>
+                </section>
+
+                <section id="abaCotas" style="margin-top:16px" hidden>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <small class="text-secondary" id="ctQuando">—</small>
+                        <button class="btn-acao" onclick="cotas()"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>
+                    </div>
+                    <div class="dv-res" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+                        <div class="dv-card"><small>Mercado Livre hoje</small><b id="ctMl">—</b><small id="ctMlSub">&nbsp;</small></div>
+                        <div class="dv-card"><small>Gemini hoje</small><b id="ctGe">—</b><small id="ctGeSub">&nbsp;</small></div>
+                        <div class="dv-card"><small>Mercado Pago hoje</small><b id="ctMp">—</b><small>&nbsp;</small></div>
+                        <div class="dv-card"><small>Erros de cota (429) hoje</small><b id="ctCota">—</b><small>ML + Gemini</small></div>
+                    </div>
+                    <div class="dv-2" style="margin-top:14px">
+                        <div class="dv-card"><small>Chamadas ao Mercado Livre por hora (hoje)</small><div class="dv-barras" id="ctHorasMl"></div><div class="dv-eixo" id="ctEixoMl"></div></div>
+                        <div class="dv-card"><small>Chamadas ao Gemini por hora (hoje)</small><div class="dv-barras" id="ctHorasGe"></div><div class="dv-eixo" id="ctEixoGe"></div></div>
+                    </div>
+                    <div class="dv-2" style="margin-top:14px">
+                        <div class="dv-lista"><table class="dv-tab"><thead><tr><th>Gemini · chave e modelo (hoje)</th><th class="num">Chamadas</th><th class="num">Cota (429)</th><th class="num">Erros</th></tr></thead><tbody id="ctChaves"></tbody></table></div>
+                        <div class="dv-lista"><table class="dv-tab"><thead><tr><th>Mercado Livre · rotas que mais gastam (hoje)</th><th class="num">Chamadas</th></tr></thead><tbody id="ctRotas"></tbody></table></div>
+                    </div>
+                    <div class="dv-lista" style="margin-top:14px"><table class="dv-tab"><thead><tr><th>Dia</th><th class="num">Mercado Livre</th><th class="num">ML cota (429)</th><th class="num">Gemini</th><th class="num">Gemini cota (429)</th><th class="num">Mercado Pago</th></tr></thead><tbody id="ctDias"></tbody></table></div>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const num = (v) => Number(v || 0).toLocaleString('pt-BR');
+let token = ''; try { token = sessionStorage.getItem('devToken') || ''; } catch {}
+
+async function api(url, opts = {}) {
+    opts.headers = { ...(opts.headers || {}), 'x-dev-token': token };
+    const r = await fetch(url, opts);
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401 && url !== '/api/dev/entrar') { mostrarLogin(); throw new Error('sessão expirada'); }
+    if (!r.ok || d.erro) throw new Error(d.erro || 'erro ' + r.status);
+    return d;
+}
+function mostrarLogin() { $('dvLogin').hidden = false; $('dvConteudo').hidden = true; $('dvTopo').hidden = true; }
+function mostrarConteudo() { $('dvLogin').hidden = true; $('dvConteudo').hidden = false; $('dvTopo').hidden = false; saude(false); }
+
+async function entrar(ev) {
+    ev.preventDefault();
+    $('dvLoginMsg').textContent = '';
+    try {
+        const d = await api('/api/dev/entrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: $('dvSenha').value }) });
+        token = d.token; try { sessionStorage.setItem('devToken', token); } catch {}
+        $('dvSenha').value = '';
+        mostrarConteudo();
+    } catch (e) { $('dvLoginMsg').textContent = e.message; }
+}
+async function sair() { try { await api('/api/dev/sair', { method: 'POST' }); } catch {} token = ''; try { sessionStorage.removeItem('devToken'); } catch {} mostrarLogin(); }
+
+function aba(a) {
+    document.querySelectorAll('.dv-aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === a));
+    $('abaSaude').hidden = a !== 'saude'; $('abaCotas').hidden = a !== 'cotas';
+    if (a === 'cotas') cotas();
+}
+
+const ICONE = { ok: 'bi-check-circle-fill ok', atencao: 'bi-exclamation-triangle-fill atencao', falha: 'bi-x-circle-fill falha' };
+async function saude(gemini) {
+    $('svQuando').textContent = gemini ? 'Conferindo (com teste de cada chave do Gemini)…' : 'Conferindo…';
+    try {
+        const d = await api('/api/dev/saude' + (gemini ? '?gemini=1' : ''));
+        $('svOk').textContent = d.resumo.ok; $('svAt').textContent = d.resumo.atencao; $('svFa').textContent = d.resumo.falha;
+        $('svQuando').textContent = `Versão ${d.versao} · conferido às ${new Date(d.verificado_em).toLocaleTimeString('pt-BR')}`;
+        const grupos = [...new Set(d.itens.map(i => i.grupo))];
+        $('svLista').innerHTML = grupos.map(g => `<div class="dv-grupo">${esc(g)}</div><div class="dv-lista">${
+            d.itens.filter(i => i.grupo === g).map(i => `<div class="dv-lin"><i class="bi ${ICONE[i.status]}"></i><span class="n">${esc(i.nome)}</span><span class="d">${esc(i.detalhe)}</span><span class="ms">${i.ms != null ? i.ms + ' ms' : ''}</span></div>`).join('')}</div>`).join('');
+    } catch (e) { $('svQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
+}
+
+function barras(alvoB, alvoE, horas) {
+    const h = Array.from({ length: 24 }, (_, i) => horas[String(i).padStart(2, '0')] || 0);
+    const max = Math.max(...h, 1), agora = new Date().getHours();
+    $(alvoB).innerHTML = h.map((v, i) => `<span style="height:${Math.max(2, v / max * 100)}%;${i > agora ? 'opacity:.25' : ''}" title="${i}h: ${num(v)} chamadas"></span>`).join('');
+    $(alvoE).innerHTML = h.map((_, i) => `<span>${i % 3 === 0 ? i + 'h' : ''}</span>`).join('');
+}
+async function cotas() {
+    try {
+        const d = await api('/api/dev/cotas');
+        $('ctQuando').textContent = 'Hoje, ' + d.hoje.split('-').reverse().join('/') + ' · contado desde que o app abriu (guarda 14 dias)';
+        $('ctMl').textContent = num(d.ml.total); $('ctMlSub').textContent = `${num(d.ml.erros)} erros · ${d.ml.ms_medio ?? '—'} ms em média`;
+        $('ctGe').textContent = num(d.gemini.total); $('ctGeSub').textContent = `${num(d.gemini.erros)} erros · ${Object.keys(d.gemini.chaves || {}).length} chave(s)/modelo(s)`;
+        $('ctMp').textContent = num(d.mp.total);
+        const cota = (d.ml.cota || 0) + (d.gemini.cota || 0);
+        $('ctCota').textContent = num(cota); $('ctCota').className = cota ? 'falha' : 'ok';
+        barras('ctHorasMl', 'ctEixoMl', d.ml.horas || {}); barras('ctHorasGe', 'ctEixoGe', d.gemini.horas || {});
+        const ch = Object.entries(d.gemini.chaves || {}).sort((a, b) => b[1].total - a[1].total);
+        $('ctChaves').innerHTML = ch.length ? ch.map(([k, v]) => `<tr><td>••••${esc(k)}</td><td class="num">${num(v.total)}</td><td class="num ${v.cota ? 'falha' : ''}">${num(v.cota)}</td><td class="num ${v.erros ? 'atencao' : ''}">${num(v.erros)}</td></tr>`).join('') : '<tr><td colspan="4" class="text-secondary">Nenhuma chamada ao Gemini hoje.</td></tr>';
+        $('ctRotas').innerHTML = (d.ml.rotas || []).map(r => `<tr><td><code>${esc(r.rota)}</code></td><td class="num">${num(r.n)}</td></tr>`).join('') || '<tr><td colspan="2" class="text-secondary">Nenhuma chamada hoje.</td></tr>';
+        $('ctDias').innerHTML = [...d.dias].reverse().map(x => `<tr><td>${x.dia.split('-').reverse().join('/')}</td><td class="num">${num(x.ml)}</td><td class="num ${x.ml_cota ? 'falha' : ''}">${num(x.ml_cota)}</td><td class="num">${num(x.gemini)}</td><td class="num ${x.gemini_cota ? 'falha' : ''}">${num(x.gemini_cota)}</td><td class="num">${num(x.mp)}</td></tr>`).join('');
+    } catch (e) { $('ctQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
+}
+
+if (token) mostrarConteudo(); else mostrarLogin();
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+<script>document.documentElement.classList.remove("sidebar-recolhida");</script>
+</body>
+</html>

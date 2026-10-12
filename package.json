@@ -1,6 +1,6 @@
 {
   "name": "dashboard-ml",
-  "version": "1.9.62",
+  "version": "1.9.63",
   "description": "Dashboard ML - Controle de Estoque Flavia Stock",
   "main": "main.js",
   "scripts": {
@@ -21,7 +21,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "theman01-dotcom",
+      "owner": "Thebigmath",
       "repo": "dashboard-ml-electron",
       "releaseType": "release"
     },

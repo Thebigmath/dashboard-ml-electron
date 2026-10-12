@@ -18,7 +18,6 @@ const astra = require('../lib/astra');
 const ia = require('../lib/ia');
 const mercado = require('../lib/mercado');
 const nubimetrics = require('../lib/nubimetrics');
-const reputacao = require('../lib/reputacao');
 
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, '../storage');
 const upload = multer({ dest: path.join(STORAGE, 'uploads/') });
@@ -1121,9 +1120,6 @@ router.post('/perguntas/responder', auth, async (req, res) => {
 });
 
 // ── Reputação no ML ─────────────────────────────────────────────────────────
-router.get('/reputacao', auth, (req, res) => res.json(reputacao.resumo()));
-router.post('/reputacao/verificar', auth, async (req, res) => { await reputacao.verificar().catch(() => {}); res.json(reputacao.resumo()); });
-router.post('/reputacao/config', auth, (req, res) => res.json(reputacao.salvarConfiguracao(req.body || {})));
 
 // ── Feed de acoes de estoque ────────────────────────────────────────────────
 // Le o que o motor ja coletou (reposicao.json): abre instantaneo, sem API.
@@ -1162,6 +1158,36 @@ router.post('/seven/abertura/feito', auth, (req, res) => {
     salvarJson(ABERTURA_DIA, { dia: hojeBR(), em: new Date().toISOString() });
     res.json({ ok: true });
 });
+// Controle de estoque parado (AD HEALTH): tempo para esgotar, faturamento em potencial, etiquetas de ADS e promocao
+router.get('/seven/parados', auth, (req, res) => { require('../lib/parado_controle').controle({ minDias: req.query.dias }).then(d => res.json(d)).catch(erroJson(res)); });
+// Queima-margem: simular nao muda nada; aplicar so com o clique (preco confere com o que a pessoa viu)
+router.get('/seven/queima/:item', auth, (req, res) => { require('../lib/queima').simular(req.params.item).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/queima/:item', auth, (req, res) => { require('../lib/queima').aplicar(req.params.item, req.body && req.body.preco).then(d => res.json(d)).catch(erroJson(res)); });
+// Campanhas ADS (AD HEALTH): gasto, receita, ACoS, ROAS e serie diaria pela API de Publicidade
+router.get('/seven/ads', auth, (req, res) => { require('../lib/ads').resumo({ dias: req.query.dias, forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Central de Promocoes (AD HEALTH > Campanhas e precos): so leitura, entrar/sair continua manual
+router.get('/seven/promocoes', auth, (req, res) => { require('../lib/promocoes').central({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Area do desenvolvedor: senha (mesmo esquema do Harvey), monitor de cotas e saude do projeto.
+// Tudo menos o "entrar" exige o token de sessao (cabecalho x-dev-token).
+const senhaDev = require('../lib/senha');
+const soDev = (req, res, next) => senhaDev.valido(req.get('x-dev-token')) ? next() : res.status(401).json({ erro: 'Entre com a senha da Área do desenvolvedor.' });
+router.post('/dev/entrar', (req, res) => { const r = senhaDev.entrar((req.body || {}).senha); res.status(r.ok ? 200 : 401).json(r); });
+router.post('/dev/sair', (req, res) => { senhaDev.sair(req.get('x-dev-token')); res.json({ ok: true }); });
+router.get('/dev/cotas', soDev, (req, res) => res.json(require('../lib/cotas').resumo()));
+router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').verificar({ testarGemini: req.query.gemini === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Regras de preco (motor_preco): avaliar e so leitura; aplicar so com confirmacao e preco conferido
+router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/regras_preco_ia', auth, (req, res) => ndjson(res, require('../lib/motor_preco').revisarIA()));
+router.post('/seven/regras_preco/:item', auth, (req, res) => { require('../lib/motor_preco').aplicar(req.params.item, req.body && req.body.preco).then(d => res.json(d)).catch(erroJson(res)); });
+// Balanco do dia (card Rankeamento > Analise da IA): numeros pelo codigo, leitura pelo Gemini em JSON
+router.get('/seven/briefing', auth, (req, res) => { require('../lib/briefing').gerar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Lista de anuncios ativos para a aba Precificacao (sem empilhadeiras), dos que mais vendem para os que menos
+router.get('/seven/produtos', auth, (req, res) => {
+    const { ehEmpilhadeira } = require('../lib/feed');
+    res.json(lerJson('reposicao.json', []).filter(p => p.item_id && p.status === 'active' && !ehEmpilhadeira(p))
+        .map(p => ({ item_id: p.item_id, sku: p.sku, titulo: p.titulo, preco: p.preco, vendas30: p.vendas30 || 0, estoque: p.estoque, full: !!p.eFull }))
+        .sort((a, b) => b.vendas30 - a.vendas30));
+});
 router.get('/seven/astra/estado', auth, (req, res) => res.json(astra.estado()));
 router.post('/seven/astra/rodar', auth, (req, res) => res.json(astra.iniciar((req.body && req.body.grupos) || [])));
 router.get('/seven/ranking_ml/estado', auth, (req, res) => res.json(rankingMt.estado()));
@@ -1183,6 +1209,10 @@ router.get('/seven/ia/estado', auth, (req, res) => ia.estado().then(d => res.jso
 router.get('/seven/ia/faturamento', auth, (req, res) => ia.faturamento(req.query.forcar === '1').then(d => res.json(d)).catch(erroJson(res)));
 router.get('/seven/ia/rankeamento', auth, (req, res) => ia.rankeamento().then(d => res.json(d)).catch(erroJson(res)));
 router.post('/seven/ia/rankeamento', auth, (req, res) => ndjson(res, ia.perguntarRankeamento({ modelo: (req.body && req.body.modelo) || undefined })));
+// Chave do Gemini: fica so no config.json deste PC; a resposta traz so os 4 ultimos caracteres
+router.post('/seven/ia/chave', auth, (req, res) => {
+    try { res.json(ia.salvarChave(req.body && req.body.chave)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); }
+});
 router.get('/seven/ia/saude', auth, (req, res) => ia.saude().then(d => res.json(d)).catch(erroJson(res)));
 router.post('/seven/ia/perguntar', auth, (req, res) => {
     ndjson(res, ia.perguntar({ pergunta: req.body && req.body.pergunta, modelo: (req.body && req.body.modelo) || undefined }));

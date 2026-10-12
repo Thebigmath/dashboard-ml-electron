@@ -10,7 +10,7 @@
     <style>
         body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
         body.page-ready { opacity:1; }
-        .ini { padding:24px; display:flex; flex-direction:column; gap:22px; max-width:1280px; }
+        .ini { padding:24px; display:flex; flex-direction:column; gap:22px; width:100%; box-sizing:border-box; }
         .ini-sec { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--l3); margin:0 0 10px; display:flex; align-items:center; gap:8px; }
         .ini-sec a { margin-left:auto; text-transform:none; letter-spacing:0; font-weight:500; color:var(--blue); text-decoration:none; font-size:12px; }
 
@@ -72,6 +72,7 @@
                 <small class="text-secondary">SEVEN · três ecossistemas, focados em praticidade e automação</small>
             </div>
             <div class="topbar-right" style="gap:10px">
+                <a class="btn-acao" href="/dev" style="text-decoration:none" title="Área do desenvolvedor: saúde do projeto e cotas das APIs"><i class="bi bi-code-slash"></i></a>
                 <a class="btn-acao" href="/auth/gerar_token" style="text-decoration:none" title="Renovar o acesso ao Mercado Livre"><i class="bi bi-key"></i></a>
                 <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0;margin:0;min-width:170px;height:auto;overflow:visible;padding:6px 10px"></div>
                 <button class="btn-acao" id="btnAtualizar" onclick="carregarFaturamento(true)" title="Busca os pedidos de novo no Mercado Livre"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>

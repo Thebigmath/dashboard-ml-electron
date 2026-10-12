@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.63",
+    "data": "2026-10-12",
+    "titulo": "AD HEALTH com regras de preço, ADS, promoções e IA estruturada",
+    "texto": "O AD HEALTH ganhou as ferramentas para decidir preço, ADS e promoções num lugar só.\n\n- Regras de preço da empresa: vendeu 2+ ontem e margem abaixo de 15% → subir +1 ponto; margem de 15% ou mais = tracionado. Feed de tracionados e revisão pela IA.\n- Controle de estoque parado (só Full) com o Queima-margem: Desconto Direto com 5% de margem, só com a sua confirmação.\n- Card Defesa: Campanhas ADS (gasto, receita, ACoS, ROAS) e Central de Promoções (subsidiadas, relâmpago, sem promoção, margem negativa).\n- Card Rankeamento: Mudança de preço, Precificação (busca qualquer anúncio) e Análise da IA estruturada (balanço de ontem, previsão do mês, riscos, oportunidades e ações).\n- IA trocada para o Gemini, com várias chaves revezando.\n- Área do desenvolvedor: saúde do projeto e cotas das APIs (com senha).\n- Telas ajustadas para monitor ultrawide.\n- O aviso de risco de reputação (Platinum) passou para o Harvey, que acompanha as duas contas.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.62",
     "data": "2026-10-06",
     "titulo": "Nova página inicial e o AD HEALTH",

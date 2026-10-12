@@ -203,7 +203,55 @@
         #rdCorpo > .rd-abas button { text-align:left; border-radius:12px; padding:12px 14px; font-size:14px; }
         #rdCorpo > :not(.rd-abas) { grid-column:2; min-width:0; }
         @media (max-width:800px) { #rdPainel.rd-painel { inset:8px; } #rdCorpo { grid-template-columns:1fr; } #rdCorpo > .rd-abas { grid-row:auto; position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:12px; } #rdCorpo > :not(.rd-abas) { grid-column:1; } }
-</style>
+        .ep-cards { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+        @media (max-width: 1000px) { .ep-cards { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        .ep-card { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
+        .ep-card small { font-size:12px; color:var(--l3); display:block; }
+        .ep-card b { font-size:22px; color:var(--l1); display:block; margin-top:4px; font-variant-numeric:tabular-nums; }
+        .ep-card b.roxo { color:#a855f7; }
+        .ep-card span { font-size:12px; color:var(--l3); }
+        .ep-tag { display:inline-block; font-size:11px; font-weight:600; border-radius:6px; padding:1px 7px; margin:4px 4px 0 0; }
+        .ep-tag.promo { background:color-mix(in srgb, #a855f7 14%, transparent); color:#a855f7; }
+        .ep-tag.ads { background:color-mix(in srgb, #ff6b35 14%, transparent); color:#ff6b35; }
+        .ep-tab { border-collapse:collapse; }
+        .ep-tab td, .ep-tab th { vertical-align:middle; padding:12px 14px; border-bottom:1px solid var(--sep); }
+        .ep-tab th { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); white-space:nowrap; }
+        .ep-tab .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .ep-dias.longo { color:#ff9f0a; font-weight:600; }
+        .ep-dias.nunca { color:#ff453a; font-weight:600; }
+        .ep-btn { border:1px solid #a855f7; color:#a855f7; background:none; border-radius:8px; padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+        .ep-btn:disabled { opacity:.4; cursor:default; }
+        .ad-graf { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
+        .ad-graf .leg { display:flex; gap:16px; font-size:12px; color:var(--l3); flex-wrap:wrap; }
+        .ad-graf .leg i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
+        .ad-ok { color:#30D158; } .ad-ruim { color:#ff453a; }
+        .ad-st { font-size:11px; font-weight:600; border-radius:6px; padding:1px 7px; }
+        .ad-st.active { background:color-mix(in srgb, #30D158 14%, transparent); color:#30D158; }
+        .ad-st.paused { background:color-mix(in srgb, #8e8e93 18%, transparent); color:var(--l3); }
+        .pr-frentes { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+        @media (max-width: 900px) { .pr-frentes { grid-template-columns:1fr; } }
+        .pr-frente { background:var(--s1); border:1px solid var(--sep); border-left:4px solid var(--cor); border-radius:14px; padding:16px 18px; cursor:pointer; display:flex; flex-direction:column; gap:6px; }
+        .pr-frente:hover { border-color:var(--cor); }
+        .pr-frente.ativa { box-shadow:0 0 0 2px var(--cor) inset; }
+        .pr-frente h4 { margin:0; font-size:15px; font-weight:600; color:var(--l1); display:flex; align-items:center; gap:8px; }
+        .pr-frente h4 i { color:var(--cor); }
+        .pr-frente p { margin:0; font-size:12px; color:var(--l3); }
+        .pr-frente .n { display:flex; align-items:baseline; justify-content:space-between; margin-top:6px; }
+        .pr-frente .n b { font-size:26px; color:var(--l1); } .pr-frente .n span { font-size:12px; color:var(--l3); margin-left:6px; }
+        .pr-frente .n a { color:var(--cor); font-size:13px; font-weight:600; }
+        .pr-rec { font-size:11px; font-weight:700; border-radius:6px; padding:1px 7px; white-space:nowrap; }
+        .pr-rec.ENTRAR { background:color-mix(in srgb,#30D158 15%,transparent); color:#30D158; }
+        .pr-rec.AVALIAR { background:color-mix(in srgb,#ff9f0a 15%,transparent); color:#ff9f0a; }
+        .pr-rec.NAO_ENTRAR, .pr-rec.SAIR { background:color-mix(in srgb,#ff453a 15%,transparent); color:#ff453a; }
+        .pr-rec.SEM_DADOS, .pr-rec.JA_PARTICIPA { background:color-mix(in srgb,#8e8e93 18%,transparent); color:var(--l3); }
+        .qm-lado { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+        .qm-box { border:1px solid var(--sep); border-radius:12px; padding:14px; }
+        .qm-box.depois { border-color:#a855f7; background:color-mix(in srgb, #a855f7 6%, transparent); }
+        .qm-box small { color:var(--l3); font-size:12px; }
+        .qm-box b { display:block; font-size:24px; margin:4px 0; color:var(--l1); }
+        .qm-box.depois b { color:#a855f7; }
+        .qm-aviso { border:1px solid #ff9f0a; background:color-mix(in srgb, #ff9f0a 8%, transparent); border-radius:10px; padding:10px 12px; font-size:13px; margin-top:12px; }
+    </style>
 </head>
 <body>
 <div id="svSplash">
@@ -234,6 +282,8 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
             <li data-view="concorrentes"><i class="bi bi-people"></i><span>Análise de concorrentes</span></li>
             <li data-view="vendas"><i class="bi bi-graph-up-arrow"></i><span>Análise por tempo de vendas</span></li>
             <li data-view="ia"><i class="bi bi-stars"></i><span>Análise com IA</span></li>
+            <li data-view="regras"><i class="bi bi-sliders"></i><span>Regras de preço</span></li>
+            <li data-view="parados"><i class="bi bi-hourglass-split"></i><span>Controle de estoque parado</span></li>
         </ul>
         <div class="sidebar-footer">v5.0</div>
         <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
@@ -311,6 +361,99 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
 
                 <div class="rt" id="rt"><div class="rt-palco" id="rtPalco"></div></div>
                 <div class="pc-fundo" id="pcFundo"><div class="pc" id="pcBox"></div></div>
+                <div class="sv-view" id="view-regras">
+                    <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                        <div><h3>Regras de preço</h3><small>Vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir +1 ponto · margem <b>≥ 15%</b> = tracionado · <span id="rgAtual">—</span></small></div>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn-acao" onclick="rgRevisar()"><i class="bi bi-stars"></i> Revisar com a IA</button>
+                            <button class="btn-acao" onclick="rgCarregar(true, true)"><i class="bi bi-arrow-clockwise"></i> Recalcular</button>
+                        </div>
+                    </div>
+                    <div class="ep-cards">
+                        <div class="ep-card"><small>Subir +1 ponto de margem</small><b id="rgNSub" style="color:#30D158">—</b><span>vendendo bem com margem abaixo de 15%</span></div>
+                        <div class="ep-card"><small>Tracionados · 1º no Nubimetrics</small><b id="rgNTra" style="color:#0a84ff">—</b><span>margem ≥ 15%: subir é opcional</span></div>
+                        <div class="ep-card"><small>Tracionados fora do 1º</small><b id="rgNOut">—</b><span>margem ≥ 15%, sem mudança</span></div>
+                        <div class="ep-card"><small>Sem mudança / sem dados</small><b id="rgNMan">—</b><span id="rgNManSub">&nbsp;</span></div>
+                    </div>
+                    <div class="sv-aviso" id="rgIA" style="display:none;white-space:pre-wrap"></div>
+                    <div class="pia-sec">Subir +1 ponto de margem</div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto"><div id="rgSubir"><div class="sv-vazio">Carregando…</div></div></div>
+                    <div class="pia-sec" style="margin-top:16px">Feed de tracionados · 1º no Nubimetrics</div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto"><div id="rgTrac"><div class="sv-vazio">Carregando…</div></div></div>
+                </div>
+
+                <!-- ADS e Promocoes vivem dentro do card Defesa (Analise com IA); aqui ficam guardados -->
+                <div id="rdDefDepot" style="display:none">
+                <div class="rd-def-view" id="view-ads">
+                    <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                        <div><h3>Campanhas ADS</h3><small>Product Ads · <span id="adPeriodo">—</span></small></div>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <select class="sv-busca" id="adDias" style="margin-left:0;min-width:120px" onchange="adCarregar(true)">
+                                <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30" selected>Últimos 30 dias</option><option value="60">Últimos 60 dias</option><option value="90">Últimos 90 dias</option>
+                            </select>
+                            <button class="btn-acao" onclick="adCarregar(true, true)"><i class="bi bi-arrow-clockwise"></i> Sincronizar</button>
+                        </div>
+                    </div>
+                    <div class="ad-graf"><div class="leg" id="adLeg">Tendência dos últimos 7 dias</div><div id="adGraf" style="height:170px"></div></div>
+                    <div class="ep-cards">
+                        <div class="ep-card"><small>Gasto</small><b id="adGasto">—</b><span id="adGastoSub">&nbsp;</span></div>
+                        <div class="ep-card"><small>Receita</small><b id="adRec">—</b><span>vendas atribuídas ao ADS</span></div>
+                        <div class="ep-card"><small>ACoS</small><b id="adAcos">—</b><span>gasto ÷ receita</span></div>
+                        <div class="ep-card"><small>ROAS</small><b id="adRoas">—</b><span>receita ÷ gasto</span></div>
+                    </div>
+                    <div class="ep-cards">
+                        <div class="ep-card"><small>Total de campanhas</small><b id="adTot">—</b></div>
+                        <div class="ep-card"><small>Ativas</small><b id="adAt" class="ad-ok">—</b></div>
+                        <div class="ep-card"><small>Pausadas</small><b id="adPa">—</b></div>
+                        <div class="ep-card"><small>Conversões</small><b id="adConv">—</b><span>unidades vendidas pelo ADS</span></div>
+                    </div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto">
+                        <table class="sv-tab ep-tab" style="width:100%"><thead><tr>
+                            <th>Campanha</th><th class="num">Orçamento/dia</th><th class="num">Gasto</th><th class="num">Receita</th><th class="num">ACoS (alvo)</th><th class="num">ROAS</th><th class="num">Cliques</th><th class="num">Vendas</th>
+                        </tr></thead><tbody id="adTabela"><tr><td colspan="8"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
+                    </div>
+                </div>
+
+                <div class="rd-def-view" id="view-promocoes">
+                    <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                        <div><h3>Central de Promoções</h3><small>Quatro frentes com as sugestões prontas · margem = preço da campanha − tarifa − custo − imposto − frete · <span id="prAtual">—</span></small></div>
+                        <button class="btn-acao" onclick="prCarregar(true, true)"><i class="bi bi-arrow-clockwise"></i> Sincronizar</button>
+                    </div>
+                    <div class="pr-frentes">
+                        <div class="pr-frente" style="--cor:#30D158" data-f="subsidiadas" onclick="prFrente('subsidiadas')"><h4><i class="bi bi-shield-check"></i> Subsidiadas</h4><p>Campanhas em que o ML banca parte do desconto e a margem continua acima do mínimo.</p><div class="n"><div><b id="prNSub">—</b><span>sugestões</span></div><a>Abrir ›</a></div></div>
+                        <div class="pr-frente" style="--cor:#ff6b35" data-f="relampago" onclick="prFrente('relampago')"><h4><i class="bi bi-lightning-charge"></i> Relâmpago</h4><p>Ofertas relâmpago: a API não lista os itens, a adesão é pelo painel do ML.</p><div class="n"><div><b id="prNRel">—</b><span>campanhas</span></div><a>Abrir ›</a></div></div>
+                        <div class="pr-frente" style="--cor:#0a84ff" data-f="sem_promocao" onclick="prFrente('sem_promocao')"><h4><i class="bi bi-tag"></i> Anúncios sem promoção</h4><p>Anúncios ativos que não estão em nenhuma promoção no ar.</p><div class="n"><div><b id="prNSem">—</b><span>sem promo</span></div><a>Abrir ›</a></div></div>
+                        <div class="pr-frente" style="--cor:#ff453a" data-f="margem_negativa" onclick="prFrente('margem_negativa')"><h4><i class="bi bi-graph-down-arrow"></i> Margem negativa</h4><p>Anúncios em campanha vendendo no prejuízo: saia da campanha ou corrija o preço.</p><div class="n"><div><b id="prNNeg">—</b><span>no vermelho</span></div><a>Abrir ›</a></div></div>
+                    </div>
+                    <div class="pr-frente" style="--cor:#a855f7;margin-bottom:14px" data-f="campanhas" onclick="prFrente('campanhas')"><h4><i class="bi bi-megaphone"></i> Campanhas disponíveis</h4><p>Todas as campanhas ativas da loja, com quantos anúncios valem a pena entrar.</p><div class="n"><div><b id="prNCamp">—</b><span>campanhas</span></div><a>Abrir ›</a></div></div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto"><div id="prLista"><div class="sv-vazio">Carregando… (a 1ª leitura das campanhas leva cerca de 1 minuto)</div></div></div>
+                </div>
+
+                </div><!-- /rdDefDepot -->
+
+                <div class="sv-view" id="view-parados">
+                    <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                        <div><h3>Controle de estoque parado</h3><small>Só o Full · tempo para esgotar = estoque ÷ média de vendas dos últimos 30 dias · <span id="epColeta">—</span></small></div>
+                        <label class="pia-fraco" style="display:flex;align-items:center;gap:8px">Mín. tempo p/ esgotar
+                            <select class="sv-busca" id="epDias" style="margin-left:0;min-width:110px" onchange="epCarregar(true)">
+                                <option value="30">30 dias</option><option value="60" selected>60 dias</option><option value="90">90 dias</option><option value="180">180 dias</option>
+                            </select></label>
+                    </div>
+                    <div class="ep-cards">
+                        <div class="ep-card"><small>Faturamento em potencial</small><b class="roxo" id="epPot">—</b><span id="epProd">&nbsp;</span></div>
+                        <div class="ep-card"><small>Unidades paradas</small><b id="epUn">—</b><span id="epUnSub">&nbsp;</span></div>
+                        <div class="ep-card"><small>Sem venda em 30 dias</small><b id="epSem">—</b><span>anúncios</span></div>
+                        <div class="ep-card"><small>Queima-margem</small><b>5%</b><span>de margem no Desconto Direto, só manual</span></div>
+                    </div>
+                    <div class="sv-aviso" id="epAviso" style="display:none"></div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto">
+                        <table class="sv-tab ep-tab" style="width:100%"><thead><tr>
+                            <th>Produto</th><th class="num">Estoque</th><th class="num">Vendas 30d</th><th class="num">Tempo p/ esgotar</th>
+                            <th class="num">Preço</th><th class="num">Custo</th><th class="num">Faturamento em potencial</th><th>Ação</th>
+                        </tr></thead><tbody id="epTabela"><tr><td colspan="8"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
+                    </div>
+                </div>
+
                 <div class="sv-view" id="view-ia">
                     <div class="sv-titulo">
                         <div><h3>Análise com IA</h3><small><span id="piaStatus">—</span> · atualiza sozinho a cada 3 minutos</small></div>
@@ -320,23 +463,23 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         </div>
                     </div>
                     <div class="sv-aviso" id="iaAviso" style="display:none"></div>
-                    <div class="pia-sec">O dia em números</div>
-                    <div class="pia-grade" id="piaNumeros"><div class="sv-vazio">Carregando…</div></div>
-                    <div class="pia-sec">O que a IA encontrou</div>
-                    <div class="pia-grade" id="piaGrupos"></div>
+                    <!-- "O dia em numeros" retirado (06/10/2026): o faturamento fica na pagina Inicio -->
+                    <div class="pia-grade" id="piaNumeros" style="display:none"></div>
+                    <!-- "O que a IA encontrou" retirado (07/10/2026) -->
+                    <div class="pia-grade" id="piaGrupos" style="display:none"></div>
                     <div class="pia-sec">Rankeamento e Defesa</div>
                     <div class="rd-grade">
                         <div class="rd-card" id="rdCardRank" onclick="rdAbrir('rank')">
                             <div class="rd-ico"><i class="bi bi-graph-up-arrow"></i></div>
                             <div><div class="rd-tit">Rankeamento</div><div class="rd-sub" id="rdRankSub">Carregando…</div></div>
                             <span class="rd-abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</span>
-                            <div class="rd-topicos"><span><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</span><span><i class="bi bi-trophy"></i> Produtos que mais faturam</span><span><i class="bi bi-stars"></i> Análise da IA</span></div>
+                            <div class="rd-topicos"><span><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</span><span><i class="bi bi-sliders"></i> Precificação</span><span><i class="bi bi-stars"></i> Análise da IA</span></div>
                         </div>
                         <div class="rd-card" id="rdCardDef" onclick="rdAbrir('def')">
                             <div class="rd-ico def"><i class="bi bi-shield-check"></i></div>
                             <div><div class="rd-tit">Defesa</div><div class="rd-sub">Proteger o que já vende</div></div>
                             <span class="rd-abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</span>
-                            <div class="rd-topicos"><span><i class="bi bi-tags"></i> Análise de preço</span><span><i class="bi bi-megaphone"></i> Anúncios patrocinados (ADS)</span><span><i class="bi bi-calendar-event"></i> Promoções</span></div>
+                            <div class="rd-topicos"><span><i class="bi bi-megaphone"></i> Campanhas ADS</span><span><i class="bi bi-tags"></i> Promoções e campanhas do ML</span></div>
                         </div>
                     </div>
                     <div id="rdFundo" onclick="rdFechar()"></div>
@@ -356,7 +499,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                             <textarea id="iaPergunta" class="pia-pergunta" placeholder="Ex.: quais produtos estão mais caros que o concorrente?"></textarea>
                             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                                 <button class="btn-acao" id="iaBtn" onclick="iaPerguntar()"><i class="bi bi-send"></i> Perguntar</button>
-                                <select class="sv-busca" id="iaModelo" style="margin-left:0;min-width:150px" title="Modelo do Ollama"></select>
+                                <select class="sv-busca" id="iaModelo" style="margin-left:0;min-width:150px" title="Modelo do Gemini"></select>
                             </div>
                             <div class="pia-resumo" id="iaResposta"></div>
                             <div class="pia-fraco" id="iaRodape"></div>
@@ -419,6 +562,8 @@ async function carregar(view, forcar) {
         if (view === 'vendas') renderVendas(forcar || !cache.vendas ? (cache.vendas = await api('/api/seven/vendas')) : cache.vendas);
         if (view === 'concorrentes') { if (forcar || !cache.conc) cache.conc = await api('/api/seven/concorrentes'); desenharConc(); }
         if (view === 'ia') iaPainel();
+        if (view === 'parados') await epCarregar(forcar);
+        if (view === 'regras') await rgCarregar(forcar);
     } catch (e) {
         const alvo = { noticias: 'nvConteudo', vendas: 'vdTabela', concorrentes: 'ccTabela' }[view];
         if (alvo) $(alvo).innerHTML = `<tr><td><div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div></td></tr>`;
@@ -606,6 +751,219 @@ async function acompanharAstra() {
     }
 }
 
+// ---- Controle de estoque parado + queima-margem -----------------------------------------------
+const epBRL = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function epTempo(d) {
+    if (d == null) return '<span class="ep-dias nunca">sem venda</span>';
+    if (d >= 365) { const a = Math.floor(d / 365), m = Math.floor((d % 365) / 30); return `<span class="ep-dias longo">${a} ano${a > 1 ? 's' : ''}${m ? ` e ${m} ${m > 1 ? 'meses' : 'mês'}` : ''}</span>`; }
+    return `<span class="ep-dias ${d >= 120 ? 'longo' : ''}">${d} dias</span>`;
+}
+async function epCarregar(forcar) {
+    const dias = $('epDias').value;
+    if (!forcar && cache.parados && cache.parados.min_dias == dias) return epDesenhar(cache.parados);
+    $('epTabela').innerHTML = '<tr><td colspan="8"><div class="sv-vazio">Carregando… (na 1ª vez do dia lê as campanhas de ADS e as promoções)</div></td></tr>';
+    cache.parados = await api('/api/seven/parados?dias=' + encodeURIComponent(dias));
+    epDesenhar(cache.parados);
+}
+function epDesenhar(d) {
+    $('epPot').textContent = epBRL(d.potencial);
+    $('epProd').textContent = `em ${d.produtos} anúncios do Full`;
+    $('epUn').textContent = Number(d.unidades).toLocaleString('pt-BR');
+    $('epUnSub').textContent = `que demoram ${d.min_dias}+ dias para esgotar`;
+    $('epSem').textContent = d.sem_venda;
+    $('epColeta').textContent = d.coletado_em ? 'coleta de ' + new Date(d.coletado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'sem coleta';
+    const av = $('epAviso');
+    if (d.avisos && d.avisos.length) { av.style.display = ''; av.textContent = 'Etiquetas incompletas: ' + d.avisos.join(' · '); } else av.style.display = 'none';
+    $('epTabela').innerHTML = (d.itens || []).map(l => `<tr>
+        <td style="min-width:280px"><b>${esc(rtCurto(l.titulo, 70))}</b><div class="pia-fraco">${esc(l.item_id)} · ${esc(l.sku || '')}</div>
+            ${l.promocao ? `<span class="ep-tag promo">Em ${esc(l.promocao)}</span>` : ''}${l.ads ? `<span class="ep-tag ads">ADS · ${esc(l.ads)}</span>` : ''}</td>
+        <td class="num">${l.estoque}</td><td class="num">${l.vendas30}</td><td class="num">${epTempo(l.dias)}</td>
+        <td class="num">${epBRL(l.preco)}</td><td class="num">${l.custo == null ? '<span class="pia-fraco">sem custo</span>' : epBRL(l.custo)}</td>
+        <td class="num" style="color:#a855f7;font-weight:600">${epBRL(l.potencial)}</td>
+        <td><button class="ep-btn" ${l.custo == null ? 'disabled title="Sem custo na planilha: não dá para calcular a margem"' : ''} onclick="qmAbrir('${esc(l.item_id)}')">Queima-margem</button></td>
+    </tr>`).join('') || '<tr><td colspan="8"><div class="sv-vazio">Nenhum anúncio do Full parado acima desse prazo.</div></td></tr>';
+}
+
+// ---- Campanhas ADS ---------------------------------------------------------------------------------
+async function adCarregar(forcar, sincronizar) {
+    const dias = $('adDias').value;
+    if (!forcar && cache.ads && cache.ads.dias == dias) return adDesenhar(cache.ads);
+    $('adTabela').innerHTML = '<tr><td colspan="8"><div class="sv-vazio">Carregando…</div></td></tr>';
+    try { cache.ads = await api(`/api/seven/ads?dias=${dias}${sincronizar ? '&forcar=1' : ''}`); adDesenhar(cache.ads); }
+    catch (e) { $('adTabela').innerHTML = `<tr><td colspan="8"><div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div></td></tr>`; }
+}
+function adGrafico(serie) {
+    if (!serie.length) return '<div class="sv-vazio">Sem série diária.</div>';
+    const W = 700, H = 150, pad = 26, max = Math.max(...serie.map(x => Math.max(x.receita, x.gasto)), 1);
+    const X = (i) => pad + i * (W - 2 * pad) / Math.max(1, serie.length - 1), Y = (v) => H - 20 - v / max * (H - 34);
+    const linha = (k) => serie.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(x[k]).toFixed(1)}`).join(' ');
+    const area = linha('receita') + ` L${X(serie.length - 1)},${H - 20} L${X(0)},${H - 20} Z`;
+    const pts = (k, cor) => serie.map((x, i) => `<circle cx="${X(i)}" cy="${Y(x[k])}" r="3" fill="${cor}"><title>${diaBR(x.dia)}: ${epBRL(x[k])}</title></circle>`).join('');
+    const dias = serie.map((x, i) => `<text x="${X(i)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="currentColor" opacity=".55">${x.dia.slice(8, 10)}/${x.dia.slice(5, 7)}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none" style="color:var(--l3)">
+        <path d="${area}" fill="#30D158" opacity=".12"/><path d="${linha('receita')}" fill="none" stroke="#30D158" stroke-width="2"/>
+        <path d="${linha('gasto')}" fill="none" stroke="#ff6b35" stroke-width="2"/>${pts('receita', '#30D158')}${pts('gasto', '#ff6b35')}${dias}</svg>`;
+}
+function adDesenhar(d) {
+    const g7 = d.serie.reduce((s, x) => s + x.gasto, 0), r7 = d.serie.reduce((s, x) => s + x.receita, 0);
+    $('adLeg').innerHTML = `<span>Tendência dos últimos 7 dias</span><span><i style="background:#ff6b35"></i>Gasto ${epBRL(g7)}</span><span><i style="background:#30D158"></i>Receita ${epBRL(r7)}</span><span><b>ROAS ${g7 ? (r7 / g7).toFixed(2).replace('.', ',') : '—'}x</b></span>`;
+    $('adGraf').innerHTML = adGrafico(d.serie);
+    $('adPeriodo').textContent = `${diaBR(d.de)} a ${diaBR(d.ate)} · atualizado às ${new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    $('adGasto').textContent = epBRL(d.gasto); $('adGastoSub').textContent = `${d.anunciante || ''}`;
+    $('adRec').textContent = epBRL(d.receita);
+    $('adAcos').textContent = d.acos == null ? '—' : String(d.acos).replace('.', ',') + '%';
+    $('adRoas').textContent = d.roas == null ? '—' : String(d.roas).replace('.', ',') + 'x';
+    $('adTot').textContent = d.total; $('adAt').textContent = d.ativas; $('adPa').textContent = d.pausadas; $('adConv').textContent = d.conversoes;
+    $('adTabela').innerHTML = d.campanhas.map(c => {
+        const acima = c.acos != null && c.acos_alvo && c.acos > c.acos_alvo;
+        return `<tr><td><b>${esc(c.nome)}</b> <span class="ad-st ${esc(c.status)}">${c.status === 'active' ? 'ativa' : c.status === 'paused' ? 'pausada' : esc(c.status)}</span>
+            <div class="pia-fraco">${esc(c.estrategia || '')}</div></td>
+            <td class="num">${epBRL(c.orcamento_dia)}</td><td class="num">${epBRL(c.gasto)}</td><td class="num">${epBRL(c.receita)}</td>
+            <td class="num ${acima ? 'ad-ruim' : ''}">${c.acos == null ? '—' : String(c.acos).replace('.', ',') + '%'}${c.acos_alvo ? ` <span class="pia-fraco">(${String(c.acos_alvo).replace('.', ',')}%)</span>` : ''}</td>
+            <td class="num">${c.roas == null ? '—' : String(c.roas).replace('.', ',') + 'x'}</td><td class="num">${Number(c.cliques).toLocaleString('pt-BR')}</td><td class="num">${c.vendas}</td></tr>`;
+    }).join('') || '<tr><td colspan="8"><div class="sv-vazio">Nenhuma campanha.</div></td></tr>';
+}
+
+// ---- Central de Promoções (so leitura) -------------------------------------------------------------
+let prFrenteAtual = 'subsidiadas';
+const prDia = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
+const prPct = (v) => v == null ? '—' : String(v).replace('.', ',') + '%';
+async function prCarregar(forcar, sincronizar) {
+    if (!forcar && cache.promo) return prDesenhar();
+    $('prLista').innerHTML = '<div class="sv-vazio">Lendo as campanhas no Mercado Livre… (cerca de 1 minuto)</div>';
+    try { cache.promo = await api('/api/seven/promocoes' + (sincronizar ? '?forcar=1' : '')); prDesenhar(); }
+    catch (e) { $('prLista').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
+}
+function prFrente(f) { prFrenteAtual = f; prDesenhar(); }
+function prTabelaItens(itens, vazio) {
+    if (!itens.length) return `<div class="sv-vazio">${vazio}</div>`;
+    return `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Produto</th><th>Campanha</th><th class="num">Preço → campanha</th><th class="num">Desconto</th><th class="num">ML banca</th><th class="num">Margem (hoje)</th><th>Recomendação</th></tr></thead><tbody>${
+        itens.map(l => `<tr><td style="min-width:240px"><b>${esc(rtCurto(l.titulo, 60))}</b><div class="pia-fraco">${esc(l.item_id)} · ${esc(l.sku || '')}</div></td>
+            <td><div>${esc(l.campanha)}</div><div class="pia-fraco">${esc(l.tipo)}${l.prazo_adesao ? ' · adesão até ' + prDia(l.prazo_adesao) : ''}</div></td>
+            <td class="num">${epBRL(l.preco_original)} → <b>${epBRL(l.preco_promo)}</b></td><td class="num">${prPct(l.desconto_pct)}</td>
+            <td class="num" style="color:#30D158;font-weight:600">${l.ml_banca_pct ? prPct(+Number(l.ml_banca_pct).toFixed(2)) : '—'}</td>
+            <td class="num"><b style="color:${l.margem_pct == null ? 'var(--l3)' : l.margem_pct < 0 ? '#ff453a' : 'var(--l1)'}">${prPct(l.margem_pct)}</b> <span class="pia-fraco">(${prPct(l.margem_hoje_pct)})</span></td>
+            <td><span class="pr-rec ${esc(l.recomendacao)}">${esc(l.recomendacao.replace('_', ' '))}</span><div class="pia-fraco" style="max-width:240px">${esc(l.motivo)}</div></td></tr>`).join('')}</tbody></table>`;
+}
+function prDesenhar() {
+    const d = cache.promo; if (!d) return;
+    $('prNSub').textContent = d.frentes.subsidiadas; $('prNRel').textContent = d.frentes.relampago || '—';
+    $('prNSem').textContent = d.frentes.sem_promocao; $('prNNeg').textContent = d.frentes.margem_negativa; $('prNCamp').textContent = d.campanhas.length;
+    $('prAtual').textContent = 'atualizado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    document.querySelectorAll('.pr-frente').forEach(e => e.classList.toggle('ativa', e.dataset.f === prFrenteAtual));
+    const f = prFrenteAtual;
+    let h = '';
+    if (f === 'subsidiadas') h = prTabelaItens(d.itens.filter(l => l.recomendacao === 'ENTRAR' && l.ml_banca_pct), 'Nenhuma campanha subsidiada com margem acima do mínimo agora.');
+    if (f === 'margem_negativa') h = prTabelaItens(d.itens.filter(l => l.recomendacao === 'SAIR'), 'Nenhum anúncio em campanha vendendo no prejuízo. Bom sinal.');
+    if (f === 'relampago') h = `<div class="sv-vazio">${d.frentes.relampago ? `${d.frentes.relampago} campanha(s) relâmpago ativa(s). A API do ML não lista os itens delas: a adesão é feita pelo painel de promoções do ML.` : 'Nenhuma oferta relâmpago ativa.'}</div>`;
+    if (f === 'sem_promocao') h = d.sem_promocao.length ? `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Produto</th><th class="num">Preço</th><th class="num">Estoque</th><th class="num">Vendas 30d</th><th>Campanhas em que pode entrar</th></tr></thead><tbody>${
+        d.sem_promocao.slice(0, 150).map(p => { const op = d.itens.filter(l => l.item_id === p.item_id && l.estado !== 'started');
+            const boas = op.filter(l => l.recomendacao === 'ENTRAR');
+            return `<tr><td><b>${esc(rtCurto(p.titulo, 64))}</b><div class="pia-fraco">${esc(p.item_id)} · ${esc(p.sku || '')}</div></td><td class="num">${epBRL(p.preco)}</td><td class="num">${p.estoque ?? '—'}</td><td class="num">${p.vendas30 ?? 0}</td>
+            <td>${op.length ? `${boas.length ? `<span class="pr-rec ENTRAR">${boas.length} com margem boa</span> ` : ''}<span class="pia-fraco">${op.map(l => esc(l.campanha)).slice(0, 3).join(' · ')}</span>` : '<span class="pia-fraco">nenhuma campanha disponível</span>'}</td></tr>`; }).join('')}</tbody></table>
+        ${d.sem_promocao.length > 150 ? `<div class="sv-vazio">Mostrando os 150 que mais vendem de ${d.sem_promocao.length}.</div>` : ''}` : '<div class="sv-vazio">Todos os anúncios ativos estão em alguma promoção.</div>';
+    if (f === 'campanhas') h = `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Campanha</th><th>Tipo</th><th class="num">Adesão até</th><th class="num">Termina</th><th class="num">Anúncios elegíveis</th><th class="num">Participando</th><th class="num">Valem entrar</th></tr></thead><tbody>${
+        d.campanhas.map(c => `<tr><td><b>${esc(c.nome)}</b> <span class="ad-st ${c.status === 'started' ? 'active' : 'paused'}">${c.status === 'started' ? 'no ar' : 'em breve'}</span></td><td class="pia-fraco">${esc(c.tipo)}</td>
+            <td class="num">${prDia(c.prazo_adesao)}</td><td class="num">${prDia(c.fim)}</td><td class="num">${c.tipo === 'LIGHTNING' ? '—' : c.itens}</td><td class="num">${c.participando}</td><td class="num" style="color:#30D158;font-weight:600">${c.entrar}</td></tr>`).join('')}</tbody></table>`;
+    $('prLista').innerHTML = h;
+}
+
+// ---- Regras de preço (motor_preco) ---------------------------------------------------------------
+async function rgCarregar(forcar, recalcular) {
+    if (!forcar && cache.regras) return rgDesenhar();
+    $('rgSubir').innerHTML = $('rgTrac').innerHTML = '<div class="sv-vazio">Calculando a margem dos anúncios que entram nas regras…</div>';
+    try { cache.regras = await api('/api/seven/regras_preco' + (recalcular ? '?forcar=1' : '')); rgDesenhar(); }
+    catch (e) { $('rgSubir').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; $('rgTrac').innerHTML = ''; }
+}
+function rgTabela(itens, vazio, botao) {
+    if (!itens.length) return `<div class="sv-vazio">${vazio}</div>`;
+    return `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Produto</th><th class="num">Ontem</th><th class="num">Média/dia</th><th class="num">Nubimetrics</th><th class="num">Busca</th><th class="num">Preço · margem</th><th class="num">Sugerido · margem</th><th>Por quê</th><th></th></tr></thead><tbody>${
+        itens.map(l => `<tr><td style="min-width:220px"><b>${esc(rtCurto(l.titulo, 58))}</b><div class="pia-fraco">${esc(l.item_id)} · ${esc(l.sku || '')}${l.curva ? ' · curva ' + esc(l.curva) : ''}</div></td>
+            <td class="num"><b>${l.ontem}</b></td><td class="num">${String(l.media_dia ?? '—').replace('.', ',')}</td>
+            <td class="num">${l.rank_nub ? `${l.rank_nub}º de ${l.grupo_anuncios}` : '—'}</td><td class="num">${esc(l.rank_ml || '—')}</td>
+            <td class="num">${epBRL(l.preco)}<div class="pia-fraco">${prPct(l.margem_pct)}</div></td>
+            <td class="num">${l.sugerido ? `<b>${epBRL(l.sugerido.preco)}</b><div class="pia-fraco">${prPct(l.sugerido.margem_pct)} · +${prPct(l.aumento_pct)}</div>` : '—'}</td>
+            <td class="pia-fraco" style="max-width:260px">${esc(l.motivo)}</td>
+            <td>${l.sugerido ? `<button class="ep-btn" style="border-color:${botao.cor};color:${botao.cor}" onclick="rgAplicar('${esc(l.item_id)}', ${l.sugerido.preco})">${botao.txt}</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
+}
+function rgDesenhar() {
+    const d = cache.regras; if (!d) return;
+    $('rgAtual').textContent = 'calculado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('rgNSub').textContent = d.subir.length; $('rgNTra').textContent = d.tracionados.length; $('rgNOut').textContent = d.tracionados_outros.length;
+    $('rgNMan').textContent = d.manter.length + d.sem_dados.length; $('rgNManSub').textContent = `${d.manter.length} sem mudança · ${d.sem_dados.length} sem dados`;
+    $('rgSubir').innerHTML = rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' });
+    $('rgTrac').innerHTML = rgTabela(d.tracionados, 'Nenhum anúncio em 1º no Nubimetrics com margem de 15% ou mais.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' });
+}
+async function rgAplicar(item, preco) {
+    const l = [...cache.regras.subir, ...cache.regras.tracionados].find(x => x.item_id === item);
+    if (!confirm(`Alterar o preço de ${l.sku} no Mercado Livre?\n\n${epBRL(l.preco)} (${prPct(l.margem_pct)}) → ${epBRL(preco)} (${prPct(l.sugerido.margem_pct)})`)) return;
+    try {
+        const r = await fetch('/api/seven/regras_preco/' + item, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco }) }).then(x => x.json());
+        if (!r.ok) throw new Error(r.erro || 'o ML recusou');
+        alert(`Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}. Fica no histórico e pode ser desfeito pelo precificador.`);
+        delete cache.regras; rd.dados = null; if (rd.aberto === 'rank') rdDesenhar(); else rgCarregar(true); rdResumo();
+    } catch (e) { alert('Não alterou: ' + e.message); }
+}
+async function rgRevisar() {
+    const el = $('rgIA'); el.style.display = ''; el.textContent = 'A IA está revisando as decisões de hoje…';
+    try {
+        const resp = await fetch('/api/seven/regras_preco_ia', { method: 'POST' });
+        const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = '', texto = '';
+        while (true) {
+            const { done, value } = await reader.read(); if (done) break;
+            buf += dec.decode(value, { stream: true }); let i;
+            while ((i = buf.indexOf('\n')) >= 0) {
+                const linha = buf.slice(0, i); buf = buf.slice(i + 1); if (!linha.trim()) continue;
+                const o = JSON.parse(linha);
+                if (o.tipo === 'token') { texto += o.texto; el.textContent = texto; }
+                if (o.tipo === 'erro') throw new Error(o.texto);
+                if (o.tipo === 'espera') el.textContent = `A IA está revisando… ${o.s}s`;
+            }
+        }
+        el.innerHTML = '<b><i class="bi bi-stars"></i> Revisão da IA (Gemini)</b><br>' + esc(texto);
+    } catch (e) { el.innerHTML = `<span style="color:#ff453a">IA indisponível: ${esc(e.message)}</span>`; }
+}
+
+let qm = null;
+async function qmAbrir(item) {
+    $('pcFundo').classList.add('on');
+    $('pcBox').innerHTML = '<div class="sv-vazio">Calculando o preço de 5% de margem…</div>';
+    try { qm = await api('/api/seven/queima/' + item); qmDesenhar(); }
+    catch (e) { $('pcBox').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div><button class="btn-acao" onclick="pcFechar()">Fechar</button>`; }
+}
+function qmDesenhar(msg) {
+    const d = qm;
+    const avisos = [];
+    if (d.promocao_ativa) avisos.push(`Em <b>${esc(d.promocao_ativa.nome)}</b> (${esc(d.promocao_ativa.tipo)}): ao ativar, sai dessa promoção e entra no Desconto Direto.`);
+    if (d.ads) avisos.push(`Em ADS na campanha <b>${esc(d.ads)}</b>: continua no ADS.`);
+    if (d.aviso) avisos.push(esc(d.aviso));
+    const lado = (t, x, cls) => x ? `<div class="qm-box ${cls}"><small>${t}</small><b>${epBRL(x.preco)}</b>
+        <div style="font-size:13px;color:${x.margem_pct < 0 ? '#ff453a' : 'var(--l2)'}">${String(x.margem_pct).replace('.', ',')}% de margem · ${epBRL(x.margem)}</div></div>` : '';
+    $('pcBox').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0;font-size:18px">Ativar queima-margem</h3>
+            <button class="btn-acao" onclick="pcFechar()" title="Fechar">✕</button></div>
+        <div class="pia-fraco" style="margin-top:10px">${esc(d.item_id)} · ${esc(d.sku)}</div><div style="font-weight:600">${esc(d.titulo)}</div>
+        ${avisos.length ? `<div class="qm-aviso">${avisos.join('<br>')}</div>` : ''}
+        <div class="qm-lado">${lado('Antes', d.antes, '')}${lado(`Depois · Desconto Direto ${d.desconto_pct != null ? '(−' + String(d.desconto_pct).replace('.', ',') + '%)' : ''}`, d.depois, 'depois')}</div>
+        <div class="pia-fraco">Custo ${epBRL(d.custo)} · frete ${epBRL(d.frete)} · imposto ${d.imposto_pct}% · tarifa do ML pelo preço novo. O Desconto Direto fica 14 dias no ar.</div>
+        ${d.pode ? '' : `<div class="qm-aviso" style="border-color:#ff453a">${esc(d.motivo)}</div>`}
+        <div id="qmMsg" style="margin-top:12px">${msg || ''}</div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">
+            <button class="btn-acao" onclick="pcFechar()">Cancelar</button>
+            <button class="btn-acao" id="qmBtn" style="background:#a855f7;color:#fff;border-color:#a855f7" ${d.pode ? '' : 'disabled'} onclick="qmAplicar()">Ativar queima-margem</button></div>`;
+}
+async function qmAplicar() {
+    if (!qm || !qm.pode) return;
+    if (!confirm(`Colocar ${qm.sku} em Desconto Direto por ${epBRL(qm.depois.preco)} (5% de margem)?`)) return;
+    $('qmBtn').disabled = true; $('qmMsg').textContent = 'Enviando ao Mercado Livre…';
+    try {
+        const r = await fetch('/api/seven/queima/' + qm.item_id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco: qm.depois.preco }) }).then(x => x.json());
+        if (!r.ok) throw new Error(r.erro || 'o ML recusou');
+        $('qmMsg').innerHTML = `<b style="color:#30D158">Ativado: ${epBRL(r.antes)} → ${epBRL(r.depois)} em Desconto Direto até ${new Date(r.ate).toLocaleDateString('pt-BR')}.</b>`;
+        delete cache.parados;
+    } catch (e) { $('qmMsg').innerHTML = `<span style="color:#ff453a">${esc(e.message)}</span>`; $('qmBtn').disabled = false; }
+}
+
 // planilha
 function baixar(tipo) { location.href = '/api/seven/planilha?tipo=' + tipo; }
 
@@ -658,7 +1016,7 @@ async function atualizarNaPrimeiraAberturaDoDia() {
     if (await recarregarTudo()) await fetch('/api/seven/abertura/feito', { method: 'POST' }).catch(() => {});
 }
 
-// ---- Análise com IA: Ollama local, resposta em NDJSON (token a token) ---------------------
+// ---- Análise com IA: Gemini, resposta em NDJSON ----------------------------------------------
 let iaEstado = null;
 const iaEXEMPLOS = [
     'Quais produtos estão com preço acima do concorrente que mais vende?',
@@ -673,13 +1031,12 @@ async function iaCarregar() {
         const sel = $('iaModelo');
         if (iaEstado.online) {
             aviso.style.display = 'none';
-            sel.innerHTML = (iaEstado.modelos || []).map(m => `<option value="${esc(m.nome)}">${esc(m.nome)} · ${m.gb} GB</option>`).join('');
+            sel.innerHTML = (iaEstado.modelos || []).map(m => `<option value="${esc(m.nome)}">${esc(m.nome)}</option>`).join('');
             if (iaEstado.modelo) sel.value = iaEstado.modelo;
-            $('iaSub').textContent = `Ollama em ${iaEstado.url} · sem GPU, a 1ª pergunta carrega o modelo e demora mais`;
+            $('iaSub').innerHTML = `Gemini · chave ••••${esc(iaEstado.chave_final)} <a href="#" onclick="iaPedirChave();return false" style="color:var(--blue)">trocar</a>`;
         } else {
             aviso.style.display = '';
-            aviso.innerHTML = `<b>Ollama desligado.</b> ${esc(iaEstado.erro || 'sem resposta em ' + iaEstado.url)}`
-                + ` — abra o Ollama e <button class="btn-acao" onclick="iaCarregar()">verifique de novo</button>.`;
+            aviso.innerHTML = iaFormChave('<b>Falta a chave do Gemini neste PC.</b> Cole a chave da API do Google AI Studio para ligar a Análise com IA.');
             sel.innerHTML = '';
         }
         $('iaExemplos').innerHTML = iaEXEMPLOS
@@ -690,6 +1047,32 @@ async function iaCarregar() {
         aviso.style.display = '';
         aviso.innerHTML = `<div style="color:#ff453a">Erro: ${esc(e.message)}</div>`;
     }
+}
+
+// Formulario da chave do Gemini: a chave vai so para o config.json deste PC (nunca para o git)
+function iaFormChave(titulo) {
+    return `${titulo}<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <input type="password" id="iaChave" class="sv-busca" style="margin-left:0;flex:1;min-width:260px" placeholder="Chave da API do Gemini" autocomplete="off">
+        <button class="btn-acao" onclick="iaSalvarChave()"><i class="bi bi-key"></i> Salvar</button></div>
+        <div id="iaChaveMsg" class="pia-fraco" style="margin-top:6px"></div>`;
+}
+function iaPedirChave() {
+    const aviso = $('iaAviso');
+    aviso.style.display = '';
+    aviso.innerHTML = iaFormChave('<b>Trocar a chave do Gemini.</b>');
+    $('iaChave').focus();
+}
+async function iaSalvarChave() {
+    const msg = $('iaChaveMsg');
+    try {
+        const r = await fetch('/api/seven/ia/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: $('iaChave').value }) });
+        const d = await r.json();
+        if (!r.ok || !d.ok) throw new Error(d.erro || 'não salvou');
+        msg.textContent = 'Chave salva (final ' + d.final + ').';
+        $('iaSaudeBtn').disabled = false; $('iaBtn').disabled = false;
+        await iaCarregar();
+        iaPainel(true);
+    } catch (e) { msg.innerHTML = `<span style="color:#ff453a">${esc(e.message)}</span>`; }
 }
 
 async function iaPerguntar() {
@@ -866,13 +1249,14 @@ async function pcAplicar(confirmarGrande) {
 // ---- Cards Rankeamento e Defesa (arquitetura "sistema de defesa e Rankeamento") ----
 let rd = { aberto: null, aba: 'preco', dados: null, ia: '', rodando: false };
 const rdR$ = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-async function rdCarregar(forcar) { if (!rd.dados || forcar) rd.dados = await api('/api/seven/ia/rankeamento'); return rd.dados; }
+// O card usa o motor de regras de preço (o mesmo da tela "Regras de preço"); a regra antiga do ±1% saiu.
+async function rdCarregar(forcar) { if (!rd.dados || forcar) { rd.dados = await api('/api/seven/regras_preco'); cache.regras = rd.dados; } return rd.dados; }
 async function rdResumo() {
-  try { const d = await rdCarregar(true); $('rdRankSub').textContent = `${d.ajustar.length} produtos para ajustar preço (${d.resumo.para_baixar} baixar · ${d.resumo.para_subir} subir) · ${d.top.length} que mais faturam`; if (rd.aberto === 'rank') rdDesenhar(); }
+  try { const d = await rdCarregar(true); $('rdRankSub').textContent = `${d.subir.length} para subir +1 ponto de margem · ${d.tracionados.length} tracionados em 1º no Nubimetrics`; if (rd.aberto === 'rank') rdDesenhar(); }
   catch (e) { $('rdRankSub').textContent = 'Erro: ' + e.message; }
 }
 function rdAbrir(qual) {
-  rd.aberto = qual; rd.aba = qual === 'rank' ? 'preco' : 'precos';
+  rd.aberto = qual; rd.aba = qual === 'rank' ? 'preco' : (rd.abaDef || 'ads');
   const rank = qual === 'rank';
   $('rdTopoIco').className = 'rd-ico' + (rank ? '' : ' def'); $('rdTopoIco').innerHTML = `<i class="bi ${rank ? 'bi-graph-up-arrow' : 'bi-shield-check'}"></i>`;
   $('rdTopoTit').textContent = rank ? 'Rankeamento' : 'Defesa';
@@ -885,41 +1269,93 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && rd.aberto 
 function rdAba(a) { rd.aba = a; rdDesenhar(); }
 function rdDesenhar() {
   const el = $('rdCorpo');
+  ['view-ads', 'view-promocoes'].forEach(id => { const v = $(id); if (v && $('rdDefDepot') && v.parentElement !== $('rdDefDepot')) $('rdDefDepot').appendChild(v); });
   if (rd.aberto === 'rank') {
-    const abas = `<div class="rd-abas"><button class="${rd.aba === 'preco' ? 'on' : ''}" onclick="rdAba('preco')"><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</button>
-      <button class="${rd.aba === 'top' ? 'on' : ''}" onclick="rdAba('top')"><i class="bi bi-trophy"></i> Produtos que mais faturam</button>
+    const abas = `<div class="rd-abas"><button class="${rd.aba === 'preco' ? 'on' : ''}" onclick="rdAba('preco')"><i class="bi bi-currency-dollar"></i> Mudança de preço</button>
+      <button class="${rd.aba === 'precif' ? 'on' : ''}" onclick="rdAba('precif')"><i class="bi bi-sliders"></i> Precificação</button>
       <button class="${rd.aba === 'ia' ? 'on' : ''}" onclick="rdAba('ia')"><i class="bi bi-stars"></i> Análise da IA</button></div>`;
     const d = rd.dados;
     if (!d) { el.innerHTML = abas + '<div class="sv-vazio">Carregando…</div>'; rdCarregar().then(rdDesenhar).catch(e => el.innerHTML = abas + `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`); return; }
     if (rd.aba === 'preco') {
-      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Produtos com sinal de preço, por faturamento. A análise sugere <b>+1%</b> ou <b>−1%</b>; você abre o precificador, vê a margem e decide (semiautomático).</div>
-        <table class="rd-tab"><tr><th>Produto</th><th>Sinal</th><th style="text-align:right">Fat. 30d</th><th style="text-align:right">Preço</th><th style="text-align:right">DF%</th><th style="text-align:right">Rank Nub</th><th style="text-align:right">Busca</th><th>Sugestão</th><th></th></tr>
-        ${d.ajustar.map(l => `<tr><td><b>${esc(l.sku)}</b><div class="pia-fraco">${esc(rtCurto(l.titulo, 46))}</div></td><td class="pia-fraco" style="max-width:240px">${esc(l.sinal_texto)}</td>
-          <td class="n">${rdR$(l.faturamento)}</td><td class="n">${l.preco ? 'R$ ' + Number(l.preco).toFixed(2).replace('.', ',') : '—'}</td><td class="n">${l.df == null ? '—' : (l.df > 0 ? '+' : '') + l.df + '%'}</td>
-          <td class="n">${l.rank_nub ? l.rank_nub + 'º/' + l.grupo_anuncios : '—'}</td><td class="n">${l.rank_busca ? l.rank_busca + 'º' : '—'}</td>
-          <td><span class="rd-dir ${l.direcao < 0 ? 'desce' : 'sobe'}">${l.direcao < 0 ? '▼ −1%' : '▲ +1%'}</span>${l.sugestao_preco ? `<div class="pia-fraco">R$ ${Number(l.sugestao_preco).toFixed(2).replace('.', ',')}</div>` : ''}</td>
-          <td><button class="btn-acao" onclick="pcAbrir('${esc(l.item_id)}','${esc(l.sinal || '')}')"><i class="bi bi-sliders"></i> Precificar</button></td></tr>`).join('') || '<tr><td colspan="9" class="sv-vazio">Nenhum produto com sinal de preço hoje.</td></tr>'}</table>`;
+      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>
+        <div class="pia-sec">Subir +1 ponto de margem</div><div style="overflow-x:auto">${rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' })}</div>
+        <div class="pia-sec" style="margin-top:14px">Tracionados · 1º no Nubimetrics</div><div style="overflow-x:auto">${rgTabela(d.tracionados, 'Nenhum tracionado em 1º no Nubimetrics.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' })}</div>`;
+    } else if (rd.aba === 'precif') {
+      // Precificação: qualquer anúncio ativo -> o precificador (margem Clássico/Premium e mudar o preço)
+      el.innerHTML = abas + `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <input class="sv-busca" id="rdBusca" style="margin-left:0;flex:1;min-width:260px" placeholder="Buscar por SKU, título ou MLB…" value="${esc(rd.busca || '')}" oninput="rd.busca=this.value;rdPrecifLista()">
+          <span class="pia-fraco">Abre o precificador: margem no Clássico e no Premium, e muda o preço com confirmação.</span></div>
+        <div id="rdPrecifLista"><div class="sv-vazio">Carregando os anúncios…</div></div>`;
+      rdProdutos().then(rdPrecifLista).catch(e => { const x = $('rdPrecifLista'); if (x) x.innerHTML = `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`; });
+      setTimeout(() => { const i = $('rdBusca'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 50);
     } else if (rd.aba === 'ia') {
-      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:6px">A IA (Ollama, nesta máquina) lê os ${Math.min(12, d.ajustar.length)} primeiros produtos da Análise de mudança de preço e decide, um a um, subir 1%, baixar 1% ou manter. Quem aplica é você, pelo precificador.</div>
-        <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><button class="btn-acao" id="rdIaBtn" onclick="rdIA()" ${rd.rodando ? 'disabled' : ''}><i class="bi bi-stars"></i> Analisar com a IA (Ollama)</button><span class="pia-fraco">A IA decide, produto a produto, subir 1%, baixar 1% ou manter, com o motivo.</span></div>
-        <div class="rd-ia" id="rdIa" style="${rd.ia || rd.rodando ? '' : 'display:none'}">${rd.ia ? esc(rd.ia) : rd.rodando ? '<span class="pia-fraco">a IA está analisando… (cerca de 1 minuto nesta máquina)</span>' : ''}</div>`;
-    } else {
-      el.innerHTML = abas + `<table class="rd-tab"><tr><th>SKU</th><th>Produto</th><th style="text-align:right">Qtd vendida 30d</th><th style="text-align:right">Qtd concorrente</th><th style="text-align:right">Vendas R$ 30d</th><th style="text-align:right">Nosso rank (Nub)</th><th style="text-align:right">Rank na busca</th></tr>
-        ${d.top.map(l => `<tr><td><b>${esc(l.sku)}</b></td><td>${esc(rtCurto(l.titulo, 52))}</td><td class="n">${l.qtd_vendida ?? '—'}</td>
-          <td class="n" title="${esc(l.concorrente || '')}">${l.qtd_concorrente ?? '—'}</td><td class="n">${rdR$(l.faturamento)}</td>
-          <td class="n">${l.rank_nub ? l.rank_nub + 'º de ' + l.grupo_anuncios : '—'}</td><td class="n">${l.rank_busca ? l.rank_busca + 'º (pág. ' + l.pagina_busca + ')' : '—'}</td></tr>`).join('')}</table>
-        <div class="pia-fraco" style="margin-top:8px">Qtd do concorrente = vendas do concorrente que mais vende no grupo do Nubimetrics (Astra). Rank na busca = Ranking ML (Issacar).</div>`;
+      rdBriefing(el, abas);
     }
   } else if (rd.aberto === 'def') {
-    const abas = `<div class="rd-abas"><button class="${rd.aba === 'precos' ? 'on' : ''}" onclick="rdAba('precos')"><i class="bi bi-tags"></i> Análise de preço</button>
-      <button class="${rd.aba === 'ads' ? 'on' : ''}" onclick="rdAba('ads')"><i class="bi bi-megaphone"></i> ADS</button>
-      <button class="${rd.aba === 'promo' ? 'on' : ''}" onclick="rdAba('promo')"><i class="bi bi-calendar-event"></i> Promoções</button></div>`;
-    const txt = { precos: '<b>Análise de preço</b> — coleta pela API do Mercado Livre para acompanhar os preços dos nossos anúncios e dos concorrentes e avisar quando alguém mexer.',
-      ads: '<b>ADS (anúncios patrocinados)</b> — análise de Product Ads por produto pela rota de ads da API: quanto cada anúncio gasta, quanto vende pelo patrocínio e onde vale investir.',
-      promo: '<b>Promoções</b> — tabela das promoções e campanhas pela API, com um bot que avisa quando uma promoção está acabando, calendário das campanhas e aviso de promoção nova.' }[rd.aba];
-    el.innerHTML = abas + `<div class="rd-breve">${txt}<div class="sv-aviso" style="margin-top:12px">Em construção — próxima etapa do SEVEN.</div></div>`;
+    // Defesa = Campanhas ADS + Promocoes (as telas sao as mesmas; so mudam de lugar)
+    if (rd.aba !== 'ads' && rd.aba !== 'promo') rd.aba = 'ads';
+    rd.abaDef = rd.aba;
+    const abas = `<div class="rd-abas"><button class="${rd.aba === 'ads' ? 'on' : ''}" onclick="rdAba('ads')"><i class="bi bi-megaphone"></i> Campanhas ADS</button>
+      <button class="${rd.aba === 'promo' ? 'on' : ''}" onclick="rdAba('promo')"><i class="bi bi-tags"></i> Promoções</button></div>`;
+    // as telas voltam ao deposito antes de o corpo ser trocado (senao somem junto com o innerHTML)
+    ['view-ads', 'view-promocoes'].forEach(id => { const v = $(id); if (v && v.parentElement !== $('rdDefDepot')) $('rdDefDepot').appendChild(v); });
+    el.innerHTML = abas + '<div id="rdDefSlot"></div>';
+    const v = $(rd.aba === 'ads' ? 'view-ads' : 'view-promocoes');
+    $('rdDefSlot').appendChild(v);
+    (rd.aba === 'ads' ? adCarregar(false) : prCarregar(false)).catch(() => {});
   }
 }
+// ---- Precificação (card Rankeamento) ----
+async function rdProdutos() { if (!rd.produtos) rd.produtos = await api('/api/seven/produtos'); return rd.produtos; }
+function rdPrecifLista() {
+  const alvo = $('rdPrecifLista'); if (!alvo || !rd.produtos) return;
+  const q = String(rd.busca || '').trim().toLowerCase();
+  const lista = (q ? rd.produtos.filter(p => [p.sku, p.titulo, p.item_id].some(x => String(x || '').toLowerCase().includes(q))) : rd.produtos).slice(0, 40);
+  alvo.innerHTML = `<table class="rd-tab"><tr><th>Produto</th><th style="text-align:right">Preço</th><th style="text-align:right">Vendas 30d</th><th style="text-align:right">Estoque</th><th></th></tr>
+    ${lista.map(p => `<tr><td><b>${esc(p.sku || '')}</b> ${p.full ? '<span class="pia-tag">Full</span>' : ''}<div class="pia-fraco">${esc(rtCurto(p.titulo, 64))} · ${esc(p.item_id)}</div></td>
+      <td class="n">${p.preco ? 'R$ ' + Number(p.preco).toFixed(2).replace('.', ',') : '—'}</td><td class="n">${p.vendas30 ?? 0}</td><td class="n">${p.estoque ?? '—'}</td>
+      <td><button class="btn-acao" onclick="pcAbrir('${esc(p.item_id)}','')"><i class="bi bi-sliders"></i> Precificar</button></td></tr>`).join('') || '<tr><td colspan="5" class="sv-vazio">Nenhum anúncio encontrado.</td></tr>'}</table>
+    <div class="pia-fraco" style="margin-top:8px">${q ? `${lista.length} resultado(s)` : `Os 40 que mais vendem de ${rd.produtos.length} anúncios ativos. Use a busca para achar qualquer um.`}</div>`;
+}
+
+// ---- Análise da IA estruturada: balanço do dia anterior + visão do que vem ----
+const BR_COR = { bom: '#30D158', atencao: '#ff9f0a', ruim: '#ff453a' };
+async function rdBriefing(el, abas, forcar) {
+  el.innerHTML = abas + '<div class="sv-vazio">A IA está batendo a operação de ontem… (cerca de 20 segundos na 1ª vez do dia)</div>';
+  let b;
+  try { b = await api('/api/seven/briefing' + (forcar ? '?forcar=1' : '')); }
+  catch (e) { el.innerHTML = abas + `<div class="sv-vazio" style="color:#ff453a">IA indisponível: ${esc(e.message)}</div>`; return; }
+  if (rd.aberto !== 'rank' || rd.aba !== 'ia') return;
+  const a = b.analise || {}, n = b.numeros || {}, v = n.vendas || {};
+  const R = (x) => x == null ? '—' : 'R$ ' + Number(x).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const P = (x) => x == null ? '—' : (x > 0 ? '+' : '') + String(x).replace('.', ',') + '%';
+  const kpi = (t, val, sub, cor) => `<div class="ep-card"><small>${t}</small><b style="font-size:20px;${cor ? 'color:' + cor : ''}">${val}</b><span>${sub}</span></div>`;
+  el.innerHTML = abas + `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="font-size:17px;font-weight:700;color:var(--l1)"><i class="bi bi-stars" style="color:#a855f7"></i> ${esc(a.manchete || '')}</div>
+      <button class="btn-acao" onclick="rdBriefing($('rdCorpo'), document.querySelector('#rdCorpo .rd-abas').outerHTML, true)"><i class="bi bi-arrow-clockwise"></i> Gerar de novo</button></div>
+    <div class="ep-cards">
+      ${kpi('Ontem', R(v.ontem_valor), `${v.ontem_pedidos ?? '—'} pedidos · ${P(v.ontem_vs_normal_pct)} vs dia normal`, v.ontem_vs_normal_pct >= 0 ? '#30D158' : '#ff453a')}
+      ${kpi('Mês até agora', R(v.mes_ate_agora), `ritmo ${P(v.ritmo_vs_mes_anterior_pct)} vs ${esc(v.mes_anterior_nome || 'mês anterior')}`)}
+      ${kpi('Fechamento previsto', R((a.previsao || {}).fechamento_estimado ?? v.projecao_mes), `${esc(v.mes_anterior_nome || 'mês anterior')}: ${R(v.mes_anterior_total)}`, '#a855f7')}
+      ${kpi('ADS ontem', n.ads && n.ads.ontem ? R(n.ads.ontem.receita) : '—', n.ads && n.ads.ontem ? `gasto ${R(n.ads.ontem.gasto)} · ROAS ${String(n.ads.ontem.roas).replace('.', ',')}x` : 'sem dado')}
+    </div>
+    <div class="pia-sec">Leitura da operação</div>
+    <div class="pia-grade" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">${(a.leituras || []).map(l => `<div class="pia-card" style="border-left:4px solid ${BR_COR[l.status] || 'var(--sep)'}">
+      <div class="pia-rot">${esc(l.area)}</div><div style="font-size:14px;color:var(--l1);line-height:1.5">${esc(l.texto)}</div></div>`).join('')}</div>
+    <div class="pia-sec">Visão do que vem</div>
+    <div class="pia-card" style="font-size:14px;line-height:1.6;color:var(--l1)">${esc((a.previsao || {}).texto || 'sem previsão')}</div>
+    <div class="pia-grade" style="grid-template-columns:1fr 1fr;margin-top:12px">
+      <div class="pia-card"><div class="pia-rot" style="color:#ff453a"><i class="bi bi-exclamation-triangle"></i> Riscos</div>${(a.riscos || []).map(x => `<div style="font-size:13px;margin-top:6px">• ${esc(x)}</div>`).join('') || '<div class="pia-fraco">nenhum</div>'}</div>
+      <div class="pia-card"><div class="pia-rot" style="color:#30D158"><i class="bi bi-graph-up-arrow"></i> Oportunidades</div>${(a.oportunidades || []).map(x => `<div style="font-size:13px;margin-top:6px">• ${esc(x)}</div>`).join('') || '<div class="pia-fraco">nenhuma</div>'}</div>
+    </div>
+    <div class="pia-sec">Ações recomendadas para hoje</div>
+    <table class="rd-tab"><tr><th>#</th><th>Área</th><th>Ação</th><th>Por quê</th></tr>
+      ${(a.acoes || []).map(x => `<tr><td><b>${x.prioridade ?? ''}</b></td><td>${esc(x.area)}</td><td><b>${esc(x.acao)}</b></td><td class="pia-fraco">${esc(x.porque)}</td></tr>`).join('') || '<tr><td colspan="4" class="sv-vazio">Nenhuma ação.</td></tr>'}</table>
+    ${(n.avisos || []).length ? `<div class="sv-aviso" style="margin-top:10px">Dados incompletos: ${esc(n.avisos.join(' · '))}</div>` : ''}
+    <div class="pia-fraco" style="margin-top:10px">Números calculados pelo Dashboard; a leitura é do Gemini (${esc(b.modelo || '')}), gerada às ${new Date(b.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}. Nada é aplicado sozinho.</div>`;
+}
+
 async function rdIA() {
   // O texto vive em rd.ia e o elemento e buscado a cada pedaco: a atualizacao automatica
   // (3 em 3 min) redesenha o card sem apagar a resposta que a IA ainda esta escrevendo.
@@ -949,7 +1385,7 @@ const PIA = { f: null, s: null, timer: null, t: 0, resumoEm: 0, resumoAssin: '',
 function piaAssinatura() { return PIA.s ? PIA.s.itens.filter(i => i.sinais.length).map(i => i.item_id).slice(0, 8).join(',') : ''; }
 
 async function iaPainel(forcar) {
-    iaCarregar();   // status do Ollama e lista de modelos
+    iaCarregar();   // status do Gemini e lista de modelos
     clearTimeout(PIA.timer);
     const st = $('piaStatus');
     if (st) st.textContent = 'atualizando…';
@@ -1026,7 +1462,7 @@ function piaDesenhar() {
 // resumo do Llama em 3 frases, no card "A IA resume"
 async function piaResumo() {
     const alvo = $('piaResumo'); if (!alvo) return;
-    if (iaEstado && !iaEstado.online) { alvo.innerHTML = '<span class="pia-fraco">Ollama desligado: o resumo volta quando ele estiver aberto. Os cards acima não dependem dele.</span>'; return; }
+    if (iaEstado && !iaEstado.online) { alvo.innerHTML = '<span class="pia-fraco">Falta a chave do Gemini: o resumo volta quando ela for cadastrada. Os cards acima não dependem dela.</span>'; return; }
     PIA.escrevendo = true; $('piaResumoBtn').disabled = true;
     alvo.innerHTML = '<span class="pia-fraco">a IA está escrevendo… (cerca de 1 minuto nesta máquina)</span>';
     let texto = '';
@@ -1034,7 +1470,7 @@ async function piaResumo() {
         const resp = await fetch('/api/seven/ia/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ modelo: ($('iaModelo') && $('iaModelo').value) || undefined,
                 pergunta: 'Em no máximo 3 frases curtas e simples, sem listas e sem códigos de produto, diga o que é mais importante fazer hoje nos anúncios. Fale como um colega de trabalho.' }) });
-        if (!resp.ok) throw new Error('o Ollama não respondeu');
+        if (!resp.ok) throw new Error('o Gemini não respondeu');
         const leitor = resp.body.getReader(); const dec = new TextDecoder(); let buf = '';
         for (;;) {
             const { value, done } = await leitor.read(); if (done) break;
@@ -1227,7 +1663,7 @@ async function rtIa() {
         const resp = await fetch('/api/seven/ia/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ modelo: ($('iaModelo') && $('iaModelo').value) || undefined,
                 pergunta: 'Em no máximo 3 frases curtas e simples, sem listas e sem códigos de produto, diga o que é mais importante fazer hoje nos anúncios. Fale como um colega de trabalho.' }) });
-        if (!resp.ok) throw new Error('o Ollama não respondeu');
+        if (!resp.ok) throw new Error('o Gemini não respondeu');
         const leitor = resp.body.getReader(); const dec = new TextDecoder(); let buf = '';
         for (;;) {
             const { value, done } = await leitor.read(); if (done) break;
@@ -1245,11 +1681,12 @@ async function rtIa() {
 
 const svT0 = Date.now();
 function svTirarSplash() { const el = document.getElementById('svSplash'); if (!el) return; setTimeout(() => { el.classList.add('sai'); setTimeout(() => el.remove(), 500); }, Math.max(0, 3000 - (Date.now() - svT0))); }
-Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
+Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia', 'parados', 'regras'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
 setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
 acompanharAstra();
 atualizarNaPrimeiraAberturaDoDia();
+if (location.hash === '#ads' || location.hash === '#promocoes') { const a = location.hash === '#ads' ? 'ads' : 'promo'; mostrar('ia'); setTimeout(() => { rd.abaDef = a; rdAbrir('def'); }, 300); }
 requestAnimationFrame(() => document.body.classList.add('page-ready'));
 setTimeout(() => document.body.classList.add('page-ready'), 150);
 </script>

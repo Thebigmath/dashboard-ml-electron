@@ -5,6 +5,8 @@ const fs = require('fs');
 const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, 'storage');
 
 const app = express();
+// Monitor de cotas: conta toda chamada ao Mercado Livre e ao Mercado Pago (Area do desenvolvedor)
+require('./lib/cotas').ligarAxios(require('axios'));
 let httpServer = null;
 
 app.use(express.json());
@@ -44,6 +46,7 @@ app.use('/auth', require('./routes/auth'));
 // ecossistemas (STOCK Ops, AD HEALTH, Finance), noticias globais e atualizacoes do app.
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/inicio.html')));
 app.get('/stock-ops', (req, res) => res.sendFile(path.join(__dirname, 'public/stock_ops.html')));
+app.get('/dev', (req, res) => res.sendFile(path.join(__dirname, 'public/dev.html')));
 app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
 app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 app.get('/envio_full', (req, res) => res.sendFile(path.join(__dirname, 'public/envio_full.html')));
@@ -79,7 +82,6 @@ module.exports = {
         // envio ao Full esquecido em aberto: aviso 2 min depois de subir e a cada 12 h
         require('./lib/envios_alerta').iniciarAgendador();
         // reputação: 40 s depois de subir e a cada 4 min
-        require('./lib/reputacao').iniciarAgendador();
         // notificações globais: feed dos próximos projetos, 45 s depois e a cada 30 min
         require('./lib/avisos').iniciarAgendador();
         // ranking ML (Issacar direto na busca do ML): todo dia a partir das 7h, para as duas contas
@@ -92,7 +94,6 @@ module.exports = {
         require('./lib/frete').pararAgendador();
         require('./lib/perguntas').pararAgendador();
         require('./lib/envios_alerta').pararAgendador();
-        require('./lib/reputacao').pararAgendador();
         require('./lib/avisos').pararAgendador();
         require('./lib/ranking_mt').pararAgendador();
         if (httpServer) httpServer.close();
