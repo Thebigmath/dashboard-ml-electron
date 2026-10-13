@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.64",
+    "data": "2026-10-12",
+    "titulo": "Regras de preço: travas, modo semiautomático e cartões",
+    "texto": "As regras de preço ficaram mais seguras e mais fáceis de ler.\n\n- Cartões no lugar da tabela: produto, números do dia, preço de hoje → sugerido e o motivo.\n- Botão de modo: Semiautomático (analisa todo dia e avisa, sem mudar preço) ou Automático (aplica o que passou nas travas).\n- 5 travas: em promoção, cruzaria R$ 79, mais de 10% acima do líder, um dia bom isolado e conferência depois da subida (avisa e oferece voltar o preço se as vendas caírem).\n- Aplicar todos com uma confirmação.\n- Quem teve o preço mudado sai da lista e fica 3 dias em observação.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.63",
     "data": "2026-10-12",
     "titulo": "AD HEALTH com regras de preço, ADS, promoções e IA estruturada",

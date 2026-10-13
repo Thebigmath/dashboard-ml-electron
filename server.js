@@ -86,6 +86,7 @@ module.exports = {
         require('./lib/avisos').iniciarAgendador();
         // ranking ML (Issacar direto na busca do ML): todo dia a partir das 7h, para as duas contas
         require('./lib/ranking_mt').iniciarAgendador();
+        require('./lib/motor_preco').iniciarAgendador();   // modo automatico das regras de preco (so se ligado)
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
         setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
@@ -96,6 +97,7 @@ module.exports = {
         require('./lib/envios_alerta').pararAgendador();
         require('./lib/avisos').pararAgendador();
         require('./lib/ranking_mt').pararAgendador();
+        require('./lib/motor_preco').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };

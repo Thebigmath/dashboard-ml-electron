@@ -1177,8 +1177,11 @@ router.get('/dev/cotas', soDev, (req, res) => res.json(require('../lib/cotas').r
 router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').verificar({ testarGemini: req.query.gemini === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Regras de preco (motor_preco): avaliar e so leitura; aplicar so com confirmacao e preco conferido
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/regras_preco_todos', auth, (req, res) => { require('../lib/motor_preco').aplicarTodos().then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/regras_preco_config', auth, (req, res) => res.json(require('../lib/motor_preco').salvarConfiguracao(req.body || {})));
 router.post('/seven/regras_preco_ia', auth, (req, res) => ndjson(res, require('../lib/motor_preco').revisarIA()));
-router.post('/seven/regras_preco/:item', auth, (req, res) => { require('../lib/motor_preco').aplicar(req.params.item, req.body && req.body.preco).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/regras_preco_reverter/:item', auth, (req, res) => { require('../lib/motor_preco').reverter(req.params.item).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/regras_preco/:item', auth, (req, res) => { require('../lib/motor_preco').aplicar(req.params.item, req.body && req.body.preco, { forcar: !!(req.body && req.body.forcar) }).then(d => res.json(d)).catch(erroJson(res)); });
 // Balanco do dia (card Rankeamento > Analise da IA): numeros pelo codigo, leitura pelo Gemini em JSON
 router.get('/seven/briefing', auth, (req, res) => { require('../lib/briefing').gerar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Lista de anuncios ativos para a aba Precificacao (sem empilhadeiras), dos que mais vendem para os que menos

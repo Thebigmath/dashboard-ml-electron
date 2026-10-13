@@ -251,6 +251,39 @@
         .qm-box b { display:block; font-size:24px; margin:4px 0; color:var(--l1); }
         .qm-box.depois b { color:#a855f7; }
         .qm-aviso { border:1px solid #ff9f0a; background:color-mix(in srgb, #ff9f0a 8%, transparent); border-radius:10px; padding:10px 12px; font-size:13px; margin-top:12px; }
+        .rg-ctrl { display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:12px 16px; margin-bottom:14px; }
+        .rg-ctrl .rg-sw { display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; color:var(--l1); }
+        .rg-ctrl .rg-sw input { width:40px; height:22px; accent-color:#30D158; cursor:pointer; }
+        .rg-ctrl small { color:var(--l3); font-size:12px; }
+        .rg-modo { display:inline-flex; border:1px solid var(--sep); border-radius:12px; overflow:hidden; }
+        .rg-modo button { border:0; background:transparent; color:var(--l2); padding:9px 14px; font-weight:700; font-size:13px; cursor:pointer; }
+        .rg-modo button.on { background:#0a84ff; color:#fff; }
+        .rg-modo button.on.auto { background:#30D158; }
+        .rg-trava { display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:2px 8px; margin:0 6px 4px 0; background:color-mix(in srgb,#ff9f0a 16%,transparent); color:#ff9f0a; }
+        .rg-card.travado { border-color:color-mix(in srgb,#ff9f0a 45%,var(--sep)); }
+        .rg-ctrl .rg-todos { margin-left:auto; background:#30D158; color:#fff; border:0; border-radius:10px; padding:9px 16px; font-weight:700; cursor:pointer; }
+        .rg-ctrl .rg-todos:disabled { opacity:.45; cursor:default; }
+        .rg-obs { width:100%; border-collapse:collapse; font-size:13px; }
+        .rg-obs td, .rg-obs th { padding:8px 10px; border-top:1px solid var(--sep); text-align:left; }
+        .rg-obs th { color:var(--l3); font-size:11px; text-transform:uppercase; letter-spacing:.3px; border-top:0; }
+        .rg-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap:12px; }
+        .rg-card { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+        .rg-tit { font-size:15px; font-weight:700; color:var(--l1); line-height:1.3; }
+        .rg-sku { font-size:12px; color:var(--l3); margin-top:2px; }
+        .rg-nums { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
+        .rg-nums > div { background:var(--s2); border-radius:10px; padding:8px 10px; min-width:0; }
+        .rg-nums small, .rg-preco small { display:block; font-size:11px; color:var(--l3); text-transform:uppercase; letter-spacing:.3px; }
+        .rg-nums b { font-size:17px; color:var(--l1); white-space:nowrap; font-variant-numeric:tabular-nums; }
+        .rg-nums b span { font-size:12px; font-weight:500; color:var(--l3); }
+        .rg-preco { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+        .rg-preco > div { min-width:0; }
+        .rg-preco b { display:block; font-size:19px; color:var(--l1); font-variant-numeric:tabular-nums; }
+        .rg-preco span { font-size:12px; color:var(--l3); }
+        .rg-preco .rg-sug b { color:#30D158; }
+        .rg-preco > i { color:var(--l3); font-size:18px; }
+        .rg-preco .ep-btn { margin-left:auto; padding:8px 14px; font-size:13px; }
+        .rg-motivo { font-size:12px; color:var(--l2); border-top:1px solid var(--sep); padding-top:10px; }
+        @media (max-width:560px) { .rg-nums { grid-template-columns:repeat(2, minmax(0,1fr)); } }
     </style>
 </head>
 <body>
@@ -373,13 +406,20 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         <div class="ep-card"><small>Subir +1 ponto de margem</small><b id="rgNSub" style="color:#30D158">—</b><span>vendendo bem com margem abaixo de 15%</span></div>
                         <div class="ep-card"><small>Tracionados · 1º no Nubimetrics</small><b id="rgNTra" style="color:#0a84ff">—</b><span>margem ≥ 15%: subir é opcional</span></div>
                         <div class="ep-card"><small>Tracionados fora do 1º</small><b id="rgNOut">—</b><span>margem ≥ 15%, sem mudança</span></div>
-                        <div class="ep-card"><small>Sem mudança / sem dados</small><b id="rgNMan">—</b><span id="rgNManSub">&nbsp;</span></div>
+                        <div class="ep-card"><small>Travados</small><b id="rgNMan">—</b><span id="rgNManSub">&nbsp;</span></div>
                     </div>
                     <div class="sv-aviso" id="rgIA" style="display:none;white-space:pre-wrap"></div>
+                    <div id="rgCtrl"></div>
                     <div class="pia-sec">Subir +1 ponto de margem</div>
-                    <div class="dashboard-card" style="padding:0;overflow:auto"><div id="rgSubir"><div class="sv-vazio">Carregando…</div></div></div>
+                    <div id="rgSubir"><div class="sv-vazio">Carregando…</div></div>
                     <div class="pia-sec" style="margin-top:16px">Feed de tracionados · 1º no Nubimetrics</div>
-                    <div class="dashboard-card" style="padding:0;overflow:auto"><div id="rgTrac"><div class="sv-vazio">Carregando…</div></div></div>
+                    <div id="rgTrac"><div class="sv-vazio">Carregando…</div></div>
+                    <div class="pia-sec" style="margin-top:16px">Travados · a regra mandaria subir, mas uma trava segurou</div>
+                    <div id="rgTravados"></div>
+                    <div class="pia-sec" style="margin-top:16px">Depois da subida · as vendas caíram?</div>
+                    <div id="rgPos"></div>
+                    <div class="pia-sec" style="margin-top:16px">Em observação · preço mudado nos últimos 3 dias</div>
+                    <div id="rgObs"></div>
                 </div>
 
                 <!-- ADS e Promocoes vivem dentro do card Defesa (Analise com IA); aqui ficam guardados -->
@@ -875,34 +915,143 @@ async function rgCarregar(forcar, recalcular) {
     try { cache.regras = await api('/api/seven/regras_preco' + (recalcular ? '?forcar=1' : '')); rgDesenhar(); }
     catch (e) { $('rgSubir').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; $('rgTrac').innerHTML = ''; }
 }
+// Cartões das regras de preço (um por produto): nome em cima, os 4 números do dia, preço atual → sugerido
+// e o motivo numa linha. Usado na tela "Regras de preço" e no card Rankeamento.
 function rgTabela(itens, vazio, botao) {
     if (!itens.length) return `<div class="sv-vazio">${vazio}</div>`;
-    return `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Produto</th><th class="num">Ontem</th><th class="num">Média/dia</th><th class="num">Nubimetrics</th><th class="num">Busca</th><th class="num">Preço · margem</th><th class="num">Sugerido · margem</th><th>Por quê</th><th></th></tr></thead><tbody>${
-        itens.map(l => `<tr><td style="min-width:220px"><b>${esc(rtCurto(l.titulo, 58))}</b><div class="pia-fraco">${esc(l.item_id)} · ${esc(l.sku || '')}${l.curva ? ' · curva ' + esc(l.curva) : ''}</div></td>
-            <td class="num"><b>${l.ontem}</b></td><td class="num">${String(l.media_dia ?? '—').replace('.', ',')}</td>
-            <td class="num">${l.rank_nub ? `${l.rank_nub}º de ${l.grupo_anuncios}` : '—'}</td><td class="num">${esc(l.rank_ml || '—')}</td>
-            <td class="num">${epBRL(l.preco)}<div class="pia-fraco">${prPct(l.margem_pct)}</div></td>
-            <td class="num">${l.sugerido ? `<b>${epBRL(l.sugerido.preco)}</b><div class="pia-fraco">${prPct(l.sugerido.margem_pct)} · +${prPct(l.aumento_pct)}</div>` : '—'}</td>
-            <td class="pia-fraco" style="max-width:260px">${esc(l.motivo)}</td>
-            <td>${l.sugerido ? `<button class="ep-btn" style="border-color:${botao.cor};color:${botao.cor}" onclick="rgAplicar('${esc(l.item_id)}', ${l.sugerido.preco})">${botao.txt}</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
+    const sinal = (v) => v == null ? '' : (v >= 0 ? '+' : '') + prPct(v);
+    return `<div class="rg-grade">${itens.map(l => `<div class="rg-card">
+        <div class="rg-topo"><div class="rg-tit" title="${esc(l.titulo)}">${esc(rtCurto(l.titulo, 70))}</div>
+          <div class="rg-sku">${esc(l.sku || '')}${l.curva ? ` · curva ${esc(l.curva)}` : ''} · ${esc(l.item_id)}</div></div>
+        <div class="rg-nums">
+          <div><small>Vendeu ontem</small><b>${l.ontem}</b></div>
+          <div><small>Média/dia</small><b>${String(l.media_dia ?? '—').replace('.', ',')}</b></div>
+          <div><small>Nubimetrics</small><b>${l.rank_nub ? `${l.rank_nub}º <span>de ${l.grupo_anuncios}</span>` : '—'}</b></div>
+          <div><small>Busca</small><b>${l.rank_ml ? esc(l.rank_ml.replace(' na pág. ', 'º · pág. ').replace(/^(\d+)ºº/, '$1º')) : '—'}</b></div>
+        </div>
+        <div class="rg-preco">
+          <div><small>Hoje</small><b>${epBRL(l.preco)}</b><span>${prPct(l.margem_pct)} de margem</span></div>
+          <i class="bi bi-arrow-right"></i>
+          <div class="rg-sug"><small>Sugerido</small><b>${l.sugerido ? epBRL(l.sugerido.preco) : '—'}</b><span>${l.sugerido ? `${prPct(l.sugerido.margem_pct)} de margem · ${sinal(l.aumento_pct)}` : ''}</span></div>
+          ${l.sugerido ? `<button class="ep-btn" style="border-color:${botao.cor};color:${botao.cor}" onclick="rgAplicar('${esc(l.item_id)}', ${l.sugerido.preco})">${botao.txt}</button>` : ''}
+        </div>
+        <div class="rg-motivo"><i class="bi bi-info-circle"></i> ${esc(l.motivo)}</div>
+      </div>`).join('')}</div>`;
 }
+// Controle semiautomático: chave do modo automático + "Aplicar todos"
+function rgControles(d) {
+    const c = d.config || {}, t = d.travas || {}, u = c.ultimo_resultado;
+    const auto = c.modo === 'automatico';
+    const prontos = d.subir.filter(l => l.sugerido).length;
+    const ult = !u ? '' : u.modo === 'automatico'
+        ? `Última rodada (${new Date(u.quando).toLocaleString('pt-BR')}): ${u.subiu} aumento(s), ${u.voltou || 0} volta(s), ${u.travados} travado(s).`
+        : `Última análise (${new Date(u.quando).toLocaleString('pt-BR')}): ${u.sugestoes} sugestão(ões), ${u.travados} travado(s)${u.quedas ? `, ${u.quedas} queda(s) depois da subida` : ''}. Nada foi mudado.`;
+    return `<div class="rg-ctrl">
+        <div class="rg-modo">
+          <button class="${auto ? '' : 'on'}" onclick="rgModo('semi')" title="Analisa todo dia e avisa; você decide e aplica"><i class="bi bi-person-check"></i> Semiautomático</button>
+          <button class="${auto ? 'on auto' : ''}" onclick="rgModo('automatico')" title="Aplica sozinho o que passou nas travas"><i class="bi bi-robot"></i> Automático</button>
+        </div>
+        <small>${auto
+          ? `<b>Automático:</b> todo dia, depois da atualização da manhã, aplica os "Subir +1 ponto" que passaram nas 5 travas (até ${t.MAX_POR_DIA}/dia, aumento até ${t.MAX_AUMENTO_PCT}%), volta o preço de quem caiu depois da subida e avisa no Windows.`
+          : `<b>Semiautomático:</b> todo dia, depois da atualização da manhã, analisa e avisa no Windows. <b>Não muda nenhum preço</b>: você aplica um a um ou todos de uma vez.`}
+          ${ult ? `<br>${ult}` : ''}</small>
+        <button class="rg-todos" ${prontos ? '' : 'disabled'} onclick="rgAplicarTodos()"><i class="bi bi-lightning-charge"></i> Aplicar todos (${prontos})</button>
+      </div>`;
+}
+// Travados: a regra mandaria subir, mas uma trava segurou. Mostra o motivo e permite subir a mao.
+function rgTravados(d) {
+    const L = d.travados || [];
+    if (!L.length) return '<div class="sv-vazio">Nenhum anúncio travado hoje.</div>';
+    const nomes = d.nome_trava || {};
+    return `<div class="rg-grade">${L.map(l => `<div class="rg-card travado">
+        <div class="rg-topo"><div class="rg-tit" title="${esc(l.titulo)}">${esc(rtCurto(l.titulo, 70))}</div>
+          <div class="rg-sku">${esc(l.sku || '')}${l.curva ? ` · curva ${esc(l.curva)}` : ''} · ${esc(l.item_id)}</div></div>
+        <div>${(l.travas || []).map(t => `<span class="rg-trava"><i class="bi bi-lock"></i> ${esc(nomes[t.id] || t.id)}</span>`).join('')}</div>
+        <div class="rg-preco">
+          <div><small>Hoje</small><b>${epBRL(l.preco)}</b><span>${prPct(l.margem_pct)} de margem · vendeu ${l.ontem} ontem</span></div>
+          <i class="bi bi-arrow-right"></i>
+          <div><small>A regra sugeria</small><b style="color:var(--l2)">${epBRL(l.sugerido.preco)}</b><span>${prPct(l.sugerido.margem_pct)} de margem</span></div>
+          <button class="ep-btn" style="border-color:#ff9f0a;color:#ff9f0a" onclick="rgAplicar('${esc(l.item_id)}', ${l.sugerido.preco}, true)">Subir mesmo assim</button>
+        </div>
+        <div class="rg-motivo"><i class="bi bi-shield-exclamation"></i> ${esc((l.travas || []).map(t => t.txt).join(' '))}</div>
+      </div>`).join('')}</div>`;
+}
+// Trava 5: o que aconteceu com as vendas depois da subida
+function rgPos(d) {
+    const L = d.pos_subida || [];
+    if (!L.length) return `<div class="sv-vazio">Nenhuma subida com mais de ${d.observar_dias || 3} dias para conferir ainda.</div>`;
+    const n = (v) => String(v ?? '—').replace('.', ',');
+    return `<div class="dashboard-card" style="padding:0;overflow:auto"><table class="rg-obs"><tr><th>Produto</th><th style="text-align:right">Preço</th><th style="text-align:right">Vendas/dia antes</th><th style="text-align:right">Depois (${'dias'})</th><th>Resultado</th><th></th></tr>
+      ${L.map(m => `<tr><td><b>${esc(rtCurto(m.titulo || m.item_id, 55))}</b><div class="pia-fraco">${esc(m.sku || '')} · ${esc(m.item_id)}</div></td>
+        <td style="text-align:right">${epBRL(m.antes)} → ${epBRL(m.depois)}</td>
+        <td style="text-align:right">${n((m.media_antes || 0).toFixed(2))}${m.media_aproximada ? '<div class="pia-fraco">média de 30 dias</div>' : ''}</td>
+        <td style="text-align:right">${n(m.media_depois)} <span class="pia-fraco">(${m.dias} dias)</span></td>
+        <td>${m.status === 'caiu' ? `<b style="color:#ff453a">Caiu ${m.variacao_pct != null ? prPct(m.variacao_pct) : ''}</b>` : `<b style="color:#30D158">Ok${m.variacao_pct != null ? ' (' + (m.variacao_pct >= 0 ? '+' : '') + prPct(m.variacao_pct) + ')' : ''}</b>`}</td>
+        <td>${m.status === 'caiu' ? `<button class="ep-btn" style="border-color:#ff453a;color:#ff453a" onclick="rgReverter('${esc(m.item_id)}', ${m.antes})">Voltar para ${epBRL(m.antes)}</button>` : ''}</td></tr>`).join('')}</table></div>
+      <div class="pia-fraco" style="margin-top:6px">Conferido ${d.observar_dias || 3} a 14 dias depois de cada subida. "Caiu" = vendas por dia abaixo de 60% de antes. No automático, o preço volta sozinho.</div>`;
+}
+function rgObservacao(d) {
+    const L = d.em_observacao || [];
+    if (!L.length) return '<div class="sv-vazio">Nenhum preço mudado nos últimos dias.</div>';
+    return `<div class="dashboard-card" style="padding:0;overflow:auto"><table class="rg-obs"><tr><th>Quando</th><th>Produto</th><th style="text-align:right">Antes</th><th style="text-align:right">Depois</th><th>Origem</th></tr>
+      ${L.map(h => `<tr><td>${new Date(h.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td><b>${esc(rtCurto(h.titulo || h.item_id, 60))}</b><div class="pia-fraco">${esc(h.item_id)}</div></td>
+        <td style="text-align:right">${epBRL(h.antes)}</td><td style="text-align:right;color:#30D158;font-weight:700">${epBRL(h.depois)}</td>
+        <td class="pia-fraco">${h.origem === 'automatico' ? 'automático' : h.origem === 'regra_margem_lote' ? 'aplicar todos' : 'manual'}</td></tr>`).join('')}</table></div>
+      <div class="pia-fraco" style="margin-top:6px">Ficam fora das listas por ${d.observar_dias || 3} dias, para observar as vendas antes de mexer de novo. Para desfazer: Rankeamento → Precificação.</div>`;
+}
+async function rgModo(modo) {
+    const atual = ((cache.regras || rd.dados || {}).config || {}).modo || 'semi';
+    if (modo === atual) return;
+    if (modo === 'automatico' && !confirm('Mudar para o modo AUTOMÁTICO?\n\nTodo dia, depois da atualização da manhã, o Dashboard vai:\n• aplicar sozinho os "Subir +1 ponto" que passarem nas 5 travas (até 10 por dia, aumento de no máximo 3%);\n• voltar o preço dos anúncios cujas vendas caíram depois da subida;\n• avisar no Windows o que fez.\n\nVocê pode voltar para o semiautomático quando quiser.')) return;
+    try { await fetch('/api/seven/regras_preco_config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modo }) }); } catch {}
+    delete cache.regras; rd.dados = null; rgRedesenhar(true);
+}
+async function rgReverter(item, preco) {
+    if (!confirm(`Voltar o preço deste anúncio para ${epBRL(preco)} no Mercado Livre?`)) return;
+    try {
+        const r = await fetch('/api/seven/regras_preco_reverter/' + item, { method: 'POST' }).then(x => x.json());
+        if (!r.ok) throw new Error(r.erro || 'o ML recusou');
+        alert(`Preço voltou: ${epBRL(r.antes)} → ${epBRL(r.depois)}.`);
+    } catch (e) { alert('Não alterou: ' + e.message); }
+    delete cache.regras; rd.dados = null; rgRedesenhar(true); rdResumo();
+}
+async function rgAplicarTodos() {
+    const d = cache.regras || rd.dados; const L = (d && d.subir || []).filter(l => l.sugerido);
+    if (!L.length) return;
+    if (!confirm(`Aplicar ${L.length} aumento(s) no Mercado Livre?\n\n` + L.map(l => `${l.sku}: ${epBRL(l.preco)} → ${epBRL(l.sugerido.preco)} (${prPct(l.margem_pct)} → ${prPct(l.sugerido.margem_pct)})`).join('\n'))) return;
+    try {
+        const r = await fetch('/api/seven/regras_preco_todos', { method: 'POST' }).then(x => x.json());
+        alert(`${r.feitos.length} preço(s) alterado(s).` + (r.falhas.length ? `\n\nNão alterou:\n` + r.falhas.map(f => `${f.sku}: ${f.erro}`).join('\n') : ''));
+    } catch (e) { alert('Erro: ' + e.message); }
+    delete cache.regras; rd.dados = null; rgRedesenhar(true); rdResumo();
+}
+// redesenha a tela que estiver aberta (Regras de preco ou o card Rankeamento)
+function rgRedesenhar(recarregar) { if (rd.aberto === 'rank') { rdCarregar(!!recarregar).then(rdDesenhar); } else rgCarregar(true); }
+
 function rgDesenhar() {
     const d = cache.regras; if (!d) return;
     $('rgAtual').textContent = 'calculado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     $('rgNSub').textContent = d.subir.length; $('rgNTra').textContent = d.tracionados.length; $('rgNOut').textContent = d.tracionados_outros.length;
-    $('rgNMan').textContent = d.manter.length + d.sem_dados.length; $('rgNManSub').textContent = `${d.manter.length} sem mudança · ${d.sem_dados.length} sem dados`;
+    $('rgNMan').textContent = (d.travados || []).length; $('rgNManSub').textContent = `travados · ${d.manter.length} sem mudança · ${d.sem_dados.length} sem dados`;
     $('rgSubir').innerHTML = rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' });
     $('rgTrac').innerHTML = rgTabela(d.tracionados, 'Nenhum anúncio em 1º no Nubimetrics com margem de 15% ou mais.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' });
+    $('rgCtrl').innerHTML = rgControles(d);
+    $('rgObs').innerHTML = rgObservacao(d);
+    $('rgTravados').innerHTML = rgTravados(d);
+    $('rgPos').innerHTML = rgPos(d);
 }
-async function rgAplicar(item, preco) {
-    const l = [...cache.regras.subir, ...cache.regras.tracionados].find(x => x.item_id === item);
-    if (!confirm(`Alterar o preço de ${l.sku} no Mercado Livre?\n\n${epBRL(l.preco)} (${prPct(l.margem_pct)}) → ${epBRL(preco)} (${prPct(l.sugerido.margem_pct)})`)) return;
+async function rgAplicar(item, preco, forcar) {
+    const d = cache.regras || rd.dados || {};
+    const l = [...(d.subir || []), ...(d.tracionados || []), ...(d.travados || [])].find(x => x.item_id === item);
+    let msg = `Alterar o preço de ${l.sku} no Mercado Livre?\n\n${epBRL(l.preco)} (${prPct(l.margem_pct)}) → ${epBRL(preco)} (${prPct(l.sugerido.margem_pct)})`;
+    if (forcar) msg = `ATENÇÃO: este anúncio está TRAVADO.\n\n${(l.travas || []).map(t => '• ' + t.txt).join('\n')}\n\n` + msg + '\n\nSubir mesmo assim?';
+    if (!confirm(msg)) return;
     try {
-        const r = await fetch('/api/seven/regras_preco/' + item, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco }) }).then(x => x.json());
+        const r = await fetch('/api/seven/regras_preco/' + item, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco, forcar: !!forcar }) }).then(x => x.json());
         if (!r.ok) throw new Error(r.erro || 'o ML recusou');
-        alert(`Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}. Fica no histórico e pode ser desfeito pelo precificador.`);
-        delete cache.regras; rd.dados = null; if (rd.aberto === 'rank') rdDesenhar(); else rgCarregar(true); rdResumo();
+        alert(`Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}. O anúncio sai da lista e fica em observação por 3 dias.`);
     } catch (e) { alert('Não alterou: ' + e.message); }
+    delete cache.regras; rd.dados = null; rgRedesenhar(true); rdResumo();
 }
 async function rgRevisar() {
     const el = $('rgIA'); el.style.display = ''; el.textContent = 'A IA está revisando as decisões de hoje…';
@@ -1277,9 +1426,12 @@ function rdDesenhar() {
     const d = rd.dados;
     if (!d) { el.innerHTML = abas + '<div class="sv-vazio">Carregando…</div>'; rdCarregar().then(rdDesenhar).catch(e => el.innerHTML = abas + `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`); return; }
     if (rd.aba === 'preco') {
-      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>
-        <div class="pia-sec">Subir +1 ponto de margem</div><div style="overflow-x:auto">${rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' })}</div>
-        <div class="pia-sec" style="margin-top:14px">Tracionados · 1º no Nubimetrics</div><div style="overflow-x:auto">${rgTabela(d.tracionados, 'Nenhum tracionado em 1º no Nubimetrics.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' })}</div>`;
+      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>${rgControles(d)}
+        <div class="pia-sec">Subir +1 ponto de margem</div><div>${rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' })}</div>
+        <div class="pia-sec" style="margin-top:14px">Tracionados · 1º no Nubimetrics</div><div>${rgTabela(d.tracionados, 'Nenhum tracionado em 1º no Nubimetrics.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' })}</div>
+        <div class="pia-sec" style="margin-top:14px">Travados · uma trava segurou</div>${rgTravados(d)}
+        <div class="pia-sec" style="margin-top:14px">Depois da subida · as vendas caíram?</div>${rgPos(d)}
+        <div class="pia-sec" style="margin-top:14px">Em observação · preço mudado nos últimos 3 dias</div>${rgObservacao(d)}`;
     } else if (rd.aba === 'precif') {
       // Precificação: qualquer anúncio ativo -> o precificador (margem Clássico/Premium e mudar o preço)
       el.innerHTML = abas + `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
