@@ -1,11 +1,22 @@
 [
   {
+    "id": "2026-10-finance",
+    "data": "2026-10-13",
+    "tag": "Finance",
+    "titulo": "Finance: DRE, conciliação e margem por produto",
+    "resumo": "O resultado do mês, o dinheiro do Mercado Pago conferido venda por venda e a margem de cada produto, nas duas contas.",
+    "texto": "No app Finance da barra (clique em Atualizar o mês para buscar as vendas no Mercado Livre e no Mercado Pago):\n\n- Resultado do mês (DRE): faturamento, cupons, devoluções, CMV, tarifas do ML, frete, impostos, margem de contribuição, ADS, custos operacionais e lucro líquido.\n- Conciliação com o Mercado Pago: quanto já foi liberado, o que está a liberar (com as datas), o que está retido (data de liberação vencida), estornos, coberturas do ML e se o Mercado Pago creditou o que devia, venda por venda.\n- Margem por produto: receita, CMV, tarifas, frete, impostos, devoluções e MC% de cada anúncio.\n- Custos operacionais: cadastro do mês (salários, aluguel, embalagem...), com copiar do mês anterior.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
     "id": "2026-10-seven-sistema",
     "data": "2026-10-13",
     "tag": "SEVEN",
     "titulo": "SEVEN: o sistema hoje",
     "resumo": "Como o SEVEN está organizado: a barra dos apps (Stock, AD Health, Finance), a segunda aba com os submenus e o Início.",
-    "texto": "O SEVEN é o sistema de gestão das contas Flavia Stock e Cordeiro Car no Mercado Livre. Os dois Dashboards têm as mesmas telas, cada um com a sua conta.\n\nNavegação (molde do Olist):\n\n- Barra à esquerda: o 7 leva ao Início; os apps Stock, AD Health e Finance; embaixo, Novidades do app, Atualizações globais e a conta (trocar de conta, tema, fundo, token, área do desenvolvedor).\n- Clicando num app, abre a segunda aba com os submenus. Fixar menu deixa ela sempre aberta.\n\nOs apps:\n\n- Início: o 7, a saudação, a hora e as atualizações.\n- STOCK Ops: Painel de Controle (montar o Full), Feed, Envio Full, Valor do Estoque, Frete e Parados.\n- AD HEALTH: Notícias urgentes, Rankeamento, Defesa, concorrentes, tempo de vendas, Análise com IA, estoque parado e Clonagem.\n- Finance: Hub de Pedidos (em montagem).\n- Harvey: app à parte para mediações, perguntas e reputação.\n\nComo ele trabalha (Escalada de Prata): os motores fazem as contas com regras fixas, a IA revisa e explica, e toda mudança fica registrada e pode ser desfeita.",
+    "texto": "O SEVEN é o sistema de gestão das contas Flavia Stock e Cordeiro Car no Mercado Livre. Os dois Dashboards têm as mesmas telas, cada um com a sua conta.\n\nNavegação (molde do Olist):\n\n- Barra à esquerda: o 7 leva ao Início; os apps Stock, AD Health e Finance; embaixo, Novidades do app, Atualizações globais e a conta (trocar de conta, tema, fundo, token, área do desenvolvedor).\n- Clicando num app, abre a segunda aba com os submenus. Fixar menu deixa ela sempre aberta.\n\nOs apps:\n\n- Início: o 7, a saudação, a hora e as atualizações.\n- STOCK Ops: Painel de Controle (montar o Full), Feed, Envio Full, Valor do Estoque, Frete e Parados.\n- AD HEALTH: Notícias urgentes, Rankeamento, Defesa, concorrentes, tempo de vendas, Análise com IA, estoque parado e Clonagem.\n- Finance: resultado do mês (DRE), conciliação com o Mercado Pago, margem por produto e custos operacionais.\n- Harvey: app à parte para mediações, perguntas e reputação.\n\nComo ele trabalha (Escalada de Prata): os motores fazem as contas com regras fixas, a IA revisa e explica, e toda mudança fica registrada e pode ser desfeita.",
     "video": "",
     "imagens": [],
     "link": ""
@@ -82,7 +93,7 @@
     "tag": "Harvey",
     "titulo": "Harvey: mediações, perguntas e reputação",
     "resumo": "O app que cuida das mediações e perguntas das duas contas, com IA no tom da loja.",
-    "texto": "O Harvey roda à parte, na bandeja do Windows:\n\n- Mediações: chegam sozinhas, com a resposta preparada pela IA para revisar e enviar. Dá para ignorar e reabrir.\n- Perguntas: a IA responde no tom de uma pessoa da loja, aprendendo com as respostas reais da equipe.\n- O dinheiro cai na nossa conta?: nas mediações encerradas, mostra se o ML cobriu o reembolso, se a venda foi mantida ou se o dinheiro voltou para o comprador, com a data de liberação no Mercado Pago.\n- Reputação: avisa com som quando uma conta chega perto de perder o Platinum.\n- Métricas: Quebrados no caminho (custo + frete, o que o ML devolveu e a análise da IA).\n- Novidades do app e Atualizações globais: o mesmo quadro dos Dashboards.",
+    "texto": "O Harvey roda à parte, na bandeja do Windows:\n\n- Mediações: chegam sozinhas, com a resposta preparada pela IA para revisar e enviar. Dá para ignorar e reabrir.\n- Perguntas: a IA responde no tom de uma pessoa da loja, aprendendo com as respostas reais da equipe.\n- O dinheiro cai na nossa conta?: nas mediações encerradas, mostra se o ML cobriu o reembolso, se a venda foi mantida ou se o dinheiro voltou para o comprador, com a data de liberação no Mercado Pago.\n- Reputação: avisa com som quando uma conta chega perto de perder o Platinum.\n- Métricas: retrospectiva do período (comparada com o anterior) com filtro de dias, e Quebrados no caminho (custo + frete, o que o ML devolveu e a análise da IA).\n- Novidades do app e Atualizações globais: o mesmo quadro dos Dashboards.",
     "video": "",
     "imagens": [],
     "link": ""

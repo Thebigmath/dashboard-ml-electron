@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .fn { padding:24px 28px 40px; display:flex; flex-direction:column; gap:18px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        .fn-topo { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+        .fn-topo h1 { margin:0; font-size:26px; font-weight:700; letter-spacing:-.4px; color:var(--l1); }
+        .fn-topo small { color:var(--l3); font-size:13px; }
+        .fn-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+        .fn-sel { padding:8px 12px; border-radius:10px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); font-size:14px; font-weight:600; }
+        .btn-acao { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:10px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-acao.pri { background:var(--blue); border-color:var(--blue); color:#fff; }
+        .btn-acao:disabled { opacity:.5; cursor:default; }
+        .fn-abas { display:flex; gap:6px; flex-wrap:wrap; }
+        .fn-abas a { padding:7px 14px; border-radius:999px; border:1px solid var(--sep); color:var(--l2); text-decoration:none; font-weight:700; font-size:13px; }
+        .fn-abas a.on { background:var(--blue); border-color:var(--blue); color:#fff; }
+        .fn-cards { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+        @media (max-width:1100px) { .fn-cards { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        .fn-card { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:16px 18px; }
+        .fn-card .r { font-size:12px; color:var(--l3); display:flex; gap:6px; align-items:center; }
+        .fn-card .v { font-size:clamp(20px, 2vw, 27px); font-weight:800; margin-top:4px; color:var(--l1); font-variant-numeric:tabular-nums; }
+        .fn-card .s { font-size:12px; color:var(--l3); margin-top:2px; }
+        .fn-box { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:18px 20px; }
+        .fn-box h3 { margin:0 0 10px; font-size:16px; font-weight:700; color:var(--l1); }
+        .dre { width:100%; border-collapse:collapse; font-size:14px; }
+        .dre td { padding:8px 6px; border-bottom:1px solid var(--sep); font-variant-numeric:tabular-nums; }
+        .dre td:nth-child(2), .dre td:nth-child(3) { text-align:right; white-space:nowrap; }
+        .dre td:nth-child(3) { color:var(--l3); font-size:12.5px; width:90px; }
+        .dre tr.sub td { font-weight:800; background:color-mix(in srgb, var(--blue) 7%, transparent); }
+        .dre tr.fim td { font-weight:800; font-size:16px; border-bottom:0; }
+        .dre tr.menos td:first-child { padding-left:22px; color:var(--l2); }
+        .fn-tab { width:100%; border-collapse:collapse; font-size:12.5px; }
+        .fn-tab th { position:sticky; top:0; background:var(--s1); font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:var(--l3); padding:9px 8px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--sep); cursor:pointer; }
+        .fn-tab th:first-child, .fn-tab td:first-child { text-align:left; }
+        .fn-tab td { padding:8px; border-bottom:1px solid var(--sep); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+        .fn-tab td.t { white-space:normal; min-width:240px; max-width:380px; }
+        .fn-rol { max-height:62vh; overflow:auto; border:1px solid var(--sep); border-radius:12px; }
+        .tag { display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:8px; white-space:nowrap; }
+        .tag.lib { background:rgba(48,209,88,.16); color:#30D158; } .tag.alib { background:rgba(10,132,255,.16); color:#0A84FF; }
+        .tag.est { background:rgba(255,69,58,.14); color:#ff453a; } .tag.cob { background:rgba(175,82,222,.16); color:#bf5af2; } .tag.par { background:rgba(255,159,10,.16); color:#ff9f0a; }
+        .bom { color:#30D158; } .ruim { color:#ff453a; } .medio { color:#ff9f0a; }
+        .fraco { color:var(--l3); font-size:12px; }
+        .aviso { border:1px solid rgba(255,159,10,.45); color:#ff9f0a; border-radius:12px; padding:10px 14px; font-size:13px; }
+        .vazio { padding:40px; text-align:center; color:var(--l3); }
+        .prog { height:6px; border-radius:3px; background:var(--sep); overflow:hidden; margin-top:6px; }
+        .prog i { display:block; height:100%; background:var(--blue); transition:width .3s; }
+        .custo-l { display:grid; grid-template-columns:1fr 180px 150px 36px; gap:8px; margin-bottom:8px; }
+        .custo-l input, .custo-l select { padding:8px 10px; border-radius:10px; border:1px solid var(--sep); background:var(--s2); color:var(--l1); font-size:13px; }
+        .fn-filtros { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+        .fn-filtros input { flex:1; min-width:220px; padding:8px 12px; border-radius:10px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex">
+<main class="content">
+<div class="fn">
+    <div class="fn-topo">
+        <div><h1><i class="bi bi-cash-coin"></i> Finance</h1><small id="fnSub">O resultado do mês, a conciliação com o Mercado Pago e a margem de cada produto</small></div>
+        <div class="fn-ctrl">
+            <select class="fn-sel" id="fnMes" onchange="carregar()"></select>
+            <button class="btn-acao pri" id="fnColetar" onclick="coletar()"><i class="bi bi-arrow-clockwise"></i> Atualizar o mês</button>
+        </div>
+    </div>
+    <div id="fnProg" style="display:none" class="fn-box"><div id="fnProgTxt" class="fraco">—</div><div class="prog"><i id="fnProgBar" style="width:0"></i></div></div>
+    <div class="fn-abas" id="fnAbas">
+        <a href="#resumo" data-a="resumo">Resultado do mês (DRE)</a><a href="#conciliacao" data-a="conciliacao">Conciliação</a>
+        <a href="#produtos" data-a="produtos">Margem por produto</a><a href="#custos" data-a="custos">Custos operacionais</a>
+    </div>
+    <div id="fnCorpo"><div class="vazio">Carregando…</div></div>
+</div>
+</main>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const R = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const P = (v) => v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ',') + '%';
+const dia = (s) => s ? new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+async function api(url, opt) { const r = await fetch(url, opt); const d = await r.json(); if (!r.ok || d.erro) throw new Error(d.erro || 'erro ' + r.status); return d; }
+const post = (url, body) => api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+let d = null, filtro = { busca: '', st: '' }, ordem = { k: 'receita', desc: true };
+
+// meses: os 12 ultimos, marcando os que ja foram coletados
+async function iniciarMeses() {
+    const m = await api('/api/finance/meses');
+    const L = []; const h = new Date();
+    for (let i = 0; i < 12; i++) { const x = new Date(h.getFullYear(), h.getMonth() - i, 1); L.push(`${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`); }
+    const nome = (k) => { const [a, mm] = k.split('-'); return new Date(a, mm - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); };
+    let salvo = ''; try { salvo = localStorage.getItem('fnMes') || ''; } catch {}
+    const padrao = salvo && L.includes(salvo) ? salvo : (m.coletados[0] && L.includes(m.coletados[0]) ? m.coletados[0] : L[1]);
+    $('fnMes').innerHTML = L.map(k => `<option value="${k}" ${k === padrao ? 'selected' : ''}>${nome(k)}${m.coletados.includes(k) ? '' : ' (não coletado)'}</option>`).join('');
+    if (m.estado.rodando) acompanhar();
+}
+async function carregar() {
+    try { localStorage.setItem('fnMes', $('fnMes').value); } catch {}
+    $('fnCorpo').innerHTML = '<div class="vazio">Carregando…</div>';
+    try { d = await api('/api/finance/mes?mes=' + $('fnMes').value); desenhar(); } catch (e) { $('fnCorpo').innerHTML = `<div class="vazio ruim">Erro: ${esc(e.message)}</div>`; }
+}
+async function coletar() {
+    const mes = $('fnMes').value;
+    if (!confirm(`Buscar as vendas de ${$('fnMes').selectedOptions[0].textContent.replace(' (não coletado)', '')} no Mercado Livre e no Mercado Pago?\n\nLeva alguns minutos (cada pagamento é conferido).`)) return;
+    try { await post('/api/finance/coletar', { mes }); acompanhar(); } catch (e) { alert(e.message); }
+}
+async function acompanhar() {
+    $('fnProg').style.display = ''; $('fnColetar').disabled = true;
+    for (;;) {
+        const e = await api('/api/finance/estado').catch(() => ({}));
+        $('fnProgTxt').textContent = e.rodando ? `${e.etapa}${e.total ? ` (${e.feito} de ${e.total})` : ''}` : (e.erro ? 'Erro: ' + e.erro : 'Pronto');
+        $('fnProgBar').style.width = e.total ? Math.round(e.feito / e.total * 100) + '%' : '15%';
+        if (!e.rodando) break;
+        await new Promise(r => setTimeout(r, 1500));
+    }
+    $('fnColetar').disabled = false; setTimeout(() => { $('fnProg').style.display = 'none'; }, 1200);
+    await iniciarMeses(); carregar();
+}
+const aba = () => (location.hash || '#resumo').slice(1);
+window.addEventListener('hashchange', desenhar);
+
+function desenhar() {
+    document.querySelectorAll('#fnAbas a').forEach(a => a.classList.toggle('on', a.dataset.a === aba()));
+    if (!d) return;
+    if (!d.coletado) { $('fnCorpo').innerHTML = `<div class="fn-box vazio">Este mês ainda não foi coletado.<br><br><button class="btn-acao pri" onclick="coletar()"><i class="bi bi-cloud-download"></i> Buscar as vendas do mês</button></div>`; return; }
+    $('fnSub').textContent = `${d.de.split('-').reverse().join('/')} a ${d.ate.split('-').reverse().join('/')}${d.fechado ? '' : ' (mês em andamento)'} · ${d.pedidos} pedidos · ${d.unidades} unidades · atualizado em ${new Date(d.atualizado_em).toLocaleString('pt-BR')}`;
+    ({ resumo: desenharResumo, conciliacao: desenharConc, produtos: desenharProdutos, custos: desenharCustos }[aba()] || desenharResumo)();
+}
+
+function desenharResumo() {
+    const x = d.dre, c = d.conciliacao;
+    const cor = (v) => v == null ? '' : v < 0 ? 'ruim' : 'bom';
+    const avisos = [];
+    if (d.sem_custo) avisos.push(`${d.sem_custo} venda(s) sem custo na planilha: o CMV está menor do que o real.`);
+    if (d.sem_frete) avisos.push(`${d.sem_frete} venda(s) sem o frete do envio.`);
+    if (!d.custos_operacionais.length) avisos.push('Custos operacionais do mês não cadastrados: o lucro líquido está sem eles (aba Custos operacionais).');
+    if (d.ads_info && d.ads_info.erro) avisos.push('Não consegui ler o gasto de ADS: ' + d.ads_info.erro);
+    const linha = (rot, v, cls) => `<tr class="${cls || ''}"><td>${rot}</td><td class="${cls === 'fim' || cls === 'sub' ? cor(v) : ''}">${cls === 'menos' ? '− ' : ''}${R(v)}</td><td>${x.receita ? P(v / x.receita * 100) : ''}</td></tr>`;
+    $('fnCorpo').innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">
+      <div class="fn-cards">
+        <div class="fn-card"><div class="r"><i class="bi bi-bag"></i> Receita líquida</div><div class="v">${R(x.receita)}</div><div class="s">bruto ${R(x.bruto)} − cupons − devoluções</div></div>
+        <div class="fn-card"><div class="r"><i class="bi bi-pie-chart"></i> Margem de contribuição</div><div class="v ${cor(x.mc)}">${R(x.mc)}</div><div class="s">${P(x.mc_pct)} da receita</div></div>
+        <div class="fn-card"><div class="r"><i class="bi bi-trophy"></i> Lucro líquido</div><div class="v ${cor(x.lucro)}">${R(x.lucro)}</div><div class="s">${P(x.lucro_pct)} · depois de ADS e custos operacionais</div></div>
+        <div class="fn-card"><div class="r"><i class="bi bi-hourglass-split"></i> A liberar no Mercado Pago</div><div class="v" style="color:#0A84FF">${R(c.a_liberar)}</div><div class="s">${c.proximas.length ? 'próxima: ' + dia(c.proximas[0].dia) + ' · ' + R(c.proximas[0].valor) : 'nada pendente'}${c.retido ? ` · <span class="medio">${R(c.retido)} retidos</span>` : ''}</div></div>
+      </div>
+      ${avisos.length ? `<div class="aviso">${avisos.map(esc).join('<br>')}</div>` : ''}
+      <div class="fn-box"><h3>Resultado do mês (DRE)</h3><table class="dre">
+        ${linha('Faturamento bruto', x.bruto)}${linha('Cupons do vendedor', x.cupons, 'menos')}${linha('Devoluções (sem cobertura do ML)', x.devolucoes, 'menos')}
+        ${linha('Receita líquida', x.receita, 'sub')}
+        ${linha('CMV (custo dos produtos)', x.cmv, 'menos')}${linha('Tarifas do Mercado Livre', x.tarifas, 'menos')}${linha('Frete pago pela loja', x.frete, 'menos')}${linha(`Impostos (${String(d.imposto_pct).replace('.', ',')}%)`, x.impostos, 'menos')}
+        ${linha('Margem de contribuição', x.mc, 'sub')}
+        ${linha('ADS (Product Ads)', x.ads, 'menos')}${linha('Custos operacionais', x.custos_operacionais, 'menos')}
+        ${linha('Lucro líquido', x.lucro, 'fim')}
+      </table><div class="fraco" style="margin-top:8px">Venda estornada (devolvida sem cobertura) entra só como devolução: o ML devolve a tarifa e o frete e o produto volta. Quando o ML cobre o reembolso, o dinheiro fica com a loja e não é devolução.</div></div></div>`;
+}
+
+function desenharConc() {
+    const c = d.conciliacao;
+    const st = (l) => l.liberacao === 'estornado' ? '<span class="tag est">estornado</span>' : l.coberto ? '<span class="tag cob">ML cobriu</span>'
+        : l.liberacao === 'liberado' ? '<span class="tag lib">liberado</span>' : l.liberacao === 'a_liberar' ? `<span class="tag alib">libera ${dia(l.liberacao_data)}</span>`
+        : l.liberacao === 'retido' ? `<span class="tag par" title="A data de liberação já passou: o dinheiro está retido (mediação, reclamação...)">retido desde ${dia(l.liberacao_data)}</span>` : '<span class="fraco">—</span>';
+    const q = filtro.busca.toLowerCase();
+    const L = d.vendas.filter(l => (!q || (l.sku + ' ' + l.titulo + ' ' + l.pedido).toLowerCase().includes(q))
+        && (!filtro.st || (filtro.st === 'diferenca' ? Math.abs(l.diferenca || 0) >= 1 : filtro.st === 'estornado' ? l.liberacao === 'estornado' : filtro.st === 'coberto' ? l.coberto : filtro.st === 'parcial' ? l.parcial : l.liberacao === filtro.st)));
+    $('fnCorpo').innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">
+      <div class="fn-cards">
+        <div class="fn-card"><div class="r"><i class="bi bi-check2-circle"></i> Liberado na conta</div><div class="v bom">${R(c.liberado)}</div><div class="s">líquido que já caiu no Mercado Pago</div></div>
+        <div class="fn-card"><div class="r"><i class="bi bi-hourglass-split"></i> A liberar</div><div class="v" style="color:#0A84FF">${R(c.a_liberar)}</div><div class="s">${c.proximas.length} data(s) de liberação pela frente</div>
+          ${c.retido ? `<div class="s medio" style="margin-top:4px;cursor:pointer" onclick="filtro.st='retido';desenharConc()"><b>${R(c.retido)} retidos</b> em ${c.qtd_retido} pedido(s): a data já passou · ver quais</div>` : ''}</div>
+        <div class="fn-card"><div class="r"><i class="bi bi-arrow-counterclockwise"></i> Estornado ao comprador</div><div class="v ruim">${R((c.cancelados.valor_estornado || 0) + c.estornado)}</div><div class="s">${(c.cancelados.estornados || 0) + c.qtd_estornado} pedido(s) pagos e cancelados · ${c.parcial} devolução(ões) parcial(is) · ${c.cancelados.qtd} cancelados no total</div></div>
+        <div class="fn-card"><div class="r"><i class="bi bi-shield-check"></i> ML cobriu</div><div class="v" style="color:#bf5af2">${c.coberto}</div><div class="s">pedido(s) em que o ML pagou o reembolso: o dinheiro fica com a loja</div></div>
+      </div>
+      <div class="fn-box"><h3>O Mercado Pago creditou o que devia?</h3>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:14px">
+          <div>Esperado (receita − tarifa − frete)<div style="font-size:20px;font-weight:800">${R(c.esperado)}</div></div>
+          <div>Creditado no Mercado Pago<div style="font-size:20px;font-weight:800">${R(c.creditado)}</div></div>
+          <div>Diferença<div style="font-size:20px;font-weight:800" class="${Math.abs(c.diferenca) < 1 ? 'bom' : c.diferenca < 0 ? 'ruim' : 'medio'}">${c.diferenca > 0 ? '+' : ''}${R(c.diferenca)}</div></div>
+          <div>Vendas com diferença de R$ 1 ou mais<div style="font-size:20px;font-weight:800">${c.com_diferenca}</div><a href="#" onclick="filtro.st='diferenca';desenharConc();return false" class="fraco">ver quais</a></div>
+        </div><div class="fraco" style="margin-top:8px">Diferença negativa = o Mercado Pago creditou menos do que a conta da venda (taxa extra, desconto de frete etc.). Vendas com cobertura do ML ou devolução parcial ficam fora desta conta.</div></div>
+      ${c.sem_mp ? `<div class="aviso">${c.sem_mp} venda(s) sem a conferência do Mercado Pago (o acesso ao pagamento falhou). Clique em Atualizar o mês para tentar de novo.</div>` : ''}
+      ${c.proximas.length ? `<div class="fn-box"><h3>Próximas liberações</h3><div style="display:flex;gap:8px;flex-wrap:wrap">${c.proximas.slice(0, 20).map(p => `<span class="tag alib" style="font-size:12px;padding:5px 10px">${dia(p.dia)} · ${R(p.valor)}</span>`).join('')}</div></div>` : ''}
+      <div class="fn-box"><h3>Venda por venda</h3>
+        <div class="fn-filtros"><input placeholder="Buscar SKU, produto ou pedido…" value="${esc(filtro.busca)}" oninput="filtro.busca=this.value;desenharConcTabela()">
+          <select class="fn-sel" onchange="filtro.st=this.value;desenharConcTabela()">${[['', 'Todas'], ['liberado', 'Liberadas'], ['a_liberar', 'A liberar'], ['retido', 'Retidas (data vencida)'], ['diferenca', 'Com diferença'], ['estornado', 'Estornadas'], ['coberto', 'ML cobriu'], ['parcial', 'Devolução parcial']].map(([v, t]) => `<option value="${v}" ${filtro.st === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div class="fn-rol" id="concTab"></div></div></div>`;
+    desenharConcTabela(st, L);
+}
+function desenharConcTabela() {
+    const st = (l) => l.liberacao === 'estornado' ? '<span class="tag est">estornado</span>' : l.coberto ? '<span class="tag cob">ML cobriu</span>'
+        : l.liberacao === 'liberado' ? '<span class="tag lib">liberado</span>' : l.liberacao === 'a_liberar' ? `<span class="tag alib">libera ${dia(l.liberacao_data)}</span>`
+        : l.liberacao === 'retido' ? `<span class="tag par" title="A data de liberação já passou: o dinheiro está retido (mediação, reclamação...)">retido desde ${dia(l.liberacao_data)}</span>` : '<span class="fraco">—</span>';
+    const q = filtro.busca.toLowerCase();
+    const L = d.vendas.filter(l => (!q || (l.sku + ' ' + l.titulo + ' ' + l.pedido).toLowerCase().includes(q))
+        && (!filtro.st || (filtro.st === 'diferenca' ? Math.abs(l.diferenca || 0) >= 1 : filtro.st === 'estornado' ? l.liberacao === 'estornado' : filtro.st === 'coberto' ? l.coberto : filtro.st === 'parcial' ? l.parcial : l.liberacao === filtro.st)));
+    $('concTab').innerHTML = L.length ? `<table class="fn-tab"><tr><th>Produto</th><th>Data</th><th>Frete</th><th>Vendido</th><th>Receita</th><th>Custos ML (tarifa + frete)</th><th>Líquido no MP</th><th>Diferença</th><th>Situação</th></tr>
+      ${L.slice(0, 400).map(l => `<tr><td class="t"><b>${esc(l.titulo.slice(0, 60))}</b><div class="fraco">${esc(l.sku)} · pedido ${esc(l.pedido)}${l.qtd > 1 ? ' · ' + l.qtd + ' un' : ''}</div></td>
+        <td>${new Date(l.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${esc(l.logistica)}</td>
+        <td>${R(l.bruto)}</td><td>${R(l.receita)}</td><td class="fraco">${l.estornado ? '—' : R(l.tarifa + l.frete)}</td><td><b>${l.liquido_mp == null ? '—' : R(l.liquido_mp)}</b></td><td class="${l.diferenca == null || Math.abs(l.diferenca) < 1 ? 'fraco' : l.diferenca < 0 ? 'ruim' : 'medio'}">${l.diferenca == null ? '—' : (l.diferenca > 0 ? '+' : '') + R(l.diferenca)}</td><td>${st(l)}</td></tr>`).join('')}</table>
+      ${L.length > 400 ? `<div class="fraco" style="padding:8px">Mostrando 400 de ${L.length}. Use a busca ou o filtro.</div>` : ''}` : '<div class="vazio">Nenhuma venda com esse filtro.</div>';
+}
+
+function desenharProdutos() {
+    const k = ordem.k;
+    const L = [...d.produtos].filter(p => !filtro.busca || (p.sku + ' ' + p.titulo).toLowerCase().includes(filtro.busca.toLowerCase()))
+        .sort((a, b) => ((a[k] ?? -1e12) > (b[k] ?? -1e12) ? 1 : -1) * (ordem.desc ? -1 : 1));
+    const th = (t, c) => `<th onclick="ordem={k:'${c}',desc:ordem.k==='${c}'?!ordem.desc:true};desenharProdutos()">${t}${ordem.k === c ? (ordem.desc ? ' ↓' : ' ↑') : ''}</th>`;
+    const cls = (v) => v == null ? '' : v < 5 ? 'ruim' : v < 15 ? 'medio' : 'bom';
+    $('fnCorpo').innerHTML = `<div class="fn-box"><h3>Margem por produto</h3>
+      <div class="fn-filtros"><input placeholder="Buscar SKU ou produto…" value="${esc(filtro.busca)}" oninput="filtro.busca=this.value;desenharProdutos();this.focus();this.setSelectionRange(this.value.length,this.value.length)"></div>
+      <div class="fn-rol"><table class="fn-tab"><tr>${th('Produto', 'titulo')}${th('Unid.', 'unidades')}${th('Receita', 'receita')}${th('CMV', 'custo')}${th('Tarifas', 'tarifa')}${th('Frete', 'frete')}${th('Impostos', 'imposto')}${th('Devoluções', 'devolucao')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}</tr>
+      ${L.map(p => `<tr><td class="t"><b>${esc(p.titulo.slice(0, 64))}</b><div class="fraco">${esc(p.sku)} · ${esc(p.item_id)}${p.estornos ? ` · ${p.estornos} estorno(s)` : ''}${p.sem_custo ? ' · <span class="medio">sem custo na planilha</span>' : ''}</div></td>
+        <td>${p.unidades}</td><td>${R(p.receita)}</td><td>${R(p.custo)}</td><td>${R(p.tarifa)}</td><td>${R(p.frete)}</td><td>${R(p.imposto)}</td><td class="${p.devolucao ? 'ruim' : 'fraco'}">${R(p.devolucao)}</td>
+        <td><b class="${p.mc < 0 ? 'ruim' : ''}">${R(p.mc)}</b></td><td><b class="${cls(p.mc_pct)}">${P(p.mc_pct)}</b></td></tr>`).join('')}</table></div>
+      <div class="fraco" style="margin-top:8px">MC = receita − CMV − tarifas − frete − impostos, das vendas que ficaram. O ADS e os custos operacionais entram só no resultado do mês.</div></div>`;
+}
+
+const CATS = ['Pessoal', 'Aluguel e estrutura', 'Embalagem', 'Sistemas e assinaturas', 'Contador e taxas', 'Transporte', 'Marketing', 'Outros'];
+function desenharCustos() {
+    const L = d.custos_operacionais.length ? d.custos_operacionais : [{ nome: '', categoria: 'Pessoal', valor: '' }];
+    $('fnCorpo').innerHTML = `<div class="fn-box"><h3>Custos operacionais de ${$('fnMes').selectedOptions[0].textContent.replace(' (não coletado)', '')}</h3>
+      <div class="fraco" style="margin-bottom:12px">O que não vem do Mercado Livre: salários, aluguel, embalagem, sistemas, contador… Entra no lucro líquido do mês.</div>
+      <div id="custosL">${L.map(linhaCusto).join('')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn-acao" onclick="$('custosL').insertAdjacentHTML('beforeend', linhaCusto({nome:'',categoria:'Outros',valor:''}))"><i class="bi bi-plus-lg"></i> Adicionar custo</button>
+        <button class="btn-acao" onclick="copiarAnterior()"><i class="bi bi-files"></i> Copiar do mês anterior</button>
+        <button class="btn-acao pri" onclick="salvarCustos()"><i class="bi bi-check-lg"></i> Salvar</button>
+        <span class="fraco" id="custosMsg" style="align-self:center">Total: ${R(d.dre.custos_operacionais)}</span></div></div>`;
+}
+function linhaCusto(c) {
+    return `<div class="custo-l"><input placeholder="Descrição (ex.: salário da Ana)" value="${esc(c.nome)}"><select>${CATS.map(k => `<option ${k === c.categoria ? 'selected' : ''}>${k}</option>`).join('')}</select>
+      <input type="number" step="0.01" placeholder="Valor (R$)" value="${c.valor ?? ''}"><button class="btn-acao" style="padding:6px" title="Remover" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button></div>`;
+}
+async function salvarCustos() {
+    const lista = [...document.querySelectorAll('#custosL .custo-l')].map(l => { const [n, c, v] = l.querySelectorAll('input, select'); return { nome: n.value, categoria: c.value, valor: Number(v.value) || 0 }; });
+    try { await post('/api/finance/custos', { mes: $('fnMes').value, lista }); $('custosMsg').textContent = 'Salvo.'; d = await api('/api/finance/mes?mes=' + $('fnMes').value); setTimeout(desenhar, 600); }
+    catch (e) { $('custosMsg').textContent = 'Erro: ' + e.message; }
+}
+async function copiarAnterior() {
+    const [a, m] = $('fnMes').value.split('-').map(Number); const ant = new Date(a, m - 2, 1);
+    const k = `${ant.getFullYear()}-${String(ant.getMonth() + 1).padStart(2, '0')}`;
+    try { const x = await api('/api/finance/mes?mes=' + k); const L = (x.custos_operacionais || []);
+        if (!L.length) return alert('O mês anterior não tem custos cadastrados.');
+        $('custosL').innerHTML = L.map(linhaCusto).join(''); $('custosMsg').textContent = 'Copiado. Confira os valores e clique em Salvar.'; }
+    catch (e) { alert(e.message); }
+}
+
+iniciarMeses().then(carregar).finally(() => document.body.classList.add('page-ready'));
+desenhar();
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

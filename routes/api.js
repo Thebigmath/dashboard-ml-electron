@@ -1179,6 +1179,13 @@ router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').veri
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Analise de vendas (estilo Mercado Turbo): MC% real de cada venda do periodo
 router.get('/seven/vendas_mc', auth, (req, res) => { require('../lib/vendas_mc').analisar({ periodo: req.query.periodo || 'ontem' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Finance: DRE do mes, conciliacao com o Mercado Pago, margem por produto e custos operacionais
+const finance = () => require('../lib/finance');
+router.get('/finance/meses', auth, (req, res) => res.json({ coletados: finance().meses(), estado: finance().estado }));
+router.get('/finance/mes', auth, (req, res) => { try { res.json(finance().analisar(String(req.query.mes || ''))); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/estado', auth, (req, res) => res.json(finance().estado));
+router.post('/finance/coletar', auth, (req, res) => { finance().coletar(String((req.body || {}).mes || ''), { forcar: !!(req.body || {}).forcar }).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/finance/custos', auth, (req, res) => { try { res.json(finance().salvarCustos(String(req.body.mes || ''), req.body.lista || [])); } catch (e) { erroJson(res)(e); } });
 // Sugestao de preco da IA para um anuncio que vendeu (Analise de vendas -> Precificar)
 router.post('/seven/preco/:item/ia', auth, (req, res) => { require('../lib/preco_ia').sugerir(req.params.item, req.body || {}).then(d => res.json(d)).catch(erroJson(res)); });
 // Clonagem (AD HEALTH): fila de anuncios para clonar na outra conta

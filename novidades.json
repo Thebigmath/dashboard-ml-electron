@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.72",
+    "data": "2026-10-13",
+    "titulo": "Finance: DRE, conciliação e margem por produto",
+    "texto": "Finance (no app Finance da barra):\n\n- Resultado do mês (DRE): faturamento, cupons, devoluções, CMV, tarifas do ML, frete, impostos, margem de contribuição, ADS, custos operacionais e lucro líquido.\n- Conciliação com o Mercado Pago: quanto já foi liberado, o que está a liberar (com as datas), o que está retido (data de liberação vencida), estornos, coberturas do ML e se o Mercado Pago creditou o que devia, venda por venda.\n- Margem por produto: receita, CMV, tarifas, frete, impostos, devoluções e MC% de cada anúncio.\n- Custos operacionais: cadastro do mês (salários, aluguel, embalagem...), com copiar do mês anterior.\n\nAnálise de vendas:\n\n- Quando você muda o preço, as vendas daquele anúncio saem da lista por 3 dias (marque mostrar os já atualizados para ver).\n- Se o mesmo produto (mesmo SKU) vendeu em outros anúncios, o sistema oferece aplicar a mesma mudança neles também.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.71",
     "data": "2026-10-13",
     "titulo": "Metas dos tapetes na regra de preço e menu hambúrguer",

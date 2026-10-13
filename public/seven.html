@@ -532,6 +532,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                     <div class="vm-ctrl">
                         <input class="sv-busca" id="vmBusca" placeholder="Buscar SKU ou produto…" style="margin-left:0;flex:1;min-width:200px" oninput="vmDesenhar()">
                         <label class="pia-fraco" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="vmSoAbaixo" onchange="vmDesenhar()"> só abaixo de 15%</label>
+                        <label class="pia-fraco" style="display:flex;gap:6px;align-items:center" title="Anúncios com o preço mudado nos últimos 3 dias saem da lista"><input type="checkbox" id="vmMostrarAlt" onchange="vmDesenhar()"> mostrar os já atualizados <span id="vmQtdAlt"></span></label>
                     </div>
                     <div class="dashboard-card" style="padding:0;overflow:auto;max-height:70vh"><div id="vmTabela"><div class="sv-vazio">Carregando…</div></div></div>
                 </div>
@@ -1223,6 +1224,33 @@ async function vmCarregar(forcar) {
     try { cache.vendasmc = await api('/api/seven/vendas_mc?periodo=' + encodeURIComponent(per)); vmDesenhar(); }
     catch (e) { $('vmTabela').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
 }
+// Depois de mudar o preco pela Analise de vendas: o anuncio sai da lista e, se o mesmo produto (mesmo SKU) aparece
+// em outros anuncios que venderam, oferece aplicar a mesma variacao (%) neles tambem, cada um sobre o proprio preco.
+async function vmDepoisDeAplicar(feito, r) {
+    const d = cache.vendasmc; d.alterados = d.alterados || {};
+    d.alterados[feito.item_id] = { quando: new Date().toISOString(), antes: r.antes, depois: r.depois };
+    const fator = r.depois / r.antes, sku = String(feito.sku || '').trim().toLowerCase();
+    const irmaos = sku ? [...new Set(d.vendas.filter(v => v.item_id !== feito.item_id && String(v.sku || '').trim().toLowerCase() === sku && !d.alterados[v.item_id]).map(v => v.item_id))] : [];
+    pcFechar(); vmDesenhar();
+    if (!irmaos.length) return;
+    const pct = ((fator - 1) * 100).toFixed(1).replace('.', ',');
+    const lista = [];
+    for (const id of irmaos) { try { const x = await api(`/api/seven/preco/${id}`); lista.push({ id, titulo: x.titulo, antes: x.preco_atual, depois: Math.round(x.preco_atual * fator * 100) / 100 }); } catch {} }
+    if (!lista.length) return;
+    if (!confirm(`O mesmo produto (SKU ${feito.sku}) vendeu em mais ${lista.length} anúncio(s). Aplicar a mesma mudança (${fator > 1 ? '+' : ''}${pct}%) neles também?\n\n` +
+        lista.map(x => `${x.id} · ${pcR$(x.antes)} → ${pcR$(x.depois)}`).join('\n'))) return;
+    const res = [];
+    for (const x of lista) {
+        try {
+            const a = await fetch(`/api/seven/preco/${x.id}/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preco: x.depois, confirmacao: 'APLICAR', motivo: `Mesma mudança do ${feito.item_id} (SKU ${feito.sku})` }) }).then(z => z.json());
+            if (a.ok) { d.alterados[x.id] = { quando: new Date().toISOString(), antes: a.antes, depois: a.depois }; res.push(`✓ ${x.id}: ${pcR$(a.antes)} → ${pcR$(a.depois)}`); }
+            else res.push(`✗ ${x.id}: ${a.erro || 'não aplicou'}`);
+        } catch (e) { res.push(`✗ ${x.id}: ${e.message}`); }
+    }
+    vmDesenhar();
+    alert('Resultado:\n\n' + res.join('\n'));
+}
 // Precificar a partir de uma venda: manda para a IA as vendas desse anuncio no periodo
 function vmPrecificar(pedido, item) {
     const d = cache.vendasmc; if (!d) return;
@@ -1238,14 +1266,19 @@ function vmDesenhar() {
     $('vmAtual').textContent = (d.de === d.ate ? dia(d.de) : `${dia(d.de)} a ${dia(d.ate)}`) + ' · atualizado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     $('vmAtual').textContent += ` · ${r.pedidos} venda(s) · MC% média ${prPct(r.mc_pct)}${r.sem_custo ? ` · ${r.sem_custo} sem custo na planilha` : ''}`;
     const q = ($('vmBusca').value || '').trim().toLowerCase(), so = $('vmSoAbaixo').checked;
-    const filtra = (x) => (!q || String(x.sku).toLowerCase().includes(q) || String(x.titulo).toLowerCase().includes(q)) && (!so || (x.mc_pct != null && x.mc_pct < d.mc_alvo));
+    // preco mudado nos ultimos 3 dias: a venda sai da lista (a nao ser que peca para mostrar)
+    const alt = d.alterados || {}, mostrarAlt = $('vmMostrarAlt').checked;
+    const qAlt = new Set(d.vendas.filter(v => alt[v.item_id]).map(v => v.item_id)).size;
+    $('vmQtdAlt').textContent = qAlt ? `(${qAlt})` : '';
+    const filtra = (x) => (!q || String(x.sku).toLowerCase().includes(q) || String(x.titulo).toLowerCase().includes(q)) && (!so || (x.mc_pct != null && x.mc_pct < d.mc_alvo))
+        && (mostrarAlt || !alt[x.item_id]);
     const ord = (L) => { if (!vmOrdem.campo) return L; const k = vmOrdem.campo; return [...L].sort((a, b) => ((a[k] ?? -1e9) > (b[k] ?? -1e9) ? 1 : -1) * (vmOrdem.desc ? -1 : 1)); };
     const th = (t, k) => `<th onclick="vmOrdenar('${k}')">${t}${vmOrdem.campo === k ? (vmOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
     const mcCel = (x) => `<td class="vm-mc ${vmClasse(x.mc_pct)}">${x.mc_pct == null ? '<span class="pia-fraco">sem custo</span>' : prPct(x.mc_pct)}</td>`;
     {
         const L = ord(d.vendas.filter(filtra));
         $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('Data', 'data')}${th('Frete', 'logistica')}${th('Valor unit.', 'valor')}${th('Qtd', 'qtd')}${th('Faturamento', 'faturamento')}${th('Custo (−)', 'custo')}${th('Imposto (−)', 'imposto')}${th('Tarifa (−)', 'tarifa')}${th('Frete comprador', 'frete_comprador')}${th('Frete vendedor (−)', 'frete_vendedor')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}<th></th></tr>
-          ${L.map((v, i) => `<tr><td class="t"><b>${esc(rtCurto(v.titulo, 56))}</b><div class="pia-fraco">${esc(v.sku)} · pedido ${esc(v.pedido)}${v.cupom ? ` · cupom ${epBRL(v.cupom)}` : ''}</div></td>
+          ${L.map((v, i) => `<tr><td class="t"><b>${esc(rtCurto(v.titulo, 56))}</b>${alt[v.item_id] ? ` <span class="pr-rec ENTRAR" title="Preço mudado em ${new Date(alt[v.item_id].quando).toLocaleString('pt-BR')}">preço atualizado ${pcR$(alt[v.item_id].antes)} → ${pcR$(alt[v.item_id].depois)}</span>` : ''}<div class="pia-fraco">${esc(v.sku)} · pedido ${esc(v.pedido)}${v.cupom ? ` · cupom ${epBRL(v.cupom)}` : ''}</div></td>
             <td>${new Date(v.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${esc(v.logistica)}</td>
             <td>${epBRL(v.valor)}</td><td>${v.qtd}</td><td>${epBRL(v.faturamento)}</td><td style="color:#ff9f0a">${v.custo == null ? '—' : epBRL(v.custo)}</td>
             <td style="color:#ff453a">${epBRL(v.imposto)}</td><td style="color:#c9a227">${epBRL(v.tarifa)}</td><td class="pia-fraco">${v.frete_comprador == null ? '—' : epBRL(v.frete_comprador)}</td>
@@ -1676,7 +1709,11 @@ async function pcAplicar(confirmarGrande) {
   try {
     const r = await fetch(`/api/seven/preco/${pc.item_id}/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ preco: pc.preco, confirmacao: 'APLICAR', confirmarGrande: !!confirmarGrande, motivo: (pc.ia && pc.ia.motivo) || pc.sugestao.motivo }) }).then(x => x.json());
-    if (r.ok) { $('pcMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${pcR$(r.antes)} → ${pcR$(r.depois)}</b>`; setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500); }
+    if (r.ok) {
+      $('pcMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${pcR$(r.antes)} → ${pcR$(r.depois)}</b>`;
+      if (pc.ia_ctx && cache.vendasmc) { const feito = pc; setTimeout(() => vmDepoisDeAplicar(feito, r), 900); }
+      else setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500);
+    }
     else if (r.precisa_confirmar) { if (confirm(r.erro)) return pcAplicar(true); $('pcMsg').textContent = 'Cancelado.'; $('pcAplicar').disabled = false; }
     else { $('pcMsg').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; $('pcAplicar').disabled = false; }
   } catch (e) { $('pcMsg').textContent = 'Erro: ' + e.message; $('pcAplicar').disabled = false; }

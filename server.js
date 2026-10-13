@@ -56,6 +56,7 @@ app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
 app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
+app.get('/finance', (req, res) => res.sendFile(path.join(__dirname, 'public/finance.html')));
 app.get('/parados', (req, res) => res.sendFile(path.join(__dirname, 'public/parados.html')));
 
 // Arquivos estáticos
