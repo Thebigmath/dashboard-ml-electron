@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.67",
+    "data": "2026-10-13",
+    "titulo": "Clonagem na própria conta",
+    "texto": "- Clonagem de anúncios: agora cria o anúncio novo na própria conta (padrão). Na janela Editar, o campo \"Clonar para\" deixa escolher esta conta ou a outra.\n- Cada anúncio da fila mostra para qual conta vai, e a confirmação antes de clonar também.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.66",
     "data": "2026-10-13",
     "titulo": "Clonagem de anúncios e reposição por família",

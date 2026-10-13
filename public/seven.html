@@ -533,7 +533,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
 
                 <div class="sv-view" id="view-clonagem">
                     <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-                        <div><h3>Clonagem de anúncios</h3><small>Copia o anúncio desta conta para a <b id="clOutra">outra conta</b> com fotos, ficha técnica, descrição e compatibilidades. Vendas e avaliações não vão junto: ficam no anúncio original.</small></div>
+                        <div><h3>Clonagem de anúncios</h3><small>Cria um anúncio novo a partir de um anúncio existente, nesta conta (<b id="clEsta">—</b>) ou na <b id="clOutra">outra conta</b>, com fotos, ficha técnica, descrição e compatibilidades. Vendas e avaliações não vão junto: ficam no anúncio original.</small></div>
                     </div>
                     <div id="clAviso"></div>
                     <div class="dashboard-card" style="padding:14px;margin-bottom:14px">
@@ -1260,8 +1260,9 @@ async function clCarregar() {
 }
 function clDesenhar() {
     const d = clDados; if (!d) return;
-    $('clOutra').textContent = d.outra_conta;
-    $('clAviso').innerHTML = d.disponivel ? '' : `<div class="dashboard-card" style="padding:12px 14px;margin-bottom:12px;border-color:#ff9f0a;color:#ff9f0a"><i class="bi bi-exclamation-triangle"></i> ${esc(d.motivo)} A clonagem usa o acesso do outro Dashboard instalado neste PC.</div>`;
+    $('clOutra').textContent = d.outra_conta; $('clEsta').textContent = d.esta_conta;
+    const clDest = (e) => e.destino === 'outra' ? d.outra_conta : d.esta_conta;
+    $('clAviso').innerHTML = d.disponivel ? '' : `<div class="pia-fraco" style="margin-bottom:10px"><i class="bi bi-info-circle"></i> ${esc(d.motivo)} Dá para clonar nesta conta; para a outra conta é preciso o outro Dashboard instalado neste PC.</div>`;
     if (!d.fila.length) { $('clFila').innerHTML = '<div class="sv-vazio">Nenhum anúncio na fila. Cole o MLB ou o link acima.</div>'; return; }
     $('clFila').innerHTML = d.fila.map(r => {
         const o = r.original, e = r.edicao, v = r.validacao;
@@ -1276,7 +1277,7 @@ function clDesenhar() {
                <button class="ep-btn" style="border-color:#30D158;color:#30D158" ${r.status !== 'validado' ? 'disabled title="Valide primeiro"' : ''} onclick="clClonar('${r.mlb}', this)"><i class="bi bi-copy"></i> Clonar</button>
                <button class="ep-btn" style="border-color:var(--sep);color:var(--l3)" title="Tirar da fila" onclick="clRemover('${r.mlb}')"><i class="bi bi-x-lg"></i></button>`;
         return `<div class="cl-item">${r.thumbnail ? `<img src="${esc(r.thumbnail.replace('http:', 'https:'))}" alt="">` : ''}
-            <div class="cl-info"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cl-tag ${r.status}">${CL_STATUS[r.status] || r.status}</span><b>${esc(e.titulo)}</b></div>
+            <div class="cl-info"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cl-tag ${r.status}">${CL_STATUS[r.status] || r.status}</span><b>${esc(e.titulo)}</b><span class="cl-tag na_fila" title="Conta onde o anúncio novo vai ser criado">→ ${esc(clDest(e))}</span></div>
               <div class="pia-fraco" style="margin-top:3px">${esc(r.mlb)} · SKU ${esc(e.sku || '—')} · ${epBRL(e.preco)} · ${e.estoque} un · ${CL_TIPO[e.tipo] || e.tipo} · ${o.fotos} foto(s)${o.compat ? ` · ${o.compat} compatibilidade(s)` : ''}${o.variacoes ? ` · ${o.variacoes} variação(ões)` : ''} · original vendeu ${o.vendidos ?? '—'}</div>${det}</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${botoes}</div></div>`;
     }).join('');
@@ -1296,7 +1297,8 @@ async function clRemover(mlb) {
 function clEditar(mlb) {
     const r = clDados.fila.find(x => x.mlb === mlb); const e = r.edicao;
     $('clBox').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Editar antes de clonar</h3><button class="ep-btn" onclick="clFechar()"><i class="bi bi-x-lg"></i></button></div>
-      <div class="pia-fraco" style="margin-top:4px">${esc(r.mlb)} → ${esc(clDados.outra_conta)} · o que mudar aqui vale só para o anúncio novo</div>
+      <div class="pia-fraco" style="margin-top:4px">${esc(r.mlb)} · o que mudar aqui vale só para o anúncio novo</div>
+      <label>Clonar para</label><select id="clDestino"><option value="esta"${e.destino !== 'outra' ? ' selected' : ''}>Esta conta (${esc(clDados.esta_conta)})</option><option value="outra"${e.destino === 'outra' ? ' selected' : ''}${clDados.disponivel ? '' : ' disabled'}>Outra conta (${esc(clDados.outra_conta)})${clDados.disponivel ? '' : ' — não instalada neste PC'}</option></select>
       <label>Nome do produto <span id="clConta" style="float:right">${e.titulo.length} letras</span></label><input id="clTitulo" value="${esc(e.titulo)}" oninput="$('clConta').textContent=this.value.length+' letras'">
       <div class="pia-fraco" style="margin-top:4px">O Mercado Livre monta o título com esse nome + a ficha técnica (lado, cor…). Título original: ${esc(r.original.titulo)}</div>
       <div class="cl-grade"><div><label>Preço (R$)</label><input id="clPreco" type="number" step="0.01" value="${e.preco}"></div>
@@ -1309,7 +1311,7 @@ function clEditar(mlb) {
 }
 function clFechar() { $('clFundo').classList.remove('on'); }
 async function clSalvar(mlb) {
-    const corpo = { titulo: $('clTitulo').value, preco: $('clPreco').value, estoque: $('clEstoque').value, sku: $('clSku').value, tipo: $('clTipo').value, descricao: $('clDesc').value };
+    const corpo = { titulo: $('clTitulo').value, preco: $('clPreco').value, estoque: $('clEstoque').value, sku: $('clSku').value, tipo: $('clTipo').value, descricao: $('clDesc').value, destino: $('clDestino').value };
     try {
         await api('/api/seven/clonagem/' + mlb + '/editar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
         clFechar(); await clCarregar(); await clValidar(mlb);
@@ -1323,7 +1325,7 @@ async function clValidar(mlb, btn) {
 }
 async function clClonar(mlb, btn) {
     const r = clDados.fila.find(x => x.mlb === mlb), e = r.edicao;
-    if (!confirm(`Criar o anúncio na ${clDados.outra_conta}?\n\n${e.titulo}\n${epBRL(e.preco)} · ${e.estoque} un · SKU ${e.sku || '—'}\n\nIsso publica um anúncio novo de verdade no Mercado Livre.`)) return;
+    if (!confirm(`Criar o anúncio novo na ${e.destino === 'outra' ? clDados.outra_conta : clDados.esta_conta}?\n\n${e.titulo}\n${epBRL(e.preco)} · ${e.estoque} un · SKU ${e.sku || '—'}\n\nIsso publica um anúncio novo de verdade no Mercado Livre.`)) return;
     btn.disabled = true; btn.textContent = 'Clonando…';
     try { const x = await api('/api/seven/clonagem/' + mlb + '/clonar', { method: 'POST' }); if (x.status !== 'clonado') alert('O Mercado Livre recusou: ' + (x.validacao?.erro || 'erro')); }
     catch (e) { alert('Erro ao clonar: ' + e.message); }

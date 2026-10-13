@@ -59,8 +59,8 @@
     "data": "2026-10-13",
     "tag": "AD HEALTH",
     "titulo": "Clonagem de anúncios",
-    "resumo": "Copia um anúncio de uma conta para a outra (Flavia ↔ Cordeiro), com fotos, ficha técnica, descrição e compatibilidades.",
-    "texto": "Na Clonagem de anúncios do AD HEALTH:\n\n- Cole o MLB ou o link (pode colar vários) e o anúncio entra na fila.\n- Antes de clonar dá para mudar o nome do produto, preço, estoque, SKU, tipo (Clássico ou Premium) e a descrição.\n- Validar confere com o Mercado Livre sem criar nada. Clonar cria o anúncio de verdade na outra conta, depois de uma confirmação.\n- Vendas, avaliações e perguntas não vão junto: ficam no anúncio original.\n- Precisa dos dois Dashboards instalados e conectados no mesmo PC.",
+    "resumo": "Cria um anúncio novo a partir de um existente, na própria conta ou na outra (Flavia ↔ Cordeiro), com fotos, ficha técnica, descrição e compatibilidades.",
+    "texto": "Na Clonagem de anúncios do AD HEALTH:\n\n- Cole o MLB ou o link (pode colar vários) e o anúncio entra na fila.\n- Clonar para: esta conta (padrão) ou a outra conta. A outra conta precisa do outro Dashboard instalado e conectado no mesmo PC.\n- Antes de clonar dá para mudar o nome do produto, preço, estoque, SKU, tipo (Clássico ou Premium) e a descrição.\n- Validar confere com o Mercado Livre sem criar nada. Clonar cria o anúncio de verdade, depois de uma confirmação.\n- Vendas, avaliações e perguntas não vão junto: ficam no anúncio original. O anúncio novo nasce fora do Full; o original não é pausado nem apagado.",
     "video": "",
     "imagens": [],
     "link": ""
