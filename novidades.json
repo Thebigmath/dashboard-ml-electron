@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.71",
+    "data": "2026-10-13",
+    "titulo": "Metas dos tapetes na regra de preço e menu hambúrguer",
+    "texto": "- Metas de vendas dos tapetes: um tapete com meta só sobe +1% no preço se bateu a meta ontem, está até o 3º no grupo do Nubimetrics e a margem está abaixo de 15%. Quem não bateu a meta mantém o preço. Vale na Mudança de preço e no Precificar com IA.\n- Rankeamento e Defesa com menu hambúrguer: as abas viram um menu e a tabela ocupa a largura toda.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.70",
     "data": "2026-10-13",
     "titulo": "Interface nova: barra dos apps e Início com o 7",

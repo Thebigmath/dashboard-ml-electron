@@ -206,6 +206,18 @@
         #rdCorpo > .rd-abas button { text-align:left; border-radius:12px; padding:12px 14px; font-size:14px; }
         #rdCorpo > :not(.rd-abas) { grid-column:2; min-width:0; }
         @media (max-width:800px) { #rdPainel.rd-painel { inset:8px; } #rdCorpo { grid-template-columns:1fr; } #rdCorpo > .rd-abas { grid-row:auto; position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:12px; } #rdCorpo > :not(.rd-abas) { grid-column:1; } }
+        /* hamburguer do Rankeamento/Defesa: as abas viram um menu e a tela fica inteira para o conteudo */
+        .rd-hamb { width:40px; height:40px; border-radius:11px; border:1px solid var(--sep); background:transparent; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex-shrink:0; }
+        .rd-hamb span { width:18px; height:2px; border-radius:2px; background:var(--l1); transition:transform .2s ease, opacity .2s ease; }
+        #rdPainel.rd-abas-on .rd-hamb span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+        #rdPainel.rd-abas-on .rd-hamb span:nth-child(2) { opacity:0; }
+        #rdPainel.rd-abas-on .rd-hamb span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+        .rd-tit .rd-aba-atual { font-weight:500; color:var(--l3); }
+        #rdPainel.rd-recolhido #rdCorpo { grid-template-columns:1fr; }
+        #rdPainel.rd-recolhido #rdCorpo > :not(.rd-abas) { grid-column:1; }
+        #rdPainel.rd-recolhido #rdCorpo > .rd-abas { display:none; }
+        #rdPainel.rd-recolhido.rd-abas-on #rdCorpo > .rd-abas { display:flex; position:absolute; top:78px; left:22px; z-index:20; width:270px; padding:10px; background:var(--s1); border:1px solid var(--sep); border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,.35); animation:rdMenu .16s ease; }
+        @keyframes rdMenu { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
         .ep-cards { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:14px; }
         @media (max-width: 1000px) { .ep-cards { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         .ep-card { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
@@ -594,7 +606,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                     </div>
                     <div id="rdFundo" onclick="rdFechar()"></div>
                     <div class="rd-painel" id="rdPainel" style="display:none">
-                        <div class="rd-topo"><div class="rd-ico" id="rdTopoIco"></div><div><div class="rd-tit" id="rdTopoTit"></div><div class="rd-sub" id="rdTopoSub"></div></div><button class="rd-fechar" onclick="rdFechar()" title="Fechar (Esc)"><i class="bi bi-x-lg"></i></button></div>
+                        <div class="rd-topo"><button class="rd-hamb" id="rdHamb" onclick="rdHamb(event)" title="Abas (menu)"><span></span><span></span><span></span></button><div class="rd-ico" id="rdTopoIco"></div><div><div class="rd-tit" id="rdTopoTit"></div><div class="rd-sub" id="rdTopoSub"></div></div><button class="rd-fechar" onclick="rdFechar()" title="Fechar (Esc)"><i class="bi bi-x-lg"></i></button></div>
                         <div id="rdCorpo"></div>
                     </div>
                     <div id="piaPrio" style="display:none"></div>
@@ -1686,13 +1698,32 @@ function rdAbrir(qual) {
   $('rdTopoTit').textContent = rank ? 'Rankeamento' : 'Defesa';
   $('rdTopoSub').textContent = rank ? $('rdRankSub').textContent : 'Proteger o que já vende';
   $('rdFundo').style.display = ''; $('rdPainel').style.display = ''; document.body.style.overflow = 'hidden';
-  rdDesenhar();
+  $('rdPainel').classList.toggle('rd-recolhido', rdRecolhido); $('rdPainel').classList.remove('rd-abas-on');
+  rdDesenhar(); rdAbaAtual();
 }
 function rdFechar() { rd.aberto = null; $('rdFundo').style.display = 'none'; $('rdPainel').style.display = 'none'; document.body.style.overflow = '';
   if (/^#(rankeamento|defesa|regras|vendasmc|ads|promocoes)$/.test(location.hash)) history.replaceState(null, '', '#ia');
   window.dispatchEvent(new Event('sh-redesenhar')); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && rd.aberto && !document.querySelector('.pc-fundo.on, #pcFundo[style*="flex"]')) rdFechar(); });
-function rdAba(a) { rd.aba = a; rdDesenhar(); }
+function rdAba(a) { rd.aba = a; $('rdPainel').classList.remove('rd-abas-on'); rdDesenhar(); rdAbaAtual(); }
+// Hamburguer: com o painel recolhido (padrao) as abas ficam num menu e o conteudo ocupa a largura toda
+let rdRecolhido = (() => { try { return localStorage.getItem('rdRecolhido') !== '0'; } catch { return true; } })();
+function rdHamb(e) {
+  if (e) e.stopPropagation();
+  const p = $('rdPainel');
+  if (!rdRecolhido) { rdRecolhido = true; p.classList.add('rd-recolhido'); p.classList.remove('rd-abas-on'); }
+  else p.classList.toggle('rd-abas-on');
+  try { localStorage.setItem('rdRecolhido', rdRecolhido ? '1' : '0'); } catch {}
+}
+function rdAbaAtual() {
+  setTimeout(() => {
+    const b = document.querySelector('#rdCorpo .rd-abas button.on'), t = $('rdTopoTit');
+    if (!t) return;
+    t.querySelector('.rd-aba-atual')?.remove();
+    if (b) { const sp = document.createElement('span'); sp.className = 'rd-aba-atual'; sp.textContent = ' · ' + b.textContent.trim(); t.appendChild(sp); }
+  }, 0);
+}
+document.addEventListener('click', (e) => { const p = $('rdPainel'); if (p && p.classList.contains('rd-abas-on') && !e.target.closest('#rdCorpo > .rd-abas, .rd-hamb')) p.classList.remove('rd-abas-on'); });
 function rdDesenhar() {
   const el = $('rdCorpo');
   ['view-ads', 'view-promocoes', 'view-vendasmc'].forEach(id => { const v = $(id); if (v && $('rdDefDepot') && v.parentElement !== $('rdDefDepot')) $('rdDefDepot').appendChild(v); });
@@ -1712,7 +1743,7 @@ function rdDesenhar() {
     const d = rd.dados;
     if (!d) { el.innerHTML = abas + '<div class="sv-vazio">Carregando…</div>'; rdCarregar().then(rdDesenhar).catch(e => el.innerHTML = abas + `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`); return; }
     if (rd.aba === 'preco') {
-      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>${rgControles(d)}
+      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · <b>com meta de vendas</b> (tapetes): bateu a meta <b>ontem</b>, está <b>até o 3º</b> no Nubimetrics e margem <b>&lt; 15%</b> → subir <b>+1% no preço</b> · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>${rgControles(d)}
         <div class="pia-sec">Subir +1 ponto de margem</div><div>${rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' })}</div>
         <div class="pia-sec" style="margin-top:14px">Tracionados (margem ≥ 15%)</div>${rgPonteDefesa(d)}
         <div class="pia-sec" style="margin-top:14px">Travados · uma trava segurou</div>${rgTravados(d)}
