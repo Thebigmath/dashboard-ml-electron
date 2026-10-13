@@ -205,7 +205,6 @@ function criarBandeja() {
             mostrarJanela();
             mainWindow?.loadURL('http://localhost:3001/frete');
         } },
-        { label: 'Perguntas do Mercado Livre', click: () => { mostrarJanela(); mainWindow?.loadURL('http://localhost:3001/perguntas'); } },
         { type: 'separator' },
         { label: 'Verificar atualização', click: () => { verificarUpdate(); mostrarJanela(); } },
         { label: 'Sair', click: () => { encerrando = true; server.stop(); app.quit(); } },

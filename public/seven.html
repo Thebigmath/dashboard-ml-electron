@@ -266,6 +266,25 @@
         .rg-obs { width:100%; border-collapse:collapse; font-size:13px; }
         .rg-obs td, .rg-obs th { padding:8px 10px; border-top:1px solid var(--sep); text-align:left; }
         .rg-obs th { color:var(--l3); font-size:11px; text-transform:uppercase; letter-spacing:.3px; border-top:0; }
+        .df-resumo { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+        .df-chip { border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; border:1px solid var(--sep); }
+        .df-st { font-size:11px; font-weight:800; border-radius:6px; padding:2px 8px; text-transform:uppercase; letter-spacing:.3px; }
+        .df-st.ameacado { background:color-mix(in srgb,#ff453a 16%,transparent); color:#ff453a; }
+        .df-st.atencao { background:color-mix(in srgb,#ff9f0a 16%,transparent); color:#ff9f0a; }
+        .df-st.protegido { background:color-mix(in srgb,#30D158 16%,transparent); color:#30D158; }
+        .rg-card.ameacado { border-left:4px solid #ff453a; } .rg-card.atencao { border-left:4px solid #ff9f0a; } .rg-card.protegido { border-left:4px solid #30D158; }
+        .df-am { font-size:13px; color:var(--l1); margin:2px 0; } .df-am small { display:block; color:var(--l3); font-size:12px; margin-left:20px; }
+        .cal-mes { margin-bottom:16px; } .cal-mes h5 { font-size:13px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); margin:0 0 6px; }
+        .cal-lin { display:grid; grid-template-columns:110px 1fr auto; gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--sep); border-radius:12px; margin-bottom:6px; background:var(--s1); }
+        .cal-lin.urgente { border-color:#ff9f0a; }
+        .cal-data { font-weight:800; color:var(--l1); font-variant-numeric:tabular-nums; } .cal-data small { display:block; font-size:11px; color:var(--l3); font-weight:500; }
+        .vm-tab { width:100%; border-collapse:collapse; font-size:12.5px; }
+        .vm-tab th { position:sticky; top:0; background:var(--s1); z-index:1; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--l3); padding:9px 8px; text-align:right; cursor:pointer; white-space:nowrap; border-bottom:1px solid var(--sep); }
+        .vm-tab th:first-child, .vm-tab td:first-child { text-align:left; }
+        .vm-tab td { padding:8px; border-bottom:1px solid var(--sep); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .vm-tab td.t { white-space:normal; min-width:220px; max-width:320px; }
+        .vm-mc { font-weight:800; } .vm-mc.ruim { color:#ff453a; } .vm-mc.baixo { color:#ff9f0a; } .vm-mc.bom { color:#30D158; }
+        .vm-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
         .rg-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap:12px; }
         .rg-card { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
         .rg-tit { font-size:15px; font-weight:700; color:var(--l1); line-height:1.3; }
@@ -312,6 +331,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
         <ul class="menu">
             <li onclick="window.location.href='/'"><i class="bi bi-house"></i><span>Início</span></li>
             <li data-view="noticias" class="active"><i class="bi bi-lightning-charge"></i><span>Notícias urgentes</span></li>
+            <li data-view="vendasmc"><i class="bi bi-receipt"></i><span>Análise de vendas</span></li>
             <li data-view="concorrentes"><i class="bi bi-people"></i><span>Análise de concorrentes</span></li>
             <li data-view="vendas"><i class="bi bi-graph-up-arrow"></i><span>Análise por tempo de vendas</span></li>
             <li data-view="ia"><i class="bi bi-stars"></i><span>Análise com IA</span></li>
@@ -404,15 +424,15 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                     </div>
                     <div class="ep-cards">
                         <div class="ep-card"><small>Subir +1 ponto de margem</small><b id="rgNSub" style="color:#30D158">—</b><span>vendendo bem com margem abaixo de 15%</span></div>
-                        <div class="ep-card"><small>Tracionados · 1º no Nubimetrics</small><b id="rgNTra" style="color:#0a84ff">—</b><span>margem ≥ 15%: subir é opcional</span></div>
-                        <div class="ep-card"><small>Tracionados fora do 1º</small><b id="rgNOut">—</b><span>margem ≥ 15%, sem mudança</span></div>
+                        <div class="ep-card"><small>Tracionados · vão para a Defesa</small><b id="rgNTra" style="color:#0a84ff">—</b><span>margem ≥ 15%: defender, não subir</span></div>
+                        <div class="ep-card"><small>Em observação</small><b id="rgNOut">—</b><span>preço mudado nos últimos 3 dias</span></div>
                         <div class="ep-card"><small>Travados</small><b id="rgNMan">—</b><span id="rgNManSub">&nbsp;</span></div>
                     </div>
                     <div class="sv-aviso" id="rgIA" style="display:none;white-space:pre-wrap"></div>
                     <div id="rgCtrl"></div>
                     <div class="pia-sec">Subir +1 ponto de margem</div>
                     <div id="rgSubir"><div class="sv-vazio">Carregando…</div></div>
-                    <div class="pia-sec" style="margin-top:16px">Feed de tracionados · 1º no Nubimetrics</div>
+                    <div class="pia-sec" style="margin-top:16px">Tracionados (margem ≥ 15%)</div>
                     <div id="rgTrac"><div class="sv-vazio">Carregando…</div></div>
                     <div class="pia-sec" style="margin-top:16px">Travados · a regra mandaria subir, mas uma trava segurou</div>
                     <div id="rgTravados"></div>
@@ -465,11 +485,36 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         <div class="pr-frente" style="--cor:#0a84ff" data-f="sem_promocao" onclick="prFrente('sem_promocao')"><h4><i class="bi bi-tag"></i> Anúncios sem promoção</h4><p>Anúncios ativos que não estão em nenhuma promoção no ar.</p><div class="n"><div><b id="prNSem">—</b><span>sem promo</span></div><a>Abrir ›</a></div></div>
                         <div class="pr-frente" style="--cor:#ff453a" data-f="margem_negativa" onclick="prFrente('margem_negativa')"><h4><i class="bi bi-graph-down-arrow"></i> Margem negativa</h4><p>Anúncios em campanha vendendo no prejuízo: saia da campanha ou corrija o preço.</p><div class="n"><div><b id="prNNeg">—</b><span>no vermelho</span></div><a>Abrir ›</a></div></div>
                     </div>
+                    <div class="pr-frente" style="--cor:#0a84ff;margin-bottom:12px" data-f="calendario" onclick="prFrente('calendario')"><h4><i class="bi bi-calendar-event"></i> Calendário das campanhas</h4><p>Quando cada campanha fecha para adesão e quando termina, mês a mês.</p><div class="n"><div><b id="prNCal">—</b><span>fechando em 7 dias</span></div><a>Abrir ›</a></div></div>
                     <div class="pr-frente" style="--cor:#a855f7;margin-bottom:14px" data-f="campanhas" onclick="prFrente('campanhas')"><h4><i class="bi bi-megaphone"></i> Campanhas disponíveis</h4><p>Todas as campanhas ativas da loja, com quantos anúncios valem a pena entrar.</p><div class="n"><div><b id="prNCamp">—</b><span>campanhas</span></div><a>Abrir ›</a></div></div>
                     <div class="dashboard-card" style="padding:0;overflow:auto"><div id="prLista"><div class="sv-vazio">Carregando… (a 1ª leitura das campanhas leva cerca de 1 minuto)</div></div></div>
                 </div>
 
                 </div><!-- /rdDefDepot -->
+
+                <div class="sv-view" id="view-vendasmc">
+                    <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                        <div><h3>Análise de vendas</h3><small>MC% real de cada venda, como no Mercado Turbo · MC = venda − cupom − custo − imposto − tarifa − frete do vendedor · <span id="vmAtual">—</span></small></div>
+                        <div class="vm-ctrl" style="margin:0">
+                            <select class="sv-busca" id="vmPeriodo" style="margin-left:0;min-width:130px" onchange="vmCarregar(true)">
+                                <option value="ontem" selected>Ontem</option><option value="hoje">Hoje</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option>
+                            </select>
+                            <button class="btn-acao" onclick="vmCarregar(true)"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>
+                        </div>
+                    </div>
+                    <div class="ep-cards">
+                        <div class="ep-card"><small>Vendas</small><b id="vmPed">—</b><span id="vmPedSub">&nbsp;</span></div>
+                        <div class="ep-card"><small>Faturamento</small><b id="vmFat">—</b><span>com o frete pago pelo comprador</span></div>
+                        <div class="ep-card"><small>Margem de contribuição</small><b id="vmMc">—</b><span id="vmMcSub">&nbsp;</span></div>
+                        <div class="ep-card"><small>Anúncios abaixo de 15%</small><b id="vmAbaixo" style="color:#ff9f0a">—</b><span id="vmAbaixoSub">&nbsp;</span></div>
+                    </div>
+                    <div class="vm-ctrl">
+                        <div class="rg-modo"><button id="vmBtnAn" class="on" onclick="vmModo('anuncios')"><i class="bi bi-grid"></i> Por anúncio</button><button id="vmBtnVd" onclick="vmModo('vendas')"><i class="bi bi-list-ul"></i> Por venda</button></div>
+                        <input class="sv-busca" id="vmBusca" placeholder="Buscar SKU ou produto…" style="margin-left:0;flex:1;min-width:200px" oninput="vmDesenhar()">
+                        <label class="pia-fraco" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="vmSoAbaixo" onchange="vmDesenhar()"> só abaixo de 15%</label>
+                    </div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto;max-height:70vh"><div id="vmTabela"><div class="sv-vazio">Carregando…</div></div></div>
+                </div>
 
                 <div class="sv-view" id="view-parados">
                     <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -519,7 +564,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                             <div class="rd-ico def"><i class="bi bi-shield-check"></i></div>
                             <div><div class="rd-tit">Defesa</div><div class="rd-sub">Proteger o que já vende</div></div>
                             <span class="rd-abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</span>
-                            <div class="rd-topicos"><span><i class="bi bi-megaphone"></i> Campanhas ADS</span><span><i class="bi bi-tags"></i> Promoções e campanhas do ML</span></div>
+                            <div class="rd-topicos"><span><i class="bi bi-shield-check"></i> Defender os tracionados (≥ 15%)</span><span><i class="bi bi-megaphone"></i> Campanhas ADS</span><span><i class="bi bi-calendar-event"></i> Promoções e calendário</span></div>
                         </div>
                     </div>
                     <div id="rdFundo" onclick="rdFechar()"></div>
@@ -603,6 +648,7 @@ async function carregar(view, forcar) {
         if (view === 'concorrentes') { if (forcar || !cache.conc) cache.conc = await api('/api/seven/concorrentes'); desenharConc(); }
         if (view === 'ia') iaPainel();
         if (view === 'parados') await epCarregar(forcar);
+        if (view === 'vendasmc') await vmCarregar(forcar);
         if (view === 'regras') await rgCarregar(forcar);
     } catch (e) {
         const alvo = { noticias: 'nvConteudo', vendas: 'vdTabela', concorrentes: 'ccTabela' }[view];
@@ -874,6 +920,27 @@ async function prCarregar(forcar, sincronizar) {
     try { cache.promo = await api('/api/seven/promocoes' + (sincronizar ? '?forcar=1' : '')); prDesenhar(); }
     catch (e) { $('prLista').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
 }
+// Calendario: cada campanha com a data em que fecha a adesao e a data em que termina, agrupado por mes
+function prCalendario(d) {
+    const ev = [];
+    for (const c of d.campanhas) {
+        if (c.prazo_adesao) ev.push({ quando: c.prazo_adesao, tipo: 'adesao', c });
+        if (c.fim) ev.push({ quando: c.fim, tipo: 'fim', c });
+    }
+    const hoje = Date.now();
+    const futuros = ev.filter(e => new Date(e.quando).getTime() >= hoje - 86400000).sort((a, b) => new Date(a.quando) - new Date(b.quando));
+    if (!futuros.length) return '<div class="sv-vazio">Nenhuma campanha com data pela frente.</div>';
+    const meses = {};
+    for (const e of futuros) { const k = new Date(e.quando).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); (meses[k] ||= []).push(e); }
+    return `<div style="padding:12px 14px">${Object.entries(meses).map(([mes, L]) => `<div class="cal-mes"><h5>${esc(mes)}</h5>${L.map(e => {
+        const dias = Math.ceil((new Date(e.quando) - hoje) / 86400000);
+        const urg = e.tipo === 'adesao' && dias <= 3;
+        const quando = dias <= 0 ? 'hoje' : dias === 1 ? 'amanhã' : `em ${dias} dias`;
+        return `<div class="cal-lin ${urg ? 'urgente' : ''}"><div class="cal-data">${new Date(e.quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}<small>${quando}</small></div>
+          <div><b>${esc(e.c.nome)}</b> <span class="pia-fraco">${esc(e.c.tipo)}</span><div class="pia-fraco">${e.tipo === 'adesao' ? '<b style="color:' + (urg ? '#ff9f0a' : 'var(--l2)') + '">Fecha para adesão</b>' : 'Termina'} · ${e.c.participando} anúncio(s) participando · ${e.c.entrar} vale(m) entrar</div></div>
+          <span class="ad-st ${e.tipo === 'adesao' ? 'active' : 'paused'}">${e.tipo === 'adesao' ? 'adesão' : 'fim'}</span></div>`; }).join('')}</div>`).join('')}
+      <div class="pia-fraco">As campanhas de ADS (anúncios patrocinados) não têm data de fim: rodam até serem pausadas. As datas acima são das promoções do Mercado Livre.</div></div>`;
+}
 function prFrente(f) { prFrenteAtual = f; prDesenhar(); }
 function prTabelaItens(itens, vazio) {
     if (!itens.length) return `<div class="sv-vazio">${vazio}</div>`;
@@ -889,6 +956,7 @@ function prDesenhar() {
     const d = cache.promo; if (!d) return;
     $('prNSub').textContent = d.frentes.subsidiadas; $('prNRel').textContent = d.frentes.relampago || '—';
     $('prNSem').textContent = d.frentes.sem_promocao; $('prNNeg').textContent = d.frentes.margem_negativa; $('prNCamp').textContent = d.campanhas.length;
+    $('prNCal').textContent = d.campanhas.filter(c => { const t = c.prazo_adesao ? (new Date(c.prazo_adesao) - Date.now()) / 86400000 : null; return t != null && t >= 0 && t <= 7; }).length;
     $('prAtual').textContent = 'atualizado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.querySelectorAll('.pr-frente').forEach(e => e.classList.toggle('ativa', e.dataset.f === prFrenteAtual));
     const f = prFrenteAtual;
@@ -902,6 +970,7 @@ function prDesenhar() {
             return `<tr><td><b>${esc(rtCurto(p.titulo, 64))}</b><div class="pia-fraco">${esc(p.item_id)} · ${esc(p.sku || '')}</div></td><td class="num">${epBRL(p.preco)}</td><td class="num">${p.estoque ?? '—'}</td><td class="num">${p.vendas30 ?? 0}</td>
             <td>${op.length ? `${boas.length ? `<span class="pr-rec ENTRAR">${boas.length} com margem boa</span> ` : ''}<span class="pia-fraco">${op.map(l => esc(l.campanha)).slice(0, 3).join(' · ')}</span>` : '<span class="pia-fraco">nenhuma campanha disponível</span>'}</td></tr>`; }).join('')}</tbody></table>
         ${d.sem_promocao.length > 150 ? `<div class="sv-vazio">Mostrando os 150 que mais vendem de ${d.sem_promocao.length}.</div>` : ''}` : '<div class="sv-vazio">Todos os anúncios ativos estão em alguma promoção.</div>';
+    if (f === 'calendario') h = prCalendario(d);
     if (f === 'campanhas') h = `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Campanha</th><th>Tipo</th><th class="num">Adesão até</th><th class="num">Termina</th><th class="num">Anúncios elegíveis</th><th class="num">Participando</th><th class="num">Valem entrar</th></tr></thead><tbody>${
         d.campanhas.map(c => `<tr><td><b>${esc(c.nome)}</b> <span class="ad-st ${c.status === 'started' ? 'active' : 'paused'}">${c.status === 'started' ? 'no ar' : 'em breve'}</span></td><td class="pia-fraco">${esc(c.tipo)}</td>
             <td class="num">${prDia(c.prazo_adesao)}</td><td class="num">${prDia(c.fim)}</td><td class="num">${c.tipo === 'LIGHTNING' ? '—' : c.itens}</td><td class="num">${c.participando}</td><td class="num" style="color:#30D158;font-weight:600">${c.entrar}</td></tr>`).join('')}</tbody></table>`;
@@ -939,6 +1008,12 @@ function rgTabela(itens, vazio, botao) {
       </div>`).join('')}</div>`;
 }
 // Controle semiautomático: chave do modo automático + "Aplicar todos"
+// Tracionados (margem >= 15%) sao defendidos no card Defesa, nao sobem por aqui
+function rgPonteDefesa(d) {
+    const n = (d.tracionados || []).length + (d.tracionados_outros || []).length;
+    return `<div class="sv-aviso" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span><i class="bi bi-shield-check"></i> Com margem de 15% ou mais o produto já está tracionado: ele sai daqui e vai para o <b>card Defesa</b>, para defender a posição${n ? ` (${n} hoje nesta lista)` : ''}.</span>
+      <button class="btn-acao" onclick="rdFechar();mostrar('ia');setTimeout(()=>{rd.abaDef='defender';rdAbrir('def')},250)"><i class="bi bi-shield-check"></i> Abrir a Defesa</button></div>`;
+}
 function rgControles(d) {
     const c = d.config || {}, t = d.travas || {}, u = c.ultimo_resultado;
     const auto = c.modo === 'automatico';
@@ -1031,10 +1106,10 @@ function rgRedesenhar(recarregar) { if (rd.aberto === 'rank') { rdCarregar(!!rec
 function rgDesenhar() {
     const d = cache.regras; if (!d) return;
     $('rgAtual').textContent = 'calculado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    $('rgNSub').textContent = d.subir.length; $('rgNTra').textContent = d.tracionados.length; $('rgNOut').textContent = d.tracionados_outros.length;
+    $('rgNSub').textContent = d.subir.length; $('rgNTra').textContent = d.tracionados.length + (d.tracionados_outros || []).length; $('rgNOut').textContent = (d.em_observacao || []).length;
     $('rgNMan').textContent = (d.travados || []).length; $('rgNManSub').textContent = `travados · ${d.manter.length} sem mudança · ${d.sem_dados.length} sem dados`;
     $('rgSubir').innerHTML = rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' });
-    $('rgTrac').innerHTML = rgTabela(d.tracionados, 'Nenhum anúncio em 1º no Nubimetrics com margem de 15% ou mais.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' });
+    $('rgTrac').innerHTML = rgPonteDefesa(d);
     $('rgCtrl').innerHTML = rgControles(d);
     $('rgObs').innerHTML = rgObservacao(d);
     $('rgTravados').innerHTML = rgTravados(d);
@@ -1071,6 +1146,77 @@ async function rgRevisar() {
         }
         el.innerHTML = '<b><i class="bi bi-stars"></i> Revisão da IA (Gemini)</b><br>' + esc(texto);
     } catch (e) { el.innerHTML = `<span style="color:#ff453a">IA indisponível: ${esc(e.message)}</span>`; }
+}
+
+// ---- Defesa > Defender: tracionados (margem >= 15%) e as ameacas de cada um ----
+const DF_ICO = { concorrente: 'bi-tag', posicao: 'bi-trophy', busca: 'bi-search', vendas: 'bi-graph-down-arrow', estoque: 'bi-box-seam' };
+const DF_NOME = { ameacado: 'Ameaçado', atencao: 'Atenção', protegido: 'Protegido' };
+async function dfCarregar(forcar) {
+  try { if (forcar || !cache.defesa) cache.defesa = await api('/api/seven/defesa' + (forcar ? '?forcar=1' : '')); dfDesenhar(); }
+  catch (e) { const el = $('rdDefender'); if (el) el.innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
+}
+function dfDesenhar() {
+  const el = $('rdDefender'); const d = cache.defesa; if (!el || !d) return;
+  const r = d.resumo;
+  el.innerHTML = `<div class="pia-fraco" style="margin-bottom:10px">Anúncios com <b>margem de 15% ou mais</b> que vendem com frequência: já estão conquistados, agora é <b>defender a posição</b>. Atualizado às ${new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · <a href="#" onclick="dfCarregar(true);return false" style="color:var(--blue)">conferir de novo</a></div>
+    <div class="df-resumo"><span class="df-chip" style="color:#ff453a">${r.ameacado} ameaçado(s)</span><span class="df-chip" style="color:#ff9f0a">${r.atencao} em atenção</span><span class="df-chip" style="color:#30D158">${r.protegido} protegido(s)</span><span class="df-chip">${r.total} no total</span></div>
+    ${d.itens.length ? `<div class="rg-grade">${d.itens.map(i => `<div class="rg-card ${i.status}">
+      <div class="rg-topo" style="display:flex;justify-content:space-between;gap:10px"><div style="min-width:0"><div class="rg-tit" title="${esc(i.titulo)}">${esc(rtCurto(i.titulo, 64))}</div>
+        <div class="rg-sku">${esc(i.sku || '')}${i.curva ? ` · curva ${esc(i.curva)}` : ''} · ${esc(i.item_id)}</div></div><span class="df-st ${i.status}">${DF_NOME[i.status]}</span></div>
+      <div class="rg-nums">
+        <div><small>Margem</small><b>${prPct(i.margem_pct)}</b></div>
+        <div><small>Média/dia</small><b>${String(i.media_dia ?? '—').replace('.', ',')}</b></div>
+        <div><small>Nubimetrics</small><b>${i.rank_nub ? `${i.rank_nub}º <span>de ${i.grupo_anuncios}</span>` : '—'}</b></div>
+        <div><small>Estoque</small><b>${i.estoque ?? '—'}${i.cobertura != null ? ` <span>${Math.round(i.cobertura)} dias</span>` : ''}</b></div>
+      </div>
+      <div>${i.promocao ? `<span class="ep-tag promo">Em ${esc(i.promocao)}</span>` : ''}${i.ads ? `<span class="ep-tag ads">ADS · ${esc(i.ads)}</span>` : ''}<span class="pia-fraco"> ${epBRL(i.preco)}</span></div>
+      ${i.ameacas.length ? `<div class="rg-motivo">${i.ameacas.map(a => `<div class="df-am"><i class="bi ${DF_ICO[a.id] || 'bi-exclamation-circle'}"></i> ${esc(a.txt)}<small>→ ${esc(a.acao)}</small></div>`).join('')}</div>`
+        : '<div class="rg-motivo"><i class="bi bi-check-circle" style="color:#30D158"></i> Sem ameaça: preço competitivo, posição boa e estoque ok.</div>'}
+    </div>`).join('')}</div>` : '<div class="sv-vazio">Nenhum anúncio com margem de 15% ou mais vendendo com frequência.</div>'}`;
+}
+
+// ---- Análise de vendas (estilo Mercado Turbo) ----
+let vmModoAtual = 'anuncios', vmOrdem = { campo: null, desc: true };
+const vmClasse = (p) => p == null ? '' : p < 5 ? 'ruim' : p < 15 ? 'baixo' : 'bom';
+async function vmCarregar(forcar) {
+    const per = $('vmPeriodo').value;
+    if (!forcar && cache.vendasmc && cache.vendasmc.periodo === per) return vmDesenhar();
+    $('vmTabela').innerHTML = '<div class="sv-vazio">Lendo as vendas no Mercado Livre…</div>';
+    try { cache.vendasmc = await api('/api/seven/vendas_mc?periodo=' + encodeURIComponent(per)); vmDesenhar(); }
+    catch (e) { $('vmTabela').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
+}
+function vmModo(m) { vmModoAtual = m; vmOrdem = { campo: null, desc: true }; $('vmBtnAn').classList.toggle('on', m === 'anuncios'); $('vmBtnVd').classList.toggle('on', m === 'vendas'); vmDesenhar(); }
+function vmOrdenar(campo) { vmOrdem = { campo, desc: vmOrdem.campo === campo ? !vmOrdem.desc : true }; vmDesenhar(); }
+function vmDesenhar() {
+    const d = cache.vendasmc; if (!d) return;
+    const r = d.resumo, dia = (x) => x.split('-').reverse().join('/');
+    $('vmAtual').textContent = (d.de === d.ate ? dia(d.de) : `${dia(d.de)} a ${dia(d.ate)}`) + ' · atualizado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('vmPed').textContent = r.pedidos; $('vmPedSub').textContent = `${r.unidades} unidade(s) · ${r.anuncios} anúncio(s)${r.cancelados ? ` · ${r.cancelados} cancelado(s) fora` : ''}`;
+    $('vmFat').textContent = epBRL(r.faturamento);
+    $('vmMc').textContent = epBRL(r.mc); $('vmMc').className = 'vm-mc ' + vmClasse(r.mc_pct); $('vmMcSub').textContent = `MC% média ${prPct(r.mc_pct)}${r.sem_custo ? ` · ${r.sem_custo} venda(s) sem custo na planilha` : ''}`;
+    $('vmAbaixo').textContent = r.abaixo_alvo; $('vmAbaixoSub').textContent = `de ${r.anuncios} que venderam no período`;
+    const q = ($('vmBusca').value || '').trim().toLowerCase(), so = $('vmSoAbaixo').checked;
+    const filtra = (x) => (!q || String(x.sku).toLowerCase().includes(q) || String(x.titulo).toLowerCase().includes(q)) && (!so || (x.mc_pct != null && x.mc_pct < d.mc_alvo));
+    const ord = (L) => { if (!vmOrdem.campo) return L; const k = vmOrdem.campo; return [...L].sort((a, b) => ((a[k] ?? -1e9) > (b[k] ?? -1e9) ? 1 : -1) * (vmOrdem.desc ? -1 : 1)); };
+    const th = (t, k) => `<th onclick="vmOrdenar('${k}')">${t}${vmOrdem.campo === k ? (vmOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
+    const mcCel = (x) => `<td class="vm-mc ${vmClasse(x.mc_pct)}">${x.mc_pct == null ? '<span class="pia-fraco">sem custo</span>' : prPct(x.mc_pct)}</td>`;
+    if (vmModoAtual === 'anuncios') {
+        const L = ord(d.anuncios.filter(filtra));
+        $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('Frete', 'logistica')}${th('Unidades', 'unidades')}${th('Faturamento', 'faturamento')}${th('Preço hoje', 'preco_atual')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}<th></th></tr>
+          ${L.map(a => `<tr><td class="t"><b>${esc(rtCurto(a.titulo, 60))}</b><div class="pia-fraco">${esc(a.sku)} · ${esc(a.item_id)}</div></td><td>${esc(a.logistica)}</td><td><b>${a.unidades}</b></td>
+            <td>${epBRL(a.faturamento)}</td><td>${a.preco_atual != null ? epBRL(a.preco_atual) : '—'}</td><td>${epBRL(a.mc)}</td>${mcCel(a)}
+            <td>${a.abaixo_alvo ? `<button class="ep-btn" style="border-color:#30D158;color:#30D158" onclick="pcAbrir('${esc(a.item_id)}','')" title="Abre o precificador para subir o preço">Precificar</button>` : `<button class="ep-btn" style="border-color:var(--sep);color:var(--l2)" onclick="pcAbrir('${esc(a.item_id)}','')">Precificar</button>`}</td></tr>`).join('')}</table>`
+          : '<div class="sv-vazio">Nenhum anúncio com esse filtro.</div>';
+    } else {
+        const L = ord(d.vendas.filter(filtra));
+        $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('Data', 'data')}${th('Frete', 'logistica')}${th('Valor unit.', 'valor')}${th('Qtd', 'qtd')}${th('Faturamento', 'faturamento')}${th('Custo (−)', 'custo')}${th('Imposto (−)', 'imposto')}${th('Tarifa (−)', 'tarifa')}${th('Frete comprador', 'frete_comprador')}${th('Frete vendedor (−)', 'frete_vendedor')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}</tr>
+          ${L.map(v => `<tr><td class="t"><b>${esc(rtCurto(v.titulo, 56))}</b><div class="pia-fraco">${esc(v.sku)} · pedido ${esc(v.pedido)}${v.cupom ? ` · cupom ${epBRL(v.cupom)}` : ''}</div></td>
+            <td>${new Date(v.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${esc(v.logistica)}</td>
+            <td>${epBRL(v.valor)}</td><td>${v.qtd}</td><td>${epBRL(v.faturamento)}</td><td style="color:#ff9f0a">${v.custo == null ? '—' : epBRL(v.custo)}</td>
+            <td style="color:#ff453a">${epBRL(v.imposto)}</td><td style="color:#c9a227">${epBRL(v.tarifa)}</td><td class="pia-fraco">${v.frete_comprador == null ? '—' : epBRL(v.frete_comprador)}</td>
+            <td style="color:#0a84ff">${v.frete_vendedor == null ? '—' : epBRL(v.frete_vendedor)}</td><td><b>${v.mc == null ? '—' : epBRL(v.mc)}</b></td>${mcCel(v)}</tr>`).join('')}</table>`
+          : '<div class="sv-vazio">Nenhuma venda com esse filtro.</div>';
+    }
 }
 
 let qm = null;
@@ -1405,7 +1551,7 @@ async function rdResumo() {
   catch (e) { $('rdRankSub').textContent = 'Erro: ' + e.message; }
 }
 function rdAbrir(qual) {
-  rd.aberto = qual; rd.aba = qual === 'rank' ? 'preco' : (rd.abaDef || 'ads');
+  rd.aberto = qual; rd.aba = qual === 'rank' ? 'preco' : (rd.abaDef || 'defender');
   const rank = qual === 'rank';
   $('rdTopoIco').className = 'rd-ico' + (rank ? '' : ' def'); $('rdTopoIco').innerHTML = `<i class="bi ${rank ? 'bi-graph-up-arrow' : 'bi-shield-check'}"></i>`;
   $('rdTopoTit').textContent = rank ? 'Rankeamento' : 'Defesa';
@@ -1428,7 +1574,7 @@ function rdDesenhar() {
     if (rd.aba === 'preco') {
       el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>${rgControles(d)}
         <div class="pia-sec">Subir +1 ponto de margem</div><div>${rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' })}</div>
-        <div class="pia-sec" style="margin-top:14px">Tracionados · 1º no Nubimetrics</div><div>${rgTabela(d.tracionados, 'Nenhum tracionado em 1º no Nubimetrics.', { txt: 'Subir +1 pt (opcional)', cor: '#0a84ff' })}</div>
+        <div class="pia-sec" style="margin-top:14px">Tracionados (margem ≥ 15%)</div>${rgPonteDefesa(d)}
         <div class="pia-sec" style="margin-top:14px">Travados · uma trava segurou</div>${rgTravados(d)}
         <div class="pia-sec" style="margin-top:14px">Depois da subida · as vendas caíram?</div>${rgPos(d)}
         <div class="pia-sec" style="margin-top:14px">Em observação · preço mudado nos últimos 3 dias</div>${rgObservacao(d)}`;
@@ -1445,12 +1591,14 @@ function rdDesenhar() {
     }
   } else if (rd.aberto === 'def') {
     // Defesa = Campanhas ADS + Promocoes (as telas sao as mesmas; so mudam de lugar)
-    if (rd.aba !== 'ads' && rd.aba !== 'promo') rd.aba = 'ads';
+    if (!['defender', 'ads', 'promo'].includes(rd.aba)) rd.aba = 'defender';
     rd.abaDef = rd.aba;
-    const abas = `<div class="rd-abas"><button class="${rd.aba === 'ads' ? 'on' : ''}" onclick="rdAba('ads')"><i class="bi bi-megaphone"></i> Campanhas ADS</button>
+    const abas = `<div class="rd-abas"><button class="${rd.aba === 'defender' ? 'on' : ''}" onclick="rdAba('defender')"><i class="bi bi-shield-check"></i> Defender</button>
+      <button class="${rd.aba === 'ads' ? 'on' : ''}" onclick="rdAba('ads')"><i class="bi bi-megaphone"></i> Campanhas ADS</button>
       <button class="${rd.aba === 'promo' ? 'on' : ''}" onclick="rdAba('promo')"><i class="bi bi-tags"></i> Promoções</button></div>`;
     // as telas voltam ao deposito antes de o corpo ser trocado (senao somem junto com o innerHTML)
     ['view-ads', 'view-promocoes'].forEach(id => { const v = $(id); if (v && v.parentElement !== $('rdDefDepot')) $('rdDefDepot').appendChild(v); });
+    if (rd.aba === 'defender') { el.innerHTML = abas + '<div id="rdDefender"><div class="sv-vazio">Conferindo os anúncios tracionados…</div></div>'; dfCarregar(); return; }
     el.innerHTML = abas + '<div id="rdDefSlot"></div>';
     const v = $(rd.aba === 'ads' ? 'view-ads' : 'view-promocoes');
     $('rdDefSlot').appendChild(v);
@@ -1833,7 +1981,7 @@ async function rtIa() {
 
 const svT0 = Date.now();
 function svTirarSplash() { const el = document.getElementById('svSplash'); if (!el) return; setTimeout(() => { el.classList.add('sai'); setTimeout(() => el.remove(), 500); }, Math.max(0, 3000 - (Date.now() - svT0))); }
-Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia', 'parados', 'regras'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
+Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia', 'parados', 'regras', 'vendasmc'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
 setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
 acompanharAstra();

@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.65",
+    "data": "2026-10-13",
+    "titulo": "Análise de vendas (estilo Mercado Turbo), Defesa e calendário",
+    "texto": "Novidades do AD HEALTH:\n\n- Análise de vendas: a MC% real de cada venda (valor − cupom − custo − imposto − tarifa − frete do vendedor), igual ao Mercado Turbo. Por anúncio (os que mais vendem primeiro) ou por venda, de ontem, hoje, 7, 15 ou 30 dias, com o botão Precificar.\n- Card Defesa → aba Defender: os tracionados (margem ≥ 15%) com as ameaças de cada um (concorrente mais barato, posição, busca, vendas caindo, estoque acabando).\n- Calendário das campanhas em Promoções: quando cada uma fecha para adesão e termina.\n- Tracionados saíram das Regras de preço (vão para a Defesa).\n- A aba Perguntas saiu do Dashboard: as perguntas ficam no Harvey.\n- Custos atualizados pela tabela do Mercado Turbo.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.64",
     "data": "2026-10-12",
     "titulo": "Regras de preço: travas, modo semiautomático e cartões",

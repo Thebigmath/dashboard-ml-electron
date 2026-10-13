@@ -55,7 +55,6 @@ app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
 app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
-app.get('/perguntas', (req, res) => res.sendFile(path.join(__dirname, 'public/perguntas.html')));
 app.get('/parados', (req, res) => res.sendFile(path.join(__dirname, 'public/parados.html')));
 
 // Arquivos estáticos
@@ -77,8 +76,6 @@ module.exports = {
         httpServer = app.listen(port, '127.0.0.1', cb);
         // monitor de frete: 90 s depois de abrir e de hora em hora
         require('./lib/frete').iniciarAgendador();
-        // perguntas do ML: a cada 10 s, desde que o app sobe (com o PC)
-        require('./lib/perguntas').iniciarAgendador();
         // envio ao Full esquecido em aberto: aviso 2 min depois de subir e a cada 12 h
         require('./lib/envios_alerta').iniciarAgendador();
         // reputação: 40 s depois de subir e a cada 4 min
@@ -93,7 +90,6 @@ module.exports = {
     },
     stop: () => {
         require('./lib/frete').pararAgendador();
-        require('./lib/perguntas').pararAgendador();
         require('./lib/envios_alerta').pararAgendador();
         require('./lib/avisos').pararAgendador();
         require('./lib/ranking_mt').pararAgendador();

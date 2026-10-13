@@ -1177,6 +1177,10 @@ router.get('/dev/cotas', soDev, (req, res) => res.json(require('../lib/cotas').r
 router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').verificar({ testarGemini: req.query.gemini === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Regras de preco (motor_preco): avaliar e so leitura; aplicar so com confirmacao e preco conferido
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Analise de vendas (estilo Mercado Turbo): MC% real de cada venda do periodo
+router.get('/seven/vendas_mc', auth, (req, res) => { require('../lib/vendas_mc').analisar({ periodo: req.query.periodo || 'ontem' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Defesa: tracionados (margem >= 15%) com as ameacas de cada um
+router.get('/seven/defesa', auth, (req, res) => { require('../lib/defesa').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 router.post('/seven/regras_preco_todos', auth, (req, res) => { require('../lib/motor_preco').aplicarTodos().then(d => res.json(d)).catch(erroJson(res)); });
 router.post('/seven/regras_preco_config', auth, (req, res) => res.json(require('../lib/motor_preco').salvarConfiguracao(req.body || {})));
 router.post('/seven/regras_preco_ia', auth, (req, res) => ndjson(res, require('../lib/motor_preco').revisarIA()));

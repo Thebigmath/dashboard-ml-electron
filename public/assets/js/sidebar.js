@@ -85,24 +85,7 @@
         document.addEventListener('avisos-vistos', () => pintarAvisos(0));
     }
 
-    // ── Contador de perguntas sem resposta ───────────────────────────────────
-    const liPerguntas = [...document.querySelectorAll('.sidebar .menu li')].find(li => li.querySelector('span')?.textContent.trim() === 'Perguntas');
-    if (liPerguntas) {
-        const pintarPerguntas = (n) => {
-            liPerguntas.querySelector('.menu-badge')?.remove();
-            if (!n) return;
-            const b = document.createElement('span');
-            b.className = 'menu-badge';
-            b.textContent = n;
-            liPerguntas.appendChild(b);
-        };
-        const atualizarPerguntas = async () => {
-            try { pintarPerguntas((await fetch('/api/perguntas/resumo').then(r => r.json())).nao_respondidas); } catch {}
-        };
-        atualizarPerguntas();
-        setInterval(atualizarPerguntas, 15000);
-        document.addEventListener('perguntas-mudaram', atualizarPerguntas);
-    }
+    // Perguntas do ML: saíram do Dashboard em 13/10/2026 (ficam no Harvey, que cuida das duas contas).
 
     // Sinal de reputacao (risco de perder o Platinum): mudou para o Harvey em 12/10/2026.
 
