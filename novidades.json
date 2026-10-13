@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.78",
+    "data": "2026-10-13",
+    "titulo": "Imposto de 7% nas margens",
+    "texto": "- Imposto corrigido para 7% (antes o sistema usava 3%) em todas as contas de margem: Precificar, Análise de vendas (MC%), regras de preço, Defesa, Premium × Clássico, Promoções, estoque parado e Finance (DRE).\n- As margens ficam cerca de 4 pontos menores que antes: é o imposto real entrando na conta.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.77",
     "data": "2026-10-13",
     "titulo": "Mudanças de preço em pontos de margem",
