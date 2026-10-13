@@ -194,6 +194,9 @@
         .rd-abrir { position:absolute; top:22px; right:22px; font-size:12px; font-weight:700; color:var(--l3); }
         .rd-card { position:relative; }
         #rdFundo { position:fixed; inset:0; background:rgba(0,0,0,.45); backdrop-filter:blur(3px); z-index:8000; display:none; }
+        /* menu do SEVEN: o Rankeamento e a Defesa abrem ao lado do menu, sem cobri-lo */
+        html.sh #rdFundo { left:72px; } html.sh.sh-fixo #rdFundo { left:328px; }
+        html.sh #rdPainel.rd-painel { left:92px; } html.sh.sh-fixo #rdPainel.rd-painel { left:348px; }
         #rdPainel.rd-painel { position:fixed; inset:28px; z-index:8001; margin:0; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.35); animation:rdExp .22s ease; }
         @keyframes rdExp { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:none; } }
         .rd-topo { display:flex; align-items:center; gap:14px; padding:18px 22px; border-bottom:1px solid var(--sep); }
@@ -318,6 +321,7 @@
         .rg-motivo { font-size:12px; color:var(--l2); border-top:1px solid var(--sep); padding-top:10px; }
         @media (max-width:560px) { .rg-nums { grid-template-columns:repeat(2, minmax(0,1fr)); } }
     </style>
+<script src="/assets/js/shell.js"></script>
 </head>
 <body>
 <div id="svSplash">
@@ -1684,7 +1688,9 @@ function rdAbrir(qual) {
   $('rdFundo').style.display = ''; $('rdPainel').style.display = ''; document.body.style.overflow = 'hidden';
   rdDesenhar();
 }
-function rdFechar() { rd.aberto = null; $('rdFundo').style.display = 'none'; $('rdPainel').style.display = 'none'; document.body.style.overflow = ''; }
+function rdFechar() { rd.aberto = null; $('rdFundo').style.display = 'none'; $('rdPainel').style.display = 'none'; document.body.style.overflow = '';
+  if (/^#(rankeamento|defesa|regras|vendasmc|ads|promocoes)$/.test(location.hash)) history.replaceState(null, '', '#ia');
+  window.dispatchEvent(new Event('sh-redesenhar')); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && rd.aberto && !document.querySelector('.pc-fundo.on, #pcFundo[style*="flex"]')) rdFechar(); });
 function rdAba(a) { rd.aba = a; rdDesenhar(); }
 function rdDesenhar() {
@@ -2121,8 +2127,21 @@ setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
 acompanharAstra();
 atualizarNaPrimeiraAberturaDoDia();
-if (svHash0 === '#regras' || svHash0 === '#vendasmc') { const a = svHash0 === '#regras' ? 'preco' : 'vendas'; mostrar('ia'); setTimeout(() => { rd.abaRank = a; rdAbrir('rank'); }, 300); }
-if (svHash0 === '#ads' || svHash0 === '#promocoes') { const a = svHash0 === '#ads' ? 'ads' : 'promo'; mostrar('ia'); setTimeout(() => { rd.abaDef = a; rdAbrir('def'); }, 300); }
+// Atalhos do menu do SEVEN (e links antigos): #rankeamento/#regras/#vendasmc abrem o card Rankeamento; #defesa/#ads/#promocoes, a Defesa
+function svIrHash(h, espera) {
+    h = String(h || '').replace('#', '');
+    const rank = { rankeamento: 'vendas', vendasmc: 'vendas', regras: 'preco' }, def = { defesa: 'defender', ads: 'ads', promocoes: 'promo' };
+    if (rank[h] || def[h]) {
+        if (rd.aberto) rdFechar();
+        mostrar('ia');
+        setTimeout(() => { if (rank[h]) { rd.abaRank = rank[h]; rdAbrir('rank'); } else { rd.abaDef = def[h]; rdAbrir('def'); }
+            history.replaceState(null, '', rank[h] ? '#rankeamento' : '#defesa'); window.dispatchEvent(new Event('sh-redesenhar')); }, espera || 0);
+        return;
+    }
+    if (['noticias', 'vendas', 'concorrentes', 'ia', 'parados', 'clonagem'].includes(h)) { if (rd.aberto) rdFechar(); mostrar(h); }
+}
+svIrHash(svHash0, 300);
+window.addEventListener('hashchange', () => svIrHash(location.hash));
 requestAnimationFrame(() => document.body.classList.add('page-ready'));
 setTimeout(() => document.body.classList.add('page-ready'), 150);
 </script>

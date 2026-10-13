@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.70",
+    "data": "2026-10-13",
+    "titulo": "Interface nova: barra dos apps e Início com o 7",
+    "texto": "Interface nova, no molde do Olist:\n\n- Barra dos apps à esquerda: o 7 do SEVEN (Início), Stock, AD Health e Finance. Embaixo, Novidades do app, Atualizações globais e a sua conta.\n- Ao clicar num app, abre a segunda aba com os submenus dele. Fixar menu deixa essa aba sempre aberta.\n- AD HEALTH: Rankeamento e Defesa agora estão direto no menu e abrem ao lado dele.\n- Conta (bolinha com as iniciais): trocar de conta, tema claro/escuro, fundo, renovar o acesso ao ML e Área do desenvolvedor.\n- Início novo: o 7, a saudação, a hora e a data; embaixo, as Atualizações globais e as do app.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.69",
     "data": "2026-10-13",
     "titulo": "Correção: Clonagem de anúncios voltou",

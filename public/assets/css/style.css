@@ -1247,3 +1247,64 @@ body {
 .fam-lados { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }
 .fam-lado { font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: color-mix(in srgb, var(--l1, #fff) 10%, transparent); color: var(--l2, #c7d1db); }
 .fam-lado.fam-par { background: color-mix(in srgb, var(--blue, #0a84ff) 22%, transparent); color: var(--l1, #fff); }
+
+/* ══════════════════════════════════════════════════════
+   MENU DO SEVEN (13/10/2026): barra dos apps + segunda aba
+   com os submenus (molde do Olist). shell.js monta; o menu
+   lateral antigo (.sidebar) fica escondido.
+══════════════════════════════════════════════════════ */
+html.sh .sidebar, html.sh .btn-hamburguer { display: none !important; }
+#shRail {
+  width: 72px; height: 100vh; position: sticky; top: 0; flex-shrink: 0; z-index: 1200;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 16px;
+  background: linear-gradient(180deg, #0b1f5e 0%, #071442 55%, #050d2e 100%);
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+#shRail .sh-7 { width: 46px; height: 46px; color: #3fe3ff; display: block; margin-bottom: 14px; filter: drop-shadow(0 0 6px rgba(63,227,255,.55)); transition: transform .2s ease; }
+#shRail .sh-7:hover { transform: scale(1.06); }
+#shRail .sh-7 svg { width: 100%; height: 100%; }
+#shRail .sh-apps { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+#shRail .sh-app, #shRail .sh-ic, #shRail .sh-conta {
+  width: 56px; border: 0; background: transparent; color: rgba(255,255,255,.72); border-radius: 14px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 7px; font-size: 10px; font-weight: 600;
+  text-decoration: none; position: relative; transition: background .15s ease, color .15s ease;
+}
+#shRail .sh-app i, #shRail .sh-ic i { font-size: 21px; line-height: 1; }
+#shRail .sh-app:hover, #shRail .sh-ic:hover { background: rgba(255,255,255,.08); color: #fff; }
+#shRail .sh-app.on { background: linear-gradient(160deg, #1f6bff, #0a46d8); color: #fff; box-shadow: 0 6px 18px rgba(10,70,216,.45); }
+#shRail .sh-base { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#shRail .sh-ic { padding: 9px 0; }
+#shRail .sh-badge { position: absolute; top: 3px; right: 6px; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px; background: #ff453a; color: #fff; font-size: 10px; font-weight: 700; display: none; align-items: center; justify-content: center; font-style: normal; }
+#shRail .sh-badge:not(:empty) { display: inline-flex; }
+#shRail .sh-conta { width: 40px; height: 40px; padding: 0; border-radius: 50%; justify-content: center; background: #1f6bff; color: #fff; font-size: 13px; font-weight: 800; margin-top: 6px; }
+#shRail .sh-conta.on { box-shadow: 0 0 0 3px rgba(63,227,255,.6); }
+
+#shPainel {
+  width: 256px; height: 100vh; position: sticky; top: 0; flex-shrink: 0; z-index: 1150;
+  display: none; flex-direction: column; background: #111318; color: #f2f3f5;
+  border-right: 1px solid rgba(255,255,255,.06); border-radius: 0 18px 18px 0;
+}
+html.sh-fixo #shPainel.tem { display: flex; }
+html.sh-fixo #shPainel.tem.aberto { display: flex; }
+html:not(.sh-fixo) #shPainel.aberto { display: flex; position: fixed; left: 72px; top: 0; box-shadow: 18px 0 40px rgba(0,0,0,.35); animation: shEntra .18s ease; }
+@keyframes shEntra { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+#shPainel .sh-cab { padding: 26px 22px 14px; }
+#shPainel .sh-cab h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: #fff; }
+#shPainel .sh-cab small { display: block; margin-top: 3px; font-size: 12px; color: rgba(255,255,255,.5); }
+#shPainel .sh-menu { list-style: none; margin: 0; padding: 4px 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+#shPainel .sh-menu li { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 11px; color: rgba(255,255,255,.78); font-size: 14px; cursor: pointer; transition: background .15s ease, color .15s ease; }
+#shPainel .sh-menu li i { font-size: 17px; width: 20px; text-align: center; }
+#shPainel .sh-menu li:hover { background: rgba(255,255,255,.07); color: #fff; }
+#shPainel .sh-menu li.on { background: rgba(31,107,255,.22); color: #fff; font-weight: 600; }
+#shPainel .sh-menu li.on i { color: #5b9bff; }
+#shPainel .sh-vazio { padding: 6px 22px; flex: 1; color: rgba(255,255,255,.55); font-size: 13px; line-height: 1.5; }
+#shPainel #shFundo { padding: 0 10px; }
+#shPainel #shFundo .bg-picker { border: 0; }
+#shPainel .sh-pe { border-top: 1px solid rgba(255,255,255,.07); padding: 16px 22px 20px; }
+#shPainel .sh-fixar { display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0; font-size: 14px; color: rgba(255,255,255,.8); }
+#shPainel .sh-fixar input { display: none; }
+#shPainel .sh-fixar i { width: 44px; height: 24px; border-radius: 999px; background: rgba(255,255,255,.18); position: relative; transition: background .2s ease; }
+#shPainel .sh-fixar i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
+#shPainel .sh-fixar input:checked + i { background: #1f6bff; }
+#shPainel .sh-fixar input:checked + i::after { transform: translateX(20px); background: #0b1230; }
+html.sh .content { min-width: 0; }
