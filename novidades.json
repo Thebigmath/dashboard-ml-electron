@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.75",
+    "data": "2026-10-13",
+    "titulo": "Correção: sugestão de preço segue a regra",
+    "texto": "- Correção: a sugestão do Precificar usa sempre o preço da regra (+1 ponto de margem, ou +1% nos tapetes com meta). A IA só confirma ou segura a subida e explica; ela não escolhe outro preço.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.74",
     "data": "2026-10-13",
     "titulo": "Premium × Clássico, lados, trava de estoque, funil de ADS e notas",
