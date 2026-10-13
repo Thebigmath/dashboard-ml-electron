@@ -19,7 +19,10 @@
 
     const APPS = {
         stock: { nome: 'STOCK Ops', curto: 'Stock', sub: 'Estoque e reposição do Full', icone: 'bi-boxes', itens: [
-            ['/painel', 'bi-layout-sidebar', 'Painel de Controle'], ['/feed', 'bi-lightning-charge', 'Feed'], ['/envio_full', 'bi-box-seam', 'Envio Full'],
+            ['/painel', 'bi-layout-sidebar', 'Painel de Controle'],
+            // acoes do Painel (os botoes do menu antigo): na tela do Painel clicam o botao dele; fora dela, abrem o Painel e clicam
+            ['acao:btnAtualizarML', 'bi-arrow-clockwise', 'Atualizar Estoque'], ['acao:btnGerarPlanilhaFull', 'bi-arrow-down-circle', 'Planilha Full'], ['acao:btnEnviarFull', 'bi-cloud-arrow-up', 'Enviar para Full'],
+            ['/feed', 'bi-lightning-charge', 'Feed'], ['/envio_full', 'bi-box-seam', 'Envio Full'],
             ['/valor_estoque', 'bi-pie-chart', 'Valor do Estoque'], ['/frete', 'bi-truck', 'Frete'], ['/parados', 'bi-pause-circle', 'Parados']] },
         ad: { nome: 'AD HEALTH', curto: 'AD Health', sub: 'Saúde dos anúncios', icone: 'bi-heart-pulse', itens: [
             ['/seven#noticias', 'bi-lightning-charge', 'Notícias urgentes'], ['/seven#rankeamento', 'bi-graph-up-arrow', 'Rankeamento'], ['/seven#defesa', 'bi-shield-check', 'Defesa'],
@@ -74,6 +77,7 @@
         desenhar();
     }
     const ativo = (href) => {
+        if (href.startsWith('acao:')) return false;
         const [p, h] = href.split('#');
         if (p !== caminho && !(p === '/painel' && caminho === '/stock-ops')) return false;
         if (!h) return true;
@@ -112,7 +116,9 @@
                 ${a.itens.length ? `<ul class="sh-menu">${a.itens.map(([href, ic, nome]) => `<li class="${ativo(href) ? 'on' : ''}" data-href="${href}"><i class="bi ${ic}"></i><span>${nome}</span></li>`).join('')}</ul>`
                     : `<div class="sh-vazio">${a.vazio || ''}</div>`}${rodape}`;
             p.querySelectorAll('.sh-menu li[data-href]').forEach(li => li.onclick = () => {
-                const href = li.dataset.href, [pp, h] = href.split('#');
+                const href = li.dataset.href;
+                if (href.startsWith('acao:')) { executarAcao(href.slice(5), li); return; }
+                const [pp, h] = href.split('#');
                 if (pp === caminho && h) { location.hash = h; setTimeout(desenhar, 50); if (!root.classList.contains('sh-fixo')) fechar(); }
                 else location.href = href;
             });
@@ -124,6 +130,25 @@
             desenhar();
         };
     }
+    // Executa um botao do Painel (Atualizar Estoque, Planilha Full, Enviar para Full) e espelha o andamento no menu
+    function executarAcao(id, li) {
+        const alvo = document.getElementById(id);
+        if (!alvo) { location.href = '/painel?acao=' + encodeURIComponent(id); return; }
+        alvo.click();
+        if (!li) return;
+        const espelhar = () => { const sp = alvo.querySelector('span'), ic = alvo.querySelector('i'); if (sp) li.querySelector('span').textContent = sp.textContent; if (ic) li.querySelector('i').className = ic.className; };
+        espelhar();
+        const t = setInterval(() => { if (!document.body.contains(li)) return clearInterval(t); espelhar(); }, 400);
+        setTimeout(() => clearInterval(t), 15 * 60 * 1000);
+    }
+    // chegou de outra tela pedindo uma acao do Painel: espera a tela montar e clica
+    (function () {
+        const acao = new URLSearchParams(location.search).get('acao');
+        if (!acao) return;
+        history.replaceState(null, '', location.pathname + location.hash);
+        const tentar = (n) => { const el = document.getElementById(acao); if (el && document.readyState === 'complete') setTimeout(() => executarAcao(acao, document.querySelector(`#shPainel li[data-href="acao:${acao}"]`)), 600); else if (n < 40) setTimeout(() => tentar(n + 1), 250); };
+        tentar(0);
+    })();
     window.addEventListener('hashchange', () => { if (document.getElementById('shPainel')) desenhar(); });
     window.addEventListener('sh-redesenhar', () => { if (document.getElementById('shPainel')) desenhar(); });
 

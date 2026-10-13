@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.73",
+    "data": "2026-10-13",
+    "titulo": "Botões do STOCK Ops de volta",
+    "texto": "- Os botões Atualizar Estoque, Planilha Full e Enviar para Full voltaram ao menu do STOCK Ops (funcionam de qualquer tela: o Painel abre e o botão é acionado).\n- Metas de vendas dos tapetes valendo nas duas contas (a regra de preço +1% usa a meta de cada produto).",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.72",
     "data": "2026-10-13",
     "titulo": "Finance: DRE, conciliação e margem por produto",
