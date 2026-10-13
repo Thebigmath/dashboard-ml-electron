@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.69",
+    "data": "2026-10-13",
+    "titulo": "Correção: Clonagem de anúncios voltou",
+    "texto": "- A tela Clonagem de anúncios aparecia vazia na versão anterior. Voltou ao normal.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.68",
     "data": "2026-10-13",
     "titulo": "Rankeamento com tudo de preço e Precificar com IA",
