@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.68",
+    "data": "2026-10-13",
+    "titulo": "Rankeamento com tudo de preço e Precificar com IA",
+    "texto": "Novidades:\n\n- Rankeamento ficou com tudo de preço num lugar só: Análise de vendas (abre primeiro), Mudança de preço, Precificação e Análise da IA. Análise de vendas e Regras de preço saíram do menu.\n- Análise de vendas: só a lista por venda (de ontem, por padrão), sem os cards. Cada venda tem o botão Precificar, que abre o precificador já com a sugestão da IA (as regras fazem a conta, a IA revisa e explica; no máximo 3% para cima ou para baixo, e o preço só muda quando você aplica).\n- STOCK Ops abre direto no Painel, onde se monta o Full.\n- Reposição por família: a linha de cima é o Par, com os números dele; clicando, abre a gaveta com o Direito e o Esquerdo.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.67",
     "data": "2026-10-13",
     "titulo": "Clonagem na própria conta",

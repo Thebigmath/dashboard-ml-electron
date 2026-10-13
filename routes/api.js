@@ -1179,6 +1179,8 @@ router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').veri
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Analise de vendas (estilo Mercado Turbo): MC% real de cada venda do periodo
 router.get('/seven/vendas_mc', auth, (req, res) => { require('../lib/vendas_mc').analisar({ periodo: req.query.periodo || 'ontem' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Sugestao de preco da IA para um anuncio que vendeu (Analise de vendas -> Precificar)
+router.post('/seven/preco/:item/ia', auth, (req, res) => { require('../lib/preco_ia').sugerir(req.params.item, req.body || {}).then(d => res.json(d)).catch(erroJson(res)); });
 // Clonagem (AD HEALTH): fila de anuncios para clonar na outra conta
 const clonagem = () => require('../lib/clonagem');
 router.get('/seven/clonagem', auth, (req, res) => { try { res.json(clonagem().lista()); } catch (e) { erroJson(res)(e); } });

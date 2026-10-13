@@ -480,10 +480,10 @@ function celulaEstrela(p) {
 
 /* ── Famílias: Direito, Esquerdo e Par numa linha só ──────────────────────
    SKU da base: "35063d" (direito), "35063e" (esquerdo), "35063d-35063e-par" (par).
-   O número da frente é a família. A linha da família soma estoque, vendas,
-   reposição, trânsito e Qtd Full dos anúncios dela; a urgência e a cobertura são
-   as do anúncio mais apertado. Clicando, abre os anúncios embaixo. Só agrupa
-   quando há 2+ anúncios da família na lista filtrada. */
+   O número da frente é a família. A linha de cima é o PAR, com os números dele
+   mesmo (sem somar nada); clicando, abre a gaveta com o Direito e o Esquerdo,
+   cada um com os seus números. Família sem par: Direito e Esquerdo ficam juntos,
+   um embaixo do outro, sem gaveta. Só agrupa com 2+ anúncios na lista filtrada. */
 window.familiasAbertas = new Set();
 let agruparFamilias = (() => { try { return localStorage.getItem('agruparFamilias') !== '0'; } catch { return true; } })();
 const skuReal = (p) => String(chaveDe(p)).split('~')[0].toLowerCase();
@@ -519,36 +519,14 @@ function montarUnidades(lista) {
         if (vistos.has(f)) continue;
         vistos.add(f);
         const membros = grupos[f].slice().sort((a, b) => ORDEM_LADO[ladoDe(a)] - ORDEM_LADO[ladoDe(b)] || skuReal(a).localeCompare(skuReal(b)));
-        unidades.push({ familia: f, membros });
+        const pares = membros.filter(m => ladoDe(m) === 'par').sort((a, b) => (Number(b.vendas30) || 0) - (Number(a.vendas30) || 0));
+        if (!pares.length) { for (const m of membros) unidades.push({ p: m }); continue; }
+        const par = pares[0];
+        unidades.push({ familia: f, par, filhos: membros.filter(m => m !== par), membros });
     }
     return unidades;
 }
 const qtdDeChave = (p) => Number(window.qtdsFull[chaveDe(p)] ?? qtdFullSugerida(p)) || 0;
-function linhaFamilia(f, membros) {
-    const soma = (fn) => membros.reduce((t, p) => t + (Number(fn(p)) || 0), 0);
-    const vendem = membros.filter(p => Number(p.cobertura) < 999 && !(Number(p.cobertura) === 0 && !(Number(p.vendas30) > 0)));
-    const pior = (vendem.length ? vendem : membros).slice().sort((a, b) => Number(a.cobertura) - Number(b.cobertura))[0];
-    const aberta = window.familiasAbertas.has(f);
-    const chaves = membros.map(chaveDe);
-    const marcados = chaves.filter(c => window.selecionados.has(c)).length;
-    const transf = soma(p => p.transferenciaMl);
-    const lados = membros.map(p => `<span class="fam-lado fam-${ladoDe(p)}">${ROTULO_LADO[ladoDe(p)]}</span>`).join('');
-    const rep = soma(p => p.eFull === false ? 0 : (p.reposicaoBruta ?? p.reposicao));
-    return `<tr class="linha-familia${aberta ? ' aberta' : ''}${marcados === chaves.length ? ' linha-sel' : ''}" data-familia="${f}" title="${aberta ? 'Fechar' : 'Abrir'} os anúncios da família">
-            <td class="col-sel"><input type="checkbox" class="sel-check sel-familia" data-familia="${f}" data-chaves="${chaves.join('|')}"${marcados === chaves.length ? ' checked' : ''}${marcados > 0 && marcados < chaves.length ? ' data-parcial="1"' : ''}></td>
-            <td class="col-estrela"><i class="bi bi-chevron-${aberta ? 'down' : 'right'} fam-seta"></i></td>
-            <td>${badgeUrgencia(pior)}</td>
-            <td><b>${nomeFamilia(membros)}</b> <span class="fam-lados">${lados}</span><div class="fam-sub">${membros.length} anúncios · clique para ${aberta ? 'fechar' : 'abrir'}</div></td>
-            <td>${f}</td>
-            <td>${soma(p => p.estoque)}</td>
-            <td>${soma(p => p.vendasPeriodo ?? p.vendas30)}</td>
-            <td>${Math.round(soma(p => p.mediaDia) * 100) / 100}</td>
-            <td title="A do anúncio mais apertado da família">${Number(pior.cobertura) >= 999 ? '—' : pior.cobertura}</td>
-            <td><strong>${rep > 0 ? rep : '—'}</strong></td>
-            <td><span style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${soma(transitoDe) > 0 ? '#f39c12' : 'var(--l3,#8ca0b3)'}">${soma(transitoDe)}${transf > 0 ? `<sup style="color:#a78bfa;font-weight:800;margin-left:3px">⇄${transf}</sup>` : ''}</span></td>
-            <td><span class="fam-qtd" data-familia="${f}" style="display:inline-block;width:70px;text-align:center;font-weight:700">${soma(qtdDeChave) || ''}</span></td>
-        </tr>`;
-}
 window.toggleFamilias = function () {
     agruparFamilias = !agruparFamilias;
     try { localStorage.setItem('agruparFamilias', agruparFamilias ? '1' : '0'); } catch {}
@@ -581,12 +559,18 @@ function renderPagina(lista, pagina) {
 
     const inputStyle = 'width:70px;background:var(--s2,#1c1c1e);border:1px solid var(--sep2,#3a3a3c);border-radius:6px;color:var(--l1,#fff);padding:3px 6px;font-size:12px;text-align:center;outline:none;';
 
-    const linha = (p, fam) => `
-        <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${fam ? ` data-familia="${fam}"` : ''} class="${fam ? 'linha-membro' : ''}${window.selecionados.has(chaveDe(p)) ? ' linha-sel' : ''}">
+    // cab: linha do par, que abre a gaveta com o Direito e o Esquerdo
+    const cabeca = (cab) => {
+        if (!cab) return '';
+        const lados = cab.filhos.map(m => `<span class="fam-lado fam-${ladoDe(m)}">${ROTULO_LADO[ladoDe(m)]}</span>`).join('');
+        return `<div class="fam-sub"><span class="fam-lados" style="margin-left:0">${lados}</span> ${cab.aberta ? 'clique para fechar' : 'clique para ver o Direito e o Esquerdo'}</div>`;
+    };
+    const linha = (p, fam, cab) => `
+        <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${fam ? ` data-familia="${fam}"` : ''}${cab ? ` data-familia="${cab.familia}"` : ''} class="${fam ? 'linha-membro' : ''}${cab ? 'linha-familia' + (cab.aberta ? ' aberta' : '') : ''}${window.selecionados.has(chaveDe(p)) ? ' linha-sel' : ''}">
             <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
             <td class="col-estrela">${celulaEstrela(p)}</td>
             <td>${badgeUrgencia(p)}</td>
-            <td>${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}</td>
+            <td>${cab ? `<i class="bi bi-chevron-${cab.aberta ? 'down' : 'right'} fam-seta"></i> ` : ''}${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}${cabeca(cab)}</td>
             <td>${p.sku}</td>
             <!-- estoque cru: o que está em trânsito tem coluna própria e ainda não chegou
                  ao FULL, então não pode ser subtraído daqui (subtrair mostrava 0 em produto
@@ -599,9 +583,11 @@ function renderPagina(lista, pagina) {
             <td><span class="qtd-transito-display transito-hover" data-chave="${chaveDe(p)}" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;cursor:help;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}${(p.transferenciaMl||0)>0?`<sup style="color:#a78bfa;font-weight:800;margin-left:3px" title="">⇄${p.transferenciaMl}</sup>`:''}</span></td>
             <td><input type="number" class="qtd-full" ${p.eFull === false ? 'title="Fora do Full: sem reposição calculada, mas você pode digitar a quantidade para enviar ao galpão"' : ''} data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`;
-    tabela.innerHTML = fatia.map(u => u.familia
-        ? linhaFamilia(u.familia, u.membros) + (window.familiasAbertas.has(u.familia) ? u.membros.map(p => linha(p, u.familia)).join('') : '')
-        : linha(u.p)).join('');
+    tabela.innerHTML = fatia.map(u => {
+        if (!u.familia) return linha(u.p);
+        const aberta = window.familiasAbertas.has(u.familia);
+        return linha(u.par, null, { familia: u.familia, aberta, filhos: u.filhos }) + (aberta ? u.filhos.map(p => linha(p, u.familia)).join('') : '');
+    }).join('');
 
     renderControles(unidades.length, pagina);
     sincronizarSelecaoUI();
@@ -815,7 +801,7 @@ if (tabela) {
         const b = e.target.closest('.btn-estrela');
         if (b) window.toggleEstrela(b.dataset.chave, b);
         const fam = e.target.closest('tr.linha-familia');
-        if (fam && !e.target.closest('input')) {
+        if (fam && !e.target.closest('input, button')) {
             const f = fam.dataset.familia;
             if (window.familiasAbertas.has(f)) window.familiasAbertas.delete(f); else window.familiasAbertas.add(f);
             renderPagina(produtosFiltrados, paginaAtual);

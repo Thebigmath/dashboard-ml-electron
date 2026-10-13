@@ -45,7 +45,8 @@ app.use('/auth', require('./routes/auth'));
 // O app abre na pagina Inicio (arquitetura SEVEN, 06/10/2026): faturamento, as portas dos
 // ecossistemas (STOCK Ops, AD HEALTH, Finance), noticias globais e atualizacoes do app.
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/inicio.html')));
-app.get('/stock-ops', (req, res) => res.sendFile(path.join(__dirname, 'public/stock_ops.html')));
+// STOCK Ops abre direto no Painel, onde se monta o Full (a tela de cards repetia o menu lateral)
+app.get('/stock-ops', (req, res) => res.redirect('/painel'));
 app.get('/dev', (req, res) => res.sendFile(path.join(__dirname, 'public/dev.html')));
 app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'public/feed.html')));
 app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
