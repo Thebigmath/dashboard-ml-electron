@@ -1184,6 +1184,7 @@ async function rgAplicarTodos() {
     if (!confirm(`Aplicar ${L.length} aumento(s) no Mercado Livre?\n\n` + L.map(l => `${l.sku}: ${epBRL(l.preco)} → ${epBRL(l.sugerido.preco)} (${prPct(l.margem_pct)} → ${prPct(l.sugerido.margem_pct)})`).join('\n'))) return;
     try {
         const r = await fetch('/api/seven/regras_preco_todos', { method: 'POST' }).then(x => x.json());
+        for (const f of r.feitos || []) if (f.item_id) vmMarcarAlterado(f.item_id, f.antes, f.depois);
         alert(`${r.feitos.length} preço(s) alterado(s).` + (r.falhas.length ? `\n\nNão alterou:\n` + r.falhas.map(f => `${f.sku}: ${f.erro}`).join('\n') : ''));
     } catch (e) { alert('Erro: ' + e.message); }
     delete cache.regras; rd.dados = null; rgRedesenhar(true); rdResumo();
@@ -1213,6 +1214,7 @@ async function rgAplicar(item, preco, forcar) {
         const r = await fetch('/api/seven/regras_preco/' + item, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco, forcar: !!forcar }) }).then(x => x.json());
         if (!r.ok) throw new Error(r.erro || 'o ML recusou');
         alert(`Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}. O anúncio sai da lista e fica em observação por 3 dias.`);
+        vmMarcarAlterado(item, r.antes, r.depois);
         await ladoDepoisDeMudar(item, r.depois / r.antes);   // mudou um lado, muda o outro
         pmDepoisDeMudar(item);                               // o Premium continua acima do Classico?
     } catch (e) { alert('Não alterou: ' + e.message); }
@@ -1274,6 +1276,13 @@ async function vmCarregar(forcar) {
     $('vmTabela').innerHTML = '<div class="sv-vazio">Lendo as vendas no Mercado Livre…</div>';
     try { cache.vendasmc = await api('/api/seven/vendas_mc?periodo=' + encodeURIComponent(per)); vmDesenhar(); }
     catch (e) { $('vmTabela').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
+}
+// Preco mudado em qualquer tela: o anuncio sai da Analise de vendas na hora (sem esperar recarregar)
+function vmMarcarAlterado(item, antes, depois) {
+  if (!cache.vendasmc) return;
+  cache.vendasmc.alterados = cache.vendasmc.alterados || {};
+  cache.vendasmc.alterados[item] = { quando: new Date().toISOString(), antes, depois };
+  if ($('vmTabela')) vmDesenhar();
 }
 // Regra do usuario: mudou um lado (Direito/Esquerdo), muda o outro tambem — mesma variacao (%), mesmo tipo de anuncio
 async function ladoDepoisDeMudar(itemId, fator) {
@@ -1830,6 +1839,7 @@ async function pcAplicar(confirmarGrande) {
     if (r.ok) {
       $('pcMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${pcR$(r.antes)} → ${pcR$(r.depois)}</b>`;
       const mudado = pc.item_id, fator = r.depois / r.antes;
+      vmMarcarAlterado(mudado, r.antes, r.depois);
       // depois de aplicar: outros anuncios do mesmo SKU -> o outro lado (D/E) -> Premium x Classico
       if (pc.ia_ctx && cache.vendasmc) { const feito = pc; setTimeout(async () => { await vmDepoisDeAplicar(feito, r); await ladoDepoisDeMudar(mudado, fator); pmDepoisDeMudar(mudado); }, 900); }
       else { setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500); setTimeout(async () => { await ladoDepoisDeMudar(mudado, fator); pmDepoisDeMudar(mudado); }, 2500); }

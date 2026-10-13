@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.76",
+    "data": "2026-10-13",
+    "titulo": "Preço atualizado sai da lista",
+    "texto": "- Preço atualizado sai da Análise de vendas na hora, em qualquer tela do SEVEN (Precificar, Mudança de preço, Premium × Clássico, outro lado).\n- Preço mudado por fora (site do ML, Mercado Turbo): o SEVEN confere no ML quando o preço mudou e, se foi depois da venda, o produto sai da lista.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.75",
     "data": "2026-10-13",
     "titulo": "Correção: sugestão de preço segue a regra",
