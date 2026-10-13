@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.66",
+    "data": "2026-10-13",
+    "titulo": "Clonagem de anúncios e reposição por família",
+    "texto": "Novidades:\n\n- Clonagem de anúncios (AD HEALTH): cole o MLB ou o link, edite nome, preço, estoque, SKU, tipo e descrição, valide e clone para a outra conta (Flavia ↔ Cordeiro) com fotos, ficha técnica e compatibilidades. Vendas e avaliações ficam no anúncio original.\n- Reposição por família (Painel de Controle): Direito, Esquerdo e Par do mesmo produto numa linha só, com os números somados. Clique para abrir os anúncios. O botão Famílias liga e desliga.\n- Atualizações globais: agora descrevem tudo o que existe no SEVEN e no Harvey.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.65",
     "data": "2026-10-13",
     "titulo": "Análise de vendas (estilo Mercado Turbo), Defesa e calendário",

@@ -1179,6 +1179,14 @@ router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').veri
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Analise de vendas (estilo Mercado Turbo): MC% real de cada venda do periodo
 router.get('/seven/vendas_mc', auth, (req, res) => { require('../lib/vendas_mc').analisar({ periodo: req.query.periodo || 'ontem' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Clonagem (AD HEALTH): fila de anuncios para clonar na outra conta
+const clonagem = () => require('../lib/clonagem');
+router.get('/seven/clonagem', auth, (req, res) => { try { res.json(clonagem().lista()); } catch (e) { erroJson(res)(e); } });
+router.post('/seven/clonagem', auth, (req, res) => { clonagem().adicionar(req.body.texto).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/clonagem/:mlb/editar', auth, (req, res) => { try { res.json(clonagem().editar(req.params.mlb, req.body || {})); } catch (e) { erroJson(res)(e); } });
+router.delete('/seven/clonagem/:mlb', auth, (req, res) => { try { res.json(clonagem().remover(req.params.mlb)); } catch (e) { erroJson(res)(e); } });
+router.post('/seven/clonagem/:mlb/validar', auth, (req, res) => { clonagem().validar(req.params.mlb).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/clonagem/:mlb/clonar', auth, (req, res) => { clonagem().clonar(req.params.mlb).then(d => res.json(d)).catch(erroJson(res)); });
 // Defesa: tracionados (margem >= 15%) com as ameacas de cada um
 router.get('/seven/defesa', auth, (req, res) => { require('../lib/defesa').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 router.post('/seven/regras_preco_todos', auth, (req, res) => { require('../lib/motor_preco').aplicarTodos().then(d => res.json(d)).catch(erroJson(res)); });

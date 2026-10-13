@@ -278,6 +278,20 @@
         .cal-lin { display:grid; grid-template-columns:110px 1fr auto; gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--sep); border-radius:12px; margin-bottom:6px; background:var(--s1); }
         .cal-lin.urgente { border-color:#ff9f0a; }
         .cal-data { font-weight:800; color:var(--l1); font-variant-numeric:tabular-nums; } .cal-data small { display:block; font-size:11px; color:var(--l3); font-weight:500; }
+        .cl-lista { display:flex; flex-direction:column; gap:10px; }
+        .cl-item { display:flex; gap:12px; align-items:center; padding:12px 14px; border:1px solid var(--sep); border-radius:14px; background:var(--s1); }
+        .cl-item img { width:56px; height:56px; object-fit:contain; border-radius:10px; background:#fff; flex-shrink:0; }
+        .cl-item .cl-info { flex:1; min-width:0; }
+        .cl-tag { display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:8px; letter-spacing:.2px; }
+        .cl-tag.na_fila { background:color-mix(in srgb, var(--l1) 10%, transparent); color:var(--l2); }
+        .cl-tag.validado { background:rgba(48,209,88,.16); color:#30D158; }
+        .cl-tag.com_erro { background:rgba(255,69,58,.16); color:#ff453a; }
+        .cl-tag.clonado { background:rgba(10,132,255,.18); color:#0A84FF; }
+        .cl-form label { display:block; font-size:11px; font-weight:700; color:var(--l3); text-transform:uppercase; letter-spacing:.3px; margin:10px 0 4px; }
+        .cl-form input, .cl-form textarea, .cl-form select { width:100%; padding:8px 10px; border-radius:10px; border:1px solid var(--sep); background:var(--s2, var(--s1)); color:var(--l1); font-size:13px; font-family:inherit; }
+        .cl-form textarea { min-height:180px; resize:vertical; }
+        .cl-grade { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
+        @media (max-width: 700px) { .cl-grade { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         .vm-tab { width:100%; border-collapse:collapse; font-size:12.5px; }
         .vm-tab th { position:sticky; top:0; background:var(--s1); z-index:1; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--l3); padding:9px 8px; text-align:right; cursor:pointer; white-space:nowrap; border-bottom:1px solid var(--sep); }
         .vm-tab th:first-child, .vm-tab td:first-child { text-align:left; }
@@ -337,6 +351,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
             <li data-view="ia"><i class="bi bi-stars"></i><span>Análise com IA</span></li>
             <li data-view="regras"><i class="bi bi-sliders"></i><span>Regras de preço</span></li>
             <li data-view="parados"><i class="bi bi-hourglass-split"></i><span>Controle de estoque parado</span></li>
+            <li data-view="clonagem"><i class="bi bi-copy"></i><span>Clonagem de anúncios</span></li>
         </ul>
         <div class="sidebar-footer">v5.0</div>
         <div class="account-switcher" style="align-items:flex-start;flex-direction:column;gap:0"></div>
@@ -516,6 +531,21 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                     <div class="dashboard-card" style="padding:0;overflow:auto;max-height:70vh"><div id="vmTabela"><div class="sv-vazio">Carregando…</div></div></div>
                 </div>
 
+                <div class="sv-view" id="view-clonagem">
+                    <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                        <div><h3>Clonagem de anúncios</h3><small>Copia o anúncio desta conta para a <b id="clOutra">outra conta</b> com fotos, ficha técnica, descrição e compatibilidades. Vendas e avaliações não vão junto: ficam no anúncio original.</small></div>
+                    </div>
+                    <div id="clAviso"></div>
+                    <div class="dashboard-card" style="padding:14px;margin-bottom:14px">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <input class="sv-busca" id="clEntrada" placeholder="Cole o MLB ou o link do anúncio (pode colar vários)" style="margin-left:0;flex:1;min-width:260px" onkeydown="if(event.key==='Enter')clAdicionar()">
+                            <button class="btn-acao" id="clBtnAdd" onclick="clAdicionar()"><i class="bi bi-plus-lg"></i> Colocar na fila</button>
+                        </div>
+                    </div>
+                    <div id="clFila" class="cl-lista"><div class="sv-vazio">Carregando…</div></div>
+                    <div class="pc-fundo" id="clFundo" onclick="if(event.target===this)clFechar()"><div class="pc cl-form" id="clBox"></div></div>
+                </div>
+
                 <div class="sv-view" id="view-parados">
                     <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
                         <div><h3>Controle de estoque parado</h3><small>Só o Full · tempo para esgotar = estoque ÷ média de vendas dos últimos 30 dias · <span id="epColeta">—</span></small></div>
@@ -649,6 +679,7 @@ async function carregar(view, forcar) {
         if (view === 'ia') iaPainel();
         if (view === 'parados') await epCarregar(forcar);
         if (view === 'vendasmc') await vmCarregar(forcar);
+        if (view === 'clonagem') await clCarregar();
         if (view === 'regras') await rgCarregar(forcar);
     } catch (e) {
         const alvo = { noticias: 'nvConteudo', vendas: 'vdTabela', concorrentes: 'ccTabela' }[view];
@@ -1217,6 +1248,86 @@ function vmDesenhar() {
             <td style="color:#0a84ff">${v.frete_vendedor == null ? '—' : epBRL(v.frete_vendedor)}</td><td><b>${v.mc == null ? '—' : epBRL(v.mc)}</b></td>${mcCel(v)}</tr>`).join('')}</table>`
           : '<div class="sv-vazio">Nenhuma venda com esse filtro.</div>';
     }
+}
+
+// ---- Clonagem de anúncios (para a outra conta) ----
+let clDados = null;
+const CL_STATUS = { na_fila: 'Na fila', validado: 'Pronto para clonar', com_erro: 'Com erro', clonado: 'Clonado' };
+const CL_TIPO = { gold_special: 'Clássico', gold_pro: 'Premium' };
+async function clCarregar() {
+    try { clDados = await api('/api/seven/clonagem'); clDesenhar(); }
+    catch (e) { $('clFila').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
+}
+function clDesenhar() {
+    const d = clDados; if (!d) return;
+    $('clOutra').textContent = d.outra_conta;
+    $('clAviso').innerHTML = d.disponivel ? '' : `<div class="dashboard-card" style="padding:12px 14px;margin-bottom:12px;border-color:#ff9f0a;color:#ff9f0a"><i class="bi bi-exclamation-triangle"></i> ${esc(d.motivo)} A clonagem usa o acesso do outro Dashboard instalado neste PC.</div>`;
+    if (!d.fila.length) { $('clFila').innerHTML = '<div class="sv-vazio">Nenhum anúncio na fila. Cole o MLB ou o link acima.</div>'; return; }
+    $('clFila').innerHTML = d.fila.map(r => {
+        const o = r.original, e = r.edicao, v = r.validacao;
+        const det = r.status === 'clonado'
+            ? `<div style="margin-top:4px;font-size:12px;color:#0A84FF">Novo anúncio na ${esc(r.clone.conta)}: <b>${esc(r.clone.id)}</b> · ${esc(r.clone.status)} · ${new Date(r.clone.em).toLocaleString('pt-BR')}${(r.clone.passos || []).length ? ' · ' + esc(r.clone.passos.join(' · ')) : ''}</div>`
+            : v && !v.ok ? `<div style="margin-top:4px;font-size:12px;color:#ff453a">${esc(v.erro)}</div>`
+            : v && v.ok && (v.avisos || []).length ? `<div class="pia-fraco" style="margin-top:4px">${esc(v.avisos.join(' · '))}</div>` : '';
+        const botoes = r.status === 'clonado'
+            ? (r.clone.permalink ? `<button class="ep-btn" onclick="clLink('${esc(r.clone.permalink)}')">Abrir</button>` : '')
+            : `<button class="ep-btn" onclick="clEditar('${r.mlb}')"><i class="bi bi-pencil"></i> Editar</button>
+               <button class="ep-btn" onclick="clValidar('${r.mlb}', this)">Validar</button>
+               <button class="ep-btn" style="border-color:#30D158;color:#30D158" ${r.status !== 'validado' ? 'disabled title="Valide primeiro"' : ''} onclick="clClonar('${r.mlb}', this)"><i class="bi bi-copy"></i> Clonar</button>
+               <button class="ep-btn" style="border-color:var(--sep);color:var(--l3)" title="Tirar da fila" onclick="clRemover('${r.mlb}')"><i class="bi bi-x-lg"></i></button>`;
+        return `<div class="cl-item">${r.thumbnail ? `<img src="${esc(r.thumbnail.replace('http:', 'https:'))}" alt="">` : ''}
+            <div class="cl-info"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cl-tag ${r.status}">${CL_STATUS[r.status] || r.status}</span><b>${esc(e.titulo)}</b></div>
+              <div class="pia-fraco" style="margin-top:3px">${esc(r.mlb)} · SKU ${esc(e.sku || '—')} · ${epBRL(e.preco)} · ${e.estoque} un · ${CL_TIPO[e.tipo] || e.tipo} · ${o.fotos} foto(s)${o.compat ? ` · ${o.compat} compatibilidade(s)` : ''}${o.variacoes ? ` · ${o.variacoes} variação(ões)` : ''} · original vendeu ${o.vendidos ?? '—'}</div>${det}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${botoes}</div></div>`;
+    }).join('');
+}
+function clLink(u) { if (window.electronAPI?.openExternal) window.electronAPI.openExternal(u); else window.open(u, '_blank'); }
+async function clAdicionar() {
+    const t = $('clEntrada').value.trim(); if (!t) return;
+    $('clBtnAdd').disabled = true;
+    try { clDados = await api('/api/seven/clonagem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: t }) }); $('clEntrada').value = ''; clDesenhar(); }
+    catch (e) { alert('Não deu para colocar na fila: ' + e.message); }
+    finally { $('clBtnAdd').disabled = false; }
+}
+async function clRemover(mlb) {
+    if (!confirm('Tirar ' + mlb + ' da fila?')) return;
+    clDados = await api('/api/seven/clonagem/' + mlb, { method: 'DELETE' }); clDesenhar();
+}
+function clEditar(mlb) {
+    const r = clDados.fila.find(x => x.mlb === mlb); const e = r.edicao;
+    $('clBox').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Editar antes de clonar</h3><button class="ep-btn" onclick="clFechar()"><i class="bi bi-x-lg"></i></button></div>
+      <div class="pia-fraco" style="margin-top:4px">${esc(r.mlb)} → ${esc(clDados.outra_conta)} · o que mudar aqui vale só para o anúncio novo</div>
+      <label>Nome do produto <span id="clConta" style="float:right">${e.titulo.length} letras</span></label><input id="clTitulo" value="${esc(e.titulo)}" oninput="$('clConta').textContent=this.value.length+' letras'">
+      <div class="pia-fraco" style="margin-top:4px">O Mercado Livre monta o título com esse nome + a ficha técnica (lado, cor…). Título original: ${esc(r.original.titulo)}</div>
+      <div class="cl-grade"><div><label>Preço (R$)</label><input id="clPreco" type="number" step="0.01" value="${e.preco}"></div>
+        <div><label>Estoque</label><input id="clEstoque" type="number" min="1" value="${e.estoque}"></div>
+        <div><label>SKU</label><input id="clSku" value="${esc(e.sku)}"></div>
+        <div><label>Tipo</label><select id="clTipo"><option value="gold_special"${e.tipo === 'gold_special' ? ' selected' : ''}>Clássico</option><option value="gold_pro"${e.tipo === 'gold_pro' ? ' selected' : ''}>Premium</option></select></div></div>
+      <label>Descrição</label><textarea id="clDesc">${esc(e.descricao)}</textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn-acao" onclick="clFechar()">Cancelar</button><button class="btn-acao" style="border-color:#0A84FF;color:#0A84FF" onclick="clSalvar('${mlb}')"><i class="bi bi-check-lg"></i> Salvar e validar</button></div>`;
+    $('clFundo').classList.add('on');
+}
+function clFechar() { $('clFundo').classList.remove('on'); }
+async function clSalvar(mlb) {
+    const corpo = { titulo: $('clTitulo').value, preco: $('clPreco').value, estoque: $('clEstoque').value, sku: $('clSku').value, tipo: $('clTipo').value, descricao: $('clDesc').value };
+    try {
+        await api('/api/seven/clonagem/' + mlb + '/editar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+        clFechar(); await clCarregar(); await clValidar(mlb);
+    } catch (e) { alert('Erro ao salvar: ' + e.message); }
+}
+async function clValidar(mlb, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Validando…'; }
+    try { await api('/api/seven/clonagem/' + mlb + '/validar', { method: 'POST' }); }
+    catch (e) { alert('Erro ao validar: ' + e.message); }
+    await clCarregar();
+}
+async function clClonar(mlb, btn) {
+    const r = clDados.fila.find(x => x.mlb === mlb), e = r.edicao;
+    if (!confirm(`Criar o anúncio na ${clDados.outra_conta}?\n\n${e.titulo}\n${epBRL(e.preco)} · ${e.estoque} un · SKU ${e.sku || '—'}\n\nIsso publica um anúncio novo de verdade no Mercado Livre.`)) return;
+    btn.disabled = true; btn.textContent = 'Clonando…';
+    try { const x = await api('/api/seven/clonagem/' + mlb + '/clonar', { method: 'POST' }); if (x.status !== 'clonado') alert('O Mercado Livre recusou: ' + (x.validacao?.erro || 'erro')); }
+    catch (e) { alert('Erro ao clonar: ' + e.message); }
+    await clCarregar();
 }
 
 let qm = null;
@@ -1981,7 +2092,7 @@ async function rtIa() {
 
 const svT0 = Date.now();
 function svTirarSplash() { const el = document.getElementById('svSplash'); if (!el) return; setTimeout(() => { el.classList.add('sai'); setTimeout(() => el.remove(), 500); }, Math.max(0, 3000 - (Date.now() - svT0))); }
-Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia', 'parados', 'regras', 'vendasmc'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
+Promise.resolve(mostrar(['noticias', 'vendas', 'concorrentes', 'ia', 'parados', 'regras', 'vendasmc', 'clonagem'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'noticias')).catch(() => {}).finally(svTirarSplash);
 setTimeout(svTirarSplash, 8000);   // nunca prende a tela
 acompanharRanking();
 acompanharAstra();

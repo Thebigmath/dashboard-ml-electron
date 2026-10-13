@@ -478,16 +478,111 @@ function celulaEstrela(p) {
     </button>`;
 }
 
+/* ── Famílias: Direito, Esquerdo e Par numa linha só ──────────────────────
+   SKU da base: "35063d" (direito), "35063e" (esquerdo), "35063d-35063e-par" (par).
+   O número da frente é a família. A linha da família soma estoque, vendas,
+   reposição, trânsito e Qtd Full dos anúncios dela; a urgência e a cobertura são
+   as do anúncio mais apertado. Clicando, abre os anúncios embaixo. Só agrupa
+   quando há 2+ anúncios da família na lista filtrada. */
+window.familiasAbertas = new Set();
+let agruparFamilias = (() => { try { return localStorage.getItem('agruparFamilias') !== '0'; } catch { return true; } })();
+const skuReal = (p) => String(chaveDe(p)).split('~')[0].toLowerCase();
+function familiaDe(p) {
+    const m = skuReal(p).match(/^(\d{4,6})[de](?=$|[-#])/);
+    return m ? m[1] : null;
+}
+function ladoDe(p) {
+    const s = skuReal(p);
+    if (/-par(?=$|[-#])/.test(s) || /^par\b/i.test(p.titulo || '')) return 'par';
+    return /^\d{4,6}d/.test(s) ? 'direito' : 'esquerdo';
+}
+const ORDEM_LADO = { direito: 0, esquerdo: 1, par: 2 };
+const ROTULO_LADO = { direito: 'D', esquerdo: 'E', par: 'Par' };
+function nomeFamilia(membros) {
+    // começo comum dos títulos (sem o "Par" da frente)
+    const palavras = membros.map(p => String(p.titulo || '').replace(/^par\s+/i, '').split(/\s+/));
+    const comum = [];
+    for (let i = 0; i < palavras[0].length; i++) {
+        const w = palavras[0][i];
+        if (palavras.every(L => (L[i] || '').toLowerCase() === w.toLowerCase())) comum.push(w); else break;
+    }
+    return comum.length >= 2 ? comum.join(' ') : String(membros[0].titulo || '').replace(/^par\s+/i, '');
+}
+function montarUnidades(lista) {
+    if (!agruparFamilias) return lista.map(p => ({ p }));
+    const grupos = {};
+    for (const p of lista) { const f = familiaDe(p); if (f) (grupos[f] ||= []).push(p); }
+    const unidades = [], vistos = new Set();
+    for (const p of lista) {
+        const f = familiaDe(p);
+        if (!f || grupos[f].length < 2) { unidades.push({ p }); continue; }
+        if (vistos.has(f)) continue;
+        vistos.add(f);
+        const membros = grupos[f].slice().sort((a, b) => ORDEM_LADO[ladoDe(a)] - ORDEM_LADO[ladoDe(b)] || skuReal(a).localeCompare(skuReal(b)));
+        unidades.push({ familia: f, membros });
+    }
+    return unidades;
+}
+const qtdDeChave = (p) => Number(window.qtdsFull[chaveDe(p)] ?? qtdFullSugerida(p)) || 0;
+function linhaFamilia(f, membros) {
+    const soma = (fn) => membros.reduce((t, p) => t + (Number(fn(p)) || 0), 0);
+    const vendem = membros.filter(p => Number(p.cobertura) < 999 && !(Number(p.cobertura) === 0 && !(Number(p.vendas30) > 0)));
+    const pior = (vendem.length ? vendem : membros).slice().sort((a, b) => Number(a.cobertura) - Number(b.cobertura))[0];
+    const aberta = window.familiasAbertas.has(f);
+    const chaves = membros.map(chaveDe);
+    const marcados = chaves.filter(c => window.selecionados.has(c)).length;
+    const transf = soma(p => p.transferenciaMl);
+    const lados = membros.map(p => `<span class="fam-lado fam-${ladoDe(p)}">${ROTULO_LADO[ladoDe(p)]}</span>`).join('');
+    const rep = soma(p => p.eFull === false ? 0 : (p.reposicaoBruta ?? p.reposicao));
+    return `<tr class="linha-familia${aberta ? ' aberta' : ''}${marcados === chaves.length ? ' linha-sel' : ''}" data-familia="${f}" title="${aberta ? 'Fechar' : 'Abrir'} os anúncios da família">
+            <td class="col-sel"><input type="checkbox" class="sel-check sel-familia" data-familia="${f}" data-chaves="${chaves.join('|')}"${marcados === chaves.length ? ' checked' : ''}${marcados > 0 && marcados < chaves.length ? ' data-parcial="1"' : ''}></td>
+            <td class="col-estrela"><i class="bi bi-chevron-${aberta ? 'down' : 'right'} fam-seta"></i></td>
+            <td>${badgeUrgencia(pior)}</td>
+            <td><b>${nomeFamilia(membros)}</b> <span class="fam-lados">${lados}</span><div class="fam-sub">${membros.length} anúncios · clique para ${aberta ? 'fechar' : 'abrir'}</div></td>
+            <td>${f}</td>
+            <td>${soma(p => p.estoque)}</td>
+            <td>${soma(p => p.vendasPeriodo ?? p.vendas30)}</td>
+            <td>${Math.round(soma(p => p.mediaDia) * 100) / 100}</td>
+            <td title="A do anúncio mais apertado da família">${Number(pior.cobertura) >= 999 ? '—' : pior.cobertura}</td>
+            <td><strong>${rep > 0 ? rep : '—'}</strong></td>
+            <td><span style="display:inline-block;min-width:40px;text-align:center;font-weight:600;color:${soma(transitoDe) > 0 ? '#f39c12' : 'var(--l3,#8ca0b3)'}">${soma(transitoDe)}${transf > 0 ? `<sup style="color:#a78bfa;font-weight:800;margin-left:3px">⇄${transf}</sup>` : ''}</span></td>
+            <td><span class="fam-qtd" data-familia="${f}" style="display:inline-block;width:70px;text-align:center;font-weight:700">${soma(qtdDeChave) || ''}</span></td>
+        </tr>`;
+}
+window.toggleFamilias = function () {
+    agruparFamilias = !agruparFamilias;
+    try { localStorage.setItem('agruparFamilias', agruparFamilias ? '1' : '0'); } catch {}
+    document.getElementById('btnFamilias')?.classList.toggle('ativo', agruparFamilias);
+    paginaAtual = 1;
+    renderPagina(produtosFiltrados, paginaAtual);
+};
+document.getElementById('btnFamilias')?.classList.toggle('ativo', agruparFamilias);
+function atualizarFamiliasUI() {
+    document.querySelectorAll('.sel-familia').forEach(chk => {
+        const chaves = chk.dataset.chaves.split('|');
+        const n = chaves.filter(c => window.selecionados.has(c)).length;
+        chk.checked = n === chaves.length;
+        chk.indeterminate = n > 0 && n < chaves.length;
+        chk.closest('tr')?.classList.toggle('linha-sel', chk.checked);
+    });
+    document.querySelectorAll('.fam-qtd').forEach(el => {
+        const membros = (window.produtosReposicao || []).filter(p => familiaDe(p) === el.dataset.familia && produtosFiltrados.includes(p));
+        const t = membros.reduce((s, p) => s + qtdDeChave(p), 0);
+        el.textContent = t || '';
+    });
+}
+
 /* ── Renderizar página ──────────────────────────────────────────────────── */
 function renderPagina(lista, pagina) {
     if (!tabela) return;
     const inicio = (pagina - 1) * POR_PAGINA;
-    const fatia  = lista.slice(inicio, inicio + POR_PAGINA);
+    const unidades = montarUnidades(lista);
+    const fatia  = unidades.slice(inicio, inicio + POR_PAGINA);
 
     const inputStyle = 'width:70px;background:var(--s2,#1c1c1e);border:1px solid var(--sep2,#3a3a3c);border-radius:6px;color:var(--l1,#fff);padding:3px 6px;font-size:12px;text-align:center;outline:none;';
 
-    tabela.innerHTML = fatia.map(p => `
-        <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' class="linha-sel"' : ''}>
+    const linha = (p, fam) => `
+        <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${fam ? ` data-familia="${fam}"` : ''} class="${fam ? 'linha-membro' : ''}${window.selecionados.has(chaveDe(p)) ? ' linha-sel' : ''}">
             <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
             <td class="col-estrela">${celulaEstrela(p)}</td>
             <td>${badgeUrgencia(p)}</td>
@@ -503,10 +598,14 @@ function renderPagina(lista, pagina) {
             <td><strong>${p.eFull === false ? '<span style="color:var(--l3,#8ca0b3);font-weight:400">n/a</span>' : (Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—')}</strong></td>
             <td><span class="qtd-transito-display transito-hover" data-chave="${chaveDe(p)}" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;cursor:help;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}${(p.transferenciaMl||0)>0?`<sup style="color:#a78bfa;font-weight:800;margin-left:3px" title="">⇄${p.transferenciaMl}</sup>`:''}</span></td>
             <td><input type="number" class="qtd-full" ${p.eFull === false ? 'title="Fora do Full: sem reposição calculada, mas você pode digitar a quantidade para enviar ao galpão"' : ''} data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
-        </tr>`).join('');
+        </tr>`;
+    tabela.innerHTML = fatia.map(u => u.familia
+        ? linhaFamilia(u.familia, u.membros) + (window.familiasAbertas.has(u.familia) ? u.membros.map(p => linha(p, u.familia)).join('') : '')
+        : linha(u.p)).join('');
 
-    renderControles(lista.length, pagina);
+    renderControles(unidades.length, pagina);
     sincronizarSelecaoUI();
+    atualizarFamiliasUI();
 }
 
 /* ── Painel de seleção flutuante ─────────────────────────────── */
@@ -654,7 +753,7 @@ function sincronizarSelecaoUI() {
     const n = window.selecionados.size;
 
     // checkbox mestre reflete o estado da página visível
-    const visiveis = [...document.querySelectorAll('.sel-linha')];
+    const visiveis = [...document.querySelectorAll('.sel-linha, .sel-familia')];
     const master   = document.getElementById('selTodos');
     if (master) {
         const marcados = visiveis.filter(c => c.checked).length;
@@ -715,7 +814,23 @@ if (tabela) {
     tabela.addEventListener('click', e => {
         const b = e.target.closest('.btn-estrela');
         if (b) window.toggleEstrela(b.dataset.chave, b);
+        const fam = e.target.closest('tr.linha-familia');
+        if (fam && !e.target.closest('input')) {
+            const f = fam.dataset.familia;
+            if (window.familiasAbertas.has(f)) window.familiasAbertas.delete(f); else window.familiasAbertas.add(f);
+            renderPagina(produtosFiltrados, paginaAtual);
+        }
     });
+    tabela.addEventListener('change', e => {
+        const chk = e.target.closest('.sel-familia');
+        if (chk) {
+            for (const c of chk.dataset.chaves.split('|')) { if (chk.checked) window.selecionados.add(c); else window.selecionados.delete(c); }
+            tabela.querySelectorAll(`tr.linha-membro[data-familia="${chk.dataset.familia}"] .sel-linha`).forEach(x => { x.checked = chk.checked; x.closest('tr').classList.toggle('linha-sel', chk.checked); });
+            sincronizarSelecaoUI();
+        }
+        atualizarFamiliasUI();
+    });
+    tabela.addEventListener('input', e => { if (e.target.closest('tr.linha-membro .qtd-full')) atualizarFamiliasUI(); });
 }
 
 document.getElementById('selTodos')?.addEventListener('change', function () {
@@ -725,6 +840,14 @@ document.getElementById('selTodos')?.addEventListener('change', function () {
         else window.selecionados.delete(chk.dataset.chave);
         chk.closest('tr')?.classList.toggle('linha-sel', this.checked);
     });
+    sincronizarSelecaoUI();
+});
+
+document.getElementById('selTodos')?.addEventListener('change', function () {
+    document.querySelectorAll('.sel-familia').forEach(chk => {
+        for (const c of chk.dataset.chaves.split('|')) { if (this.checked) window.selecionados.add(c); else window.selecionados.delete(c); }
+    });
+    atualizarFamiliasUI();
     sincronizarSelecaoUI();
 });
 
@@ -1057,8 +1180,10 @@ function focarProdutoDaURL() {
     textoPesquisa = '';
     limparFiltros();
 
-    const idx = produtosFiltrados.findIndex(p => chaveDe(p) === chave);
+    const unidades = montarUnidades(produtosFiltrados);
+    const idx = unidades.findIndex(u => u.familia ? u.membros.some(p => chaveDe(p) === chave) : chaveDe(u.p) === chave);
     if (idx < 0) return;
+    if (unidades[idx].familia) window.familiasAbertas.add(unidades[idx].familia);
     irPagina(Math.floor(idx / POR_PAGINA) + 1);
 
     requestAnimationFrame(() => {

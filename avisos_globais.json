@@ -1,5 +1,93 @@
 [
   {
+    "id": "2026-10-seven-sistema",
+    "data": "2026-10-13",
+    "tag": "SEVEN",
+    "titulo": "SEVEN: o sistema hoje",
+    "resumo": "Como o SEVEN está organizado: Início, STOCK Ops, AD HEALTH e Finance, nas duas contas.",
+    "texto": "O SEVEN é o sistema de gestão das contas Flavia Stock e Cordeiro Car no Mercado Livre. Os dois Dashboards têm as mesmas telas, cada um com a sua conta.\n\n- Início: a porta de entrada, com o faturamento e os atalhos para cada área.\n- STOCK Ops: estoque e reposição do Full (Painel de Controle, Feed, Envio Full, Valor do Estoque, Frete, Parados).\n- AD HEALTH: a saúde dos anúncios — preço, vendas, concorrentes, defesa, ADS, promoções e clonagem.\n- Finance: Hub de Pedidos (em montagem).\n- Harvey: app à parte para mediações, perguntas e reputação.\n\nComo ele trabalha (Escalada de Prata): os motores fazem as contas com regras fixas, a IA revisa e explica, e toda mudança fica registrada e pode ser desfeita.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-seven-precos",
+    "data": "2026-10-13",
+    "tag": "AD HEALTH",
+    "titulo": "Rankeamento e Regras de preço",
+    "resumo": "O motor que sugere subir o preço de quem está vendendo bem, com travas de segurança e modo semiautomático.",
+    "texto": "No card Rankeamento do AD HEALTH:\n\n- Mudança de preço: produtos que venderam 2 ou mais ontem e estão com margem abaixo de 15% recebem a sugestão de subir 1 ponto de margem. Depois da subida, o produto fica 3 dias em observação.\n- Margem de 15% ou mais = tracionado: vai para o card Defesa, para ser defendido.\n- 5 travas: em promoção, cruzaria os R$ 79 do frete grátis, mais de 10% acima do líder, um dia bom isolado e conferência depois da subida (se as vendas caírem, oferece voltar o preço).\n- Modo Semiautomático (analisa e avisa, sem mudar nada) ou Automático (aplica o que passou nas travas). Todo preço aplicado pode ser revertido.\n- Precificação: busca qualquer produto e mostra a margem no Clássico e no Premium (custo, imposto, tarifa e frete).\n- Análise da IA: o briefing do dia explicado pela IA.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-seven-defesa",
+    "data": "2026-10-13",
+    "tag": "AD HEALTH",
+    "titulo": "Defesa, Campanhas ADS e Promoções",
+    "resumo": "Os produtos tracionados com as ameaças de cada um, as campanhas de ADS e o calendário das promoções.",
+    "texto": "No card Defesa do AD HEALTH:\n\n- Defender: os tracionados (margem de 15% ou mais e vendendo) com as ameaças de cada um: concorrente mais barato, posição na busca, vendas caindo nos últimos 7 dias e estoque acabando. Status protegido, atenção ou ameaçado.\n- Campanhas ADS: investimento, vendas e retorno de cada campanha de Product Ads.\n- Promoções: as campanhas do Mercado Livre em que cada anúncio está ou pode entrar, com o calendário de quando cada uma fecha para adesão e quando termina.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-seven-vendas",
+    "data": "2026-10-13",
+    "tag": "AD HEALTH",
+    "titulo": "Análise de vendas (MC% real)",
+    "resumo": "A margem de contribuição real de cada venda, igual ao relatório do Mercado Turbo.",
+    "texto": "A Análise de vendas mostra a MC% de verdade de cada venda: valor − cupom − custo − imposto − tarifa − frete pago pelo vendedor, dividido pelo valor da venda (a mesma conta do Mercado Turbo).\n\n- Períodos: ontem, hoje, 7, 15 e 30 dias.\n- Por anúncio (os que mais venderam primeiro) ou venda por venda.\n- Destaca os anúncios abaixo de 15% e tem o botão Precificar em cada linha.\n- Os custos vêm da tabela do Mercado Turbo.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-seven-analises",
+    "data": "2026-10-13",
+    "tag": "AD HEALTH",
+    "titulo": "Notícias, concorrentes, tempo de vendas e estoque parado",
+    "resumo": "As outras telas do AD HEALTH e de onde vêm os dados de cada uma.",
+    "texto": "- Notícias urgentes: o que precisa de decisão hoje (estoque, preço, posição).\n- Análise de concorrentes: preço de quem mais vende, diferença para o nosso preço e a nossa posição no grupo, com os dados do ASTRA (Nubimetrics).\n- Análise por tempo de vendas: comparação mês a mês e o Ranking ML (página e posição na busca), com os dados do Issacar.\n- Análise com IA: perguntas livres sobre os dados.\n- Controle de estoque parado: produtos sem venda, quanto dinheiro está parado e a simulação de queima de preço.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-seven-clonagem",
+    "data": "2026-10-13",
+    "tag": "AD HEALTH",
+    "titulo": "Clonagem de anúncios",
+    "resumo": "Copia um anúncio de uma conta para a outra (Flavia ↔ Cordeiro), com fotos, ficha técnica, descrição e compatibilidades.",
+    "texto": "Na Clonagem de anúncios do AD HEALTH:\n\n- Cole o MLB ou o link (pode colar vários) e o anúncio entra na fila.\n- Antes de clonar dá para mudar o nome do produto, preço, estoque, SKU, tipo (Clássico ou Premium) e a descrição.\n- Validar confere com o Mercado Livre sem criar nada. Clonar cria o anúncio de verdade na outra conta, depois de uma confirmação.\n- Vendas, avaliações e perguntas não vão junto: ficam no anúncio original.\n- Precisa dos dois Dashboards instalados e conectados no mesmo PC.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-stock-familias",
+    "data": "2026-10-13",
+    "tag": "STOCK Ops",
+    "titulo": "Reposição por família",
+    "resumo": "Direito, Esquerdo e Par do mesmo produto numa linha só na tabela de Reposição.",
+    "texto": "No Painel de Controle (Produtos para Reposição):\n\n- Os anúncios da mesma família (ex.: 35063d, 35063e e o par 35063d-35063e-par) ficam numa linha só, com estoque, vendas, reposição, trânsito e Qtd Full somados. A urgência e a cobertura são as do anúncio mais apertado.\n- Clicando, a família abre e mostra cada anúncio embaixo. O quadradinho da família marca todos de uma vez.\n- O botão Famílias liga e desliga o agrupamento.\n- O estoque é o do Full ao vivo, já com as unidades em transferência entre galpões. O que está travado (sem nota, perdido) fica de fora.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
+    "id": "2026-10-harvey",
+    "data": "2026-10-13",
+    "tag": "Harvey",
+    "titulo": "Harvey: mediações, perguntas e reputação",
+    "resumo": "O app que cuida das mediações e perguntas das duas contas, com IA no tom da loja.",
+    "texto": "O Harvey roda à parte, na bandeja do Windows:\n\n- Mediações: chegam sozinhas, com a resposta preparada pela IA para revisar e enviar. Dá para ignorar e reabrir.\n- Perguntas: a IA responde no tom de uma pessoa da loja, aprendendo com as respostas reais da equipe.\n- Reputação: avisa com som quando uma conta chega perto de perder o Platinum.\n- Métricas: Quebrados no caminho (custo + frete, o que o ML devolveu e a análise da IA).\n- Novidades do app e Atualizações globais: o mesmo quadro dos Dashboards.",
+    "video": "",
+    "imagens": [],
+    "link": ""
+  },
+  {
     "id": "2026-09-astra",
     "data": "2026-09-30",
     "tag": "Projeto novo",
