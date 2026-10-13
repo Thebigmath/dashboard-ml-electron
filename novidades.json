@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.77",
+    "data": "2026-10-13",
+    "titulo": "Mudanças de preço em pontos de margem",
+    "texto": "- Toda mudança de preço agora é em PONTOS de margem, não em % do preço: se a margem era 1,22%, subir 1 leva para 2,22%.\n- Botões do Precificar viraram −1 pt e +1 pt (cada clique soma mais 1 ponto de margem).\n- Tapetes com meta sobem +1 ponto de margem (antes era +1% no preço).\n- Outro lado (Direito/Esquerdo) e outros anúncios do mesmo SKU recebem os mesmos pontos de margem, cada um sobre a própria margem.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.76",
     "data": "2026-10-13",
     "titulo": "Preço atualizado sai da lista",

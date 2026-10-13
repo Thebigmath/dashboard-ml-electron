@@ -1182,6 +1182,9 @@ router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').veri
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Analise de vendas (estilo Mercado Turbo): MC% real de cada venda do periodo
 router.get('/seven/vendas_mc', auth, (req, res) => { require('../lib/vendas_mc').analisar({ periodo: req.query.periodo || 'ontem' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Mudanca em PONTOS de margem: preco para +/-N pontos (botoes do Precificar) e quantos pontos uma mudanca representou
+router.get('/seven/preco/:item/pontos', auth, (req, res) => { require('../lib/pontos').maisPontos(req.params.item, Number(req.query.pontos || 1), req.query.base).then(d => res.json(d)).catch(erroJson(res)); });
+router.get('/seven/preco/:item/delta', auth, (req, res) => { require('../lib/pontos').pontosDaMudanca(req.params.item, req.query.antes, req.query.depois).then(d => res.json(d)).catch(erroJson(res)); });
 // Lado oposto (Direito/Esquerdo) de um anuncio: para aplicar a mesma mudanca de preco nos dois lados
 router.get('/seven/lados/opostos', auth, (req, res) => { require('../lib/lados').opostos(String(req.query.item || '')).then(d => res.json(d)).catch(erroJson(res)); });
 // Monitor Premium x Classico: a margem do Premium tem que ser maior que a do Classico do mesmo produto

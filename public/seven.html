@@ -1215,7 +1215,7 @@ async function rgAplicar(item, preco, forcar) {
         if (!r.ok) throw new Error(r.erro || 'o ML recusou');
         alert(`Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}. O anúncio sai da lista e fica em observação por 3 dias.`);
         vmMarcarAlterado(item, r.antes, r.depois);
-        await ladoDepoisDeMudar(item, r.depois / r.antes);   // mudou um lado, muda o outro
+        await ladoDepoisDeMudar(item, r.antes, r.depois);   // mudou um lado, muda o outro (mesmos pontos de margem)
         pmDepoisDeMudar(item);                               // o Premium continua acima do Classico?
     } catch (e) { alert('Não alterou: ' + e.message); }
     delete cache.regras; rd.dados = null; rgRedesenhar(true); rdResumo();
@@ -1285,14 +1285,19 @@ function vmMarcarAlterado(item, antes, depois) {
   if ($('vmTabela')) vmDesenhar();
 }
 // Regra do usuario: mudou um lado (Direito/Esquerdo), muda o outro tambem — mesma variacao (%), mesmo tipo de anuncio
-async function ladoDepoisDeMudar(itemId, fator) {
+async function ladoDepoisDeMudar(itemId, antes, depois) {
   let o; try { o = await api('/api/seven/lados/opostos?item=' + encodeURIComponent(itemId)); } catch { return; }
   const alt = (cache.vendasmc && cache.vendasmc.alterados) || {};
-  const L = (o.itens || []).filter(x => !alt[x.item_id]).map(x => ({ ...x, depois: Math.round(x.preco * fator * 100) / 100 }));
+  const cand = (o.itens || []).filter(x => !alt[x.item_id]);
+  if (!cand.length) return;
+  const pts = await pontosDe(itemId, antes, depois);
+  if (pts == null) return;
+  const L = [];
+  for (const x of cand) { try { const p = await precoComPontos(x.item_id, pts); L.push({ ...x, preco: p.preco_atual, depois: p.preco, m0: p.margem_base, m1: p.margem_pct }); } catch {} }
   if (!L.length) return;
-  const pct = ((fator - 1) * 100).toFixed(1).replace('.', ',');
-  if (!confirm(`Mudou o lado do ${o.sku}: mudar também o lado ${o.lado_oposto} (${o.oposto})?\n\nMesma mudança (${fator > 1 ? '+' : ''}${pct}%):\n` +
-      L.map(x => `${x.item_id} · ${pcR$(x.preco)} → ${pcR$(x.depois)}${x.estoque === 0 ? ' (sem estoque)' : ''}`).join('\n'))) return;
+  const ptsTxt = `${pts > 0 ? '+' : ''}${String(pts).replace('.', ',')} ponto(s) de margem`;
+  if (!confirm(`Mudou o lado do ${o.sku}: mudar também o lado ${o.lado_oposto} (${o.oposto})?\n\nMesma mudança (${ptsTxt}):\n` +
+      L.map(x => `${x.item_id} · ${pcR$(x.preco)} (${x.m0}%) → ${pcR$(x.depois)} (${x.m1}%)${x.estoque === 0 ? ' (sem estoque)' : ''}`).join('\n'))) return;
   const res = [];
   for (const x of L) {
     try {
@@ -1344,16 +1349,18 @@ async function pmDepoisDeMudar(itemId) {
 async function vmDepoisDeAplicar(feito, r) {
     const d = cache.vendasmc; d.alterados = d.alterados || {};
     d.alterados[feito.item_id] = { quando: new Date().toISOString(), antes: r.antes, depois: r.depois };
-    const fator = r.depois / r.antes, sku = String(feito.sku || '').trim().toLowerCase();
+    const sku = String(feito.sku || '').trim().toLowerCase();
     const irmaos = sku ? [...new Set(d.vendas.filter(v => v.item_id !== feito.item_id && String(v.sku || '').trim().toLowerCase() === sku && !d.alterados[v.item_id]).map(v => v.item_id))] : [];
     pcFechar(); vmDesenhar();
     if (!irmaos.length) return;
-    const pct = ((fator - 1) * 100).toFixed(1).replace('.', ',');
+    const pts = await pontosDe(feito.item_id, r.antes, r.depois);
+    if (pts == null) return;
     const lista = [];
-    for (const id of irmaos) { try { const x = await api(`/api/seven/preco/${id}`); lista.push({ id, titulo: x.titulo, antes: x.preco_atual, depois: Math.round(x.preco_atual * fator * 100) / 100 }); } catch {} }
+    for (const id of irmaos) { try { const x = await precoComPontos(id, pts); lista.push({ id, antes: x.preco_atual, depois: x.preco, m0: x.margem_base, m1: x.margem_pct }); } catch {} }
     if (!lista.length) return;
-    if (!confirm(`O mesmo produto (SKU ${feito.sku}) vendeu em mais ${lista.length} anúncio(s). Aplicar a mesma mudança (${fator > 1 ? '+' : ''}${pct}%) neles também?\n\n` +
-        lista.map(x => `${x.id} · ${pcR$(x.antes)} → ${pcR$(x.depois)}`).join('\n'))) return;
+    const ptsTxt = `${pts > 0 ? '+' : ''}${String(pts).replace('.', ',')} ponto(s) de margem`;
+    if (!confirm(`O mesmo produto (SKU ${feito.sku}) vendeu em mais ${lista.length} anúncio(s). Aplicar a mesma mudança (${ptsTxt}) neles também?\n\n` +
+        lista.map(x => `${x.id} · ${pcR$(x.antes)} (${x.m0}%) → ${pcR$(x.depois)} (${x.m1}%)`).join('\n'))) return;
     const res = [];
     for (const x of lista) {
         try {
@@ -1778,10 +1785,10 @@ function pcDesenhar(precoMostrado) {
       <div class="pia-fraco">SKU ${esc(d.sku || '—')} · ${esc(d.item_id)} · preço atual ${pcR$(d.preco_atual)}${d.variacoes ? ` · ${d.variacoes} variações (o preço vale para todas)` : ''}</div></div>
       <button class="btn-acao" onclick="pcFechar()"><i class="bi bi-x-lg"></i></button></div>
     ${d.ia_ctx ? pcBlocoIA(d) : `<div class="pc-sug"><i class="bi bi-stars" style="color:#0A84FF;font-size:18px"></i>
-      <div style="flex:1"><b>Sugestão da análise: ${sg.direcao < 0 ? 'baixar 1%' : sg.direcao > 0 ? 'subir 1%' : 'manter'} → ${pcR$(sg.preco)}</b><div class="pia-fraco">${esc(sg.motivo)}</div></div>
-      ${sg.direcao ? `<button class="btn-acao" onclick="pcRecalcular(${sg.preco})">Usar sugestão</button>` : ''}</div>`}
+      <div style="flex:1"><b>Sugestão da análise: ${sg.direcao < 0 ? 'baixar 1 ponto de margem' : sg.direcao > 0 ? 'subir 1 ponto de margem' : 'manter'}</b><div class="pia-fraco">${esc(sg.motivo)}</div></div>
+      ${sg.direcao ? `<button class="btn-acao" onclick="pcPasso(${sg.direcao})">Usar sugestão</button>` : ''}</div>`}
     <div class="pc-lin" style="font-size:14px;margin-bottom:6px"><span><b>Novo preço</b></span>
-      <span><button class="btn-acao" onclick="pcPasso(-1)" title="Projeta 1% abaixo do preço digitado">−1%</button> <button class="btn-acao" onclick="pcPasso(1)" title="Projeta 1% acima do preço digitado (clique de novo para somar mais 1%)">+1%</button>
+      <span><button class="btn-acao" onclick="pcPasso(-1)" title="Preço para a margem cair 1 ponto (ex.: 2,22% → 1,22%)">−1 pt</button> <button class="btn-acao" onclick="pcPasso(1)" title="Preço para a margem subir 1 ponto (ex.: 1,22% → 2,22%); clique de novo para somar mais 1 ponto">+1 pt</button>
         <input id="pcPreco" type="number" step="0.01" min="0" value="${d.preco}"> <button class="btn-acao" onclick="pcRecalcular()">Recalcular</button></span></div>
     <div class="pc-lin" style="margin-bottom:10px"><span>Custo usado ${d.custo_origem && d.custo_origem !== 'digitado' ? '(planilha de custos)' : d.custo == null ? '<b style="color:#FF9F0A">— não está na planilha de custos</b>' : '(digitado)'}</span>
       <span><input id="pcCusto" type="number" step="0.01" min="0" value="${d.custo ?? ''}" placeholder="custo"></span></div>
@@ -1810,11 +1817,16 @@ function pcBlocoIA(d) {
       <div class="pia-fraco" style="margin-top:4px">MC% real ${x.base.mc_real_pct != null ? String(x.base.mc_real_pct).replace('.', ',') + '%' : '—'} · margem do anúncio ${x.base.margem_anuncio_pct != null ? String(x.base.margem_anuncio_pct).replace('.', ',') + '%' : '—'} · ${x.base.vendas_periodo ?? '—'} vendida(s) no período · média ${x.base.media_dia ?? '—'}/dia${x.base.rank_nub ? ` · ${x.base.rank_nub}º no grupo` : ''}${x.base.df_lider_pct != null ? ` · ${String(x.base.df_lider_pct).replace('.', ',')}% vs líder` : ''}${x.aviso_ia ? ' · ' + esc(x.aviso_ia) : ''}</div></div>
     ${x.acao !== 'manter' ? `<button class="btn-acao" onclick="pcRecalcular(${x.preco})">Usar sugestão</button>` : ''}</div>`;
 }
-// -1% / +1%: projeta o preco e a margem; cada clique soma mais 1% sobre o valor que esta na caixa
-function pcPasso(pct) {
-  const atual = Number(($('pcPreco') || {}).value) || pc.preco;
-  pcRecalcular(Math.round(atual * (1 + pct / 100) * 100) / 100);
+// -1 pt / +1 pt: o preco para a margem mudar 1 PONTO (1,22% -> 2,22%) a partir do preco que esta na caixa
+async function pcPasso(pontos) {
+  const base = Number(($('pcPreco') || {}).value) || pc.preco;
+  if ($('pcMsg')) $('pcMsg').textContent = 'Calculando…';
+  try { const r = await api(`/api/seven/preco/${pc.item_id}/pontos?pontos=${pontos}&base=${base}`); pcRecalcular(r.preco); }
+  catch (e) { if ($('pcMsg')) $('pcMsg').textContent = 'Erro: ' + e.message; }
 }
+// preco de outro anuncio com a margem dele mudando os mesmos pontos (outro lado / mesmo SKU)
+async function precoComPontos(id, pontos) { return api(`/api/seven/preco/${id}/pontos?pontos=${pontos}`); }
+async function pontosDe(id, antes, depois) { try { return (await api(`/api/seven/preco/${id}/delta?antes=${antes}&depois=${depois}`)).pontos; } catch { return null; } }
 async function pcRecalcular(preco) {
   const p = preco ?? Number($('pcPreco').value);
   const cx = $('pcCusto').value, c = cx !== '' && Number(cx) !== Number(pc.custo) ? cx : '';   // so manda o custo se voce mudou
@@ -1838,11 +1850,11 @@ async function pcAplicar(confirmarGrande) {
       body: JSON.stringify({ preco: pc.preco, confirmacao: 'APLICAR', confirmarGrande: !!confirmarGrande, motivo: (pc.ia && pc.ia.motivo) || pc.sugestao.motivo }) }).then(x => x.json());
     if (r.ok) {
       $('pcMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${pcR$(r.antes)} → ${pcR$(r.depois)}</b>`;
-      const mudado = pc.item_id, fator = r.depois / r.antes;
+      const mudado = pc.item_id;
       vmMarcarAlterado(mudado, r.antes, r.depois);
       // depois de aplicar: outros anuncios do mesmo SKU -> o outro lado (D/E) -> Premium x Classico
-      if (pc.ia_ctx && cache.vendasmc) { const feito = pc; setTimeout(async () => { await vmDepoisDeAplicar(feito, r); await ladoDepoisDeMudar(mudado, fator); pmDepoisDeMudar(mudado); }, 900); }
-      else { setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500); setTimeout(async () => { await ladoDepoisDeMudar(mudado, fator); pmDepoisDeMudar(mudado); }, 2500); }
+      if (pc.ia_ctx && cache.vendasmc) { const feito = pc; setTimeout(async () => { await vmDepoisDeAplicar(feito, r); await ladoDepoisDeMudar(mudado, r.antes, r.depois); pmDepoisDeMudar(mudado); }, 900); }
+      else { setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500); setTimeout(async () => { await ladoDepoisDeMudar(mudado, r.antes, r.depois); pmDepoisDeMudar(mudado); }, 2500); }
     }
     else if (r.precisa_confirmar) { if (confirm(r.erro)) return pcAplicar(true); $('pcMsg').textContent = 'Cancelado.'; $('pcAplicar').disabled = false; }
     else { $('pcMsg').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; $('pcAplicar').disabled = false; }
@@ -1912,7 +1924,7 @@ function rdDesenhar() {
     const d = rd.dados;
     if (!d) { el.innerHTML = abas + '<div class="sv-vazio">Carregando…</div>'; rdCarregar().then(rdDesenhar).catch(e => el.innerHTML = abas + `<div class="sv-vazio">Erro: ${esc(e.message)}</div>`); return; }
     if (rd.aba === 'preco') {
-      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · <b>com meta de vendas</b> (tapetes): bateu a meta <b>ontem</b>, está <b>até o 3º</b> no Nubimetrics e margem <b>&lt; 15%</b> → subir <b>+1% no preço</b> · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>${rgControles(d)}
+      el.innerHTML = abas + `<div class="pia-fraco" style="margin-bottom:10px">Regras da empresa: vendeu <b>2+ ontem</b> e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · <b>com meta de vendas</b> (tapetes): bateu a meta <b>ontem</b>, está <b>até o 3º</b> no Nubimetrics e margem <b>&lt; 15%</b> → subir <b>+1 ponto</b> de margem · margem <b>≥ 15%</b> = tracionado. Quem aplica é você (com confirmação).</div>${rgControles(d)}
         <div class="pia-sec">Subir +1 ponto de margem</div><div>${rgTabela(d.subir, 'Nenhum anúncio vendendo bem com margem abaixo de 15% hoje.', { txt: 'Subir +1 pt', cor: '#30D158' })}</div>
         <div class="pia-sec" style="margin-top:14px">Tracionados (margem ≥ 15%)</div>${rgPonteDefesa(d)}
         <div class="pia-sec" style="margin-top:14px">Travados · uma trava segurou</div>${rgTravados(d)}
