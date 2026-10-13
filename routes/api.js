@@ -1165,6 +1165,9 @@ router.get('/seven/queima/:item', auth, (req, res) => { require('../lib/queima')
 router.post('/seven/queima/:item', auth, (req, res) => { require('../lib/queima').aplicar(req.params.item, req.body && req.body.preco).then(d => res.json(d)).catch(erroJson(res)); });
 // Campanhas ADS (AD HEALTH): gasto, receita, ACoS, ROAS e serie diaria pela API de Publicidade
 router.get('/seven/ads', auth, (req, res) => { require('../lib/ads').resumo({ dias: req.query.dias, forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+// detalhe de uma campanha (funil por dia e por anuncio) e a analise da IA
+router.get('/seven/ads/:id', auth, (req, res) => { require('../lib/ads').detalhe(req.params.id, req.query.dias).then(d => res.json(d)).catch(erroJson(res)); });
+router.post('/seven/ads/:id/ia', auth, (req, res) => { require('../lib/ads').analisarIA(req.params.id, (req.body || {}).dias).then(d => res.json(d)).catch(erroJson(res)); });
 // Central de Promocoes (AD HEALTH > Campanhas e precos): so leitura, entrar/sair continua manual
 router.get('/seven/promocoes', auth, (req, res) => { require('../lib/promocoes').central({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Area do desenvolvedor: senha (mesmo esquema do Harvey), monitor de cotas e saude do projeto.
@@ -1179,12 +1182,25 @@ router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').veri
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Analise de vendas (estilo Mercado Turbo): MC% real de cada venda do periodo
 router.get('/seven/vendas_mc', auth, (req, res) => { require('../lib/vendas_mc').analisar({ periodo: req.query.periodo || 'ontem' }).then(d => res.json(d)).catch(erroJson(res)); });
+// Lado oposto (Direito/Esquerdo) de um anuncio: para aplicar a mesma mudanca de preco nos dois lados
+router.get('/seven/lados/opostos', auth, (req, res) => { require('../lib/lados').opostos(String(req.query.item || '')).then(d => res.json(d)).catch(erroJson(res)); });
+// Monitor Premium x Classico: a margem do Premium tem que ser maior que a do Classico do mesmo produto
+router.get('/seven/premium', auth, (req, res) => { require('../lib/premium').monitor({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
+router.get('/seven/premium/checar', auth, (req, res) => { require('../lib/premium').checar(String(req.query.item || '')).then(d => res.json(d)).catch(erroJson(res)); });
 // Finance: DRE do mes, conciliacao com o Mercado Pago, margem por produto e custos operacionais
 const finance = () => require('../lib/finance');
 router.get('/finance/meses', auth, (req, res) => res.json({ coletados: finance().meses(), estado: finance().estado }));
 router.get('/finance/mes', auth, (req, res) => { try { res.json(finance().analisar(String(req.query.mes || ''))); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/estado', auth, (req, res) => res.json(finance().estado));
 router.post('/finance/coletar', auth, (req, res) => { finance().coletar(String((req.body || {}).mes || ''), { forcar: !!(req.body || {}).forcar }).then(d => res.json(d)).catch(erroJson(res)); });
+// Notas de fornecedores (Hub de Pedidos + Organizar notas no Google Drive)
+const notas = () => require('../lib/notas');
+router.get('/finance/notas/info', auth, (req, res) => notas().info().then(d => res.json(d)).catch(erroJson(res)));
+router.post('/finance/notas/hub', auth, (req, res) => notas().iniciarHub().then(d => res.json(d)).catch(erroJson(res)));
+router.post('/finance/notas/organizar', auth, (req, res) => { try { res.json(notas().organizar({ executar: !!(req.body || {}).executar })); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/notas/reconectar', auth, (req, res) => { try { res.json(notas().reconectar()); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/notas/estado', auth, (req, res) => res.json(notas().estado()));
+router.get('/finance/notas/historico', auth, (req, res) => res.json(notas().historico()));
 router.post('/finance/custos', auth, (req, res) => { try { res.json(finance().salvarCustos(String(req.body.mes || ''), req.body.lista || [])); } catch (e) { erroJson(res)(e); } });
 // Sugestao de preco da IA para um anuncio que vendeu (Analise de vendas -> Precificar)
 router.post('/seven/preco/:item/ia', auth, (req, res) => { require('../lib/preco_ia').sugerir(req.params.item, req.body || {}).then(d => res.json(d)).catch(erroJson(res)); });

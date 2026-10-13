@@ -75,7 +75,7 @@
     <div id="fnProg" style="display:none" class="fn-box"><div id="fnProgTxt" class="fraco">—</div><div class="prog"><i id="fnProgBar" style="width:0"></i></div></div>
     <div class="fn-abas" id="fnAbas">
         <a href="#resumo" data-a="resumo">Resultado do mês (DRE)</a><a href="#conciliacao" data-a="conciliacao">Conciliação</a>
-        <a href="#produtos" data-a="produtos">Margem por produto</a><a href="#custos" data-a="custos">Custos operacionais</a>
+        <a href="#produtos" data-a="produtos">Margem por produto</a><a href="#custos" data-a="custos">Custos operacionais</a><a href="#notas" data-a="notas">Notas de fornecedores</a>
     </div>
     <div id="fnCorpo"><div class="vazio">Carregando…</div></div>
 </div>
@@ -129,6 +129,7 @@ window.addEventListener('hashchange', desenhar);
 
 function desenhar() {
     document.querySelectorAll('#fnAbas a').forEach(a => a.classList.toggle('on', a.dataset.a === aba()));
+    if (aba() === 'notas') return desenharNotas();   // nao depende do mes coletado
     if (!d) return;
     if (!d.coletado) { $('fnCorpo').innerHTML = `<div class="fn-box vazio">Este mês ainda não foi coletado.<br><br><button class="btn-acao pri" onclick="coletar()"><i class="bi bi-cloud-download"></i> Buscar as vendas do mês</button></div>`; return; }
     $('fnSub').textContent = `${d.de.split('-').reverse().join('/')} a ${d.ate.split('-').reverse().join('/')}${d.fechado ? '' : ' (mês em andamento)'} · ${d.pedidos} pedidos · ${d.unidades} unidades · atualizado em ${new Date(d.atualizado_em).toLocaleString('pt-BR')}`;
@@ -222,6 +223,57 @@ function desenharProdutos() {
       <div class="fraco" style="margin-top:8px">MC = receita − CMV − tarifas − frete − impostos, das vendas que ficaram. O ADS e os custos operacionais entram só no resultado do mês.</div></div>`;
 }
 
+
+// ---- Notas de fornecedores: Hub de Pedidos (arrastar o PDF) + Organizar a pasta do Drive + historico ----
+let nt = null;
+async function desenharNotas() {
+    $('fnCorpo').innerHTML = '<div class="vazio">Carregando…</div>';
+    try { nt = await api('/api/finance/notas/info'); } catch (e) { $('fnCorpo').innerHTML = `<div class="vazio ruim">Erro: ${esc(e.message)}</div>`; return; }
+    if (!nt.disponivel) { $('fnCorpo').innerHTML = `<div class="fn-box vazio">O sistema de notas (Hub de Pedidos / Organizar notas) não está neste PC.<br><span class="fraco">Pasta procurada: ${esc(nt.dir)}</span></div>`; return; }
+    let hist = []; try { hist = await api('/api/finance/notas/historico'); } catch {}
+    const tag = (st) => /reserva/.test(st) ? '<span class="tag par">reserva</span>' : /simula/.test(st) ? '<span class="tag alib">simulação</span>' : '<span class="tag lib">organizada</span>';
+    $('fnCorpo').innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">
+      <div class="fn-box"><h3><i class="bi bi-cloud-upload"></i> Subir notas (Hub de Pedidos)</h3>
+        <div class="fraco" style="margin-bottom:10px">Arraste o PDF do pedido: o hub lê, mostra o fornecedor, o CNPJ (Flavia ou Luan) e a pasta do Drive com o número certo, e só envia quando você confirmar.</div>
+        <div id="ntHub">${nt.hub_no_ar ? '' : `<button class="btn-acao pri" onclick="abrirHub()"><i class="bi bi-play-fill"></i> Abrir o Hub de Pedidos aqui</button> <span class="fraco" id="ntHubMsg"></span>`}</div></div>
+      <div class="fn-box"><h3><i class="bi bi-folder-symlink"></i> Organizar a pasta do Drive</h3>
+        <div class="fraco" style="margin-bottom:10px">Pega os PDFs soltos na pasta "fornecedores" do Drive, identifica fornecedor e CNPJ, renomeia com o próximo número e move para a pasta certa. O que não der para identificar vai para a Reserva. Primeiro simule: nada é mexido.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-acao" id="ntSim" onclick="organizarNotas(false)"><i class="bi bi-eye"></i> Simular</button>
+          <button class="btn-acao pri" id="ntExe" onclick="organizarNotas(true)"><i class="bi bi-check2-all"></i> Organizar de verdade</button>
+          <button class="btn-acao" id="ntRec" onclick="reconectarDrive()" title="Use quando o acesso ao Google Drive vencer: abre o navegador para o login"><i class="bi bi-google"></i> Reconectar o Google Drive</button></div>
+        <pre id="ntLog" style="display:none;margin-top:12px;max-height:40vh;overflow:auto;background:var(--s2);border:1px solid var(--sep);border-radius:12px;padding:12px;font-size:12px;white-space:pre-wrap"></pre></div>
+      <div class="fn-box"><h3><i class="bi bi-clock-history"></i> Histórico</h3>
+        ${hist.length ? `<div class="fn-rol"><table class="fn-tab"><tr><th>Quando</th><th>Arquivo</th><th>Fornecedor</th><th>CNPJ</th><th>Pasta</th><th>Situação</th></tr>
+          ${hist.map(h => `<tr><td>${esc(h.data_hora)}</td><td class="t"><b>${esc(h.novo_nome)}</b>${h.arquivo_original !== h.novo_nome ? `<div class="fraco">era ${esc(h.arquivo_original)}</div>` : ''}</td><td>${esc(h.fornecedor || '—')}</td><td>${esc(h.destinatario || '—')}</td>
+            <td class="fraco" style="text-align:left">${esc(h.pasta)}</td><td>${tag(h.status)}${h.motivo ? `<div class="fraco">${esc(h.motivo)}</div>` : ''}</td></tr>`).join('')}</table></div>` : '<div class="fraco">Nenhuma nota organizada ainda.</div>'}</div></div>`;
+    if (nt.hub_no_ar) mostrarHub();
+    if (nt.rodando) acompanharNotas();
+}
+function mostrarHub() { $('ntHub').innerHTML = `<iframe src="http://127.0.0.1:${nt.hub_porta}/" style="width:100%;height:72vh;border:1px solid var(--sep);border-radius:12px;background:#fff"></iframe>`; }
+async function abrirHub() {
+    $('ntHubMsg').textContent = 'Abrindo o Hub (conectando ao Google Drive)…';
+    try { await post('/api/finance/notas/hub', {}); mostrarHub(); } catch (e) { $('ntHubMsg').textContent = e.message + ' Se o acesso ao Drive venceu, use "Reconectar o Google Drive" abaixo.'; }
+}
+async function reconectarDrive() {
+    if (!confirm('Reconectar o Google Drive?\n\nVai abrir o navegador deste PC para você entrar na conta do Google que tem a pasta "fornecedores" e autorizar.')) return;
+    try { await post('/api/finance/notas/reconectar', {}); acompanharNotas(); } catch (e) { alert(e.message); }
+}
+async function organizarNotas(executar) {
+    if (executar && !confirm('Organizar de verdade a pasta "fornecedores" do Drive?\n\nOs PDFs soltos serão renomeados e movidos para a pasta de cada fornecedor e CNPJ. Rode a simulação antes para conferir.')) return;
+    try { await post('/api/finance/notas/organizar', { executar }); acompanharNotas(); } catch (e) { alert(e.message); }
+}
+async function acompanharNotas() {
+    const log = $('ntLog'); if (!log) return; log.style.display = '';
+    $('ntSim').disabled = $('ntExe').disabled = $('ntRec').disabled = true;
+    for (;;) {
+        const e = await api('/api/finance/notas/estado').catch(() => ({ linhas: [] }));
+        if (!$('ntLog')) return;
+        log.textContent = (e.linhas || []).join('\n') || 'Começando…'; log.scrollTop = log.scrollHeight;
+        if (!e.rodando) break;
+        await new Promise(r => setTimeout(r, 1200));
+    }
+    $('ntSim').disabled = $('ntExe').disabled = $('ntRec').disabled = false;
+}
 const CATS = ['Pessoal', 'Aluguel e estrutura', 'Embalagem', 'Sistemas e assinaturas', 'Contador e taxas', 'Transporte', 'Marketing', 'Outros'];
 function desenharCustos() {
     const L = d.custos_operacionais.length ? d.custos_operacionais : [{ nome: '', categoria: 'Pessoal', valor: '' }];

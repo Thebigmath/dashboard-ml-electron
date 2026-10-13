@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.74",
+    "data": "2026-10-13",
+    "titulo": "Premium × Clássico, lados, trava de estoque, funil de ADS e notas",
+    "texto": "Rankeamento e preços:\n\n- Precificar mais rápido: a conta das regras aparece na hora e a IA revisa logo depois. Botões −1% e +1% projetam o preço e a margem (cada clique soma mais 1%).\n- A análise usa as vendas de ontem da própria Análise de vendas.\n- Premium × Clássico: nova aba no Rankeamento mostra os produtos em que a margem do Premium está igual ou menor que a do Clássico, com o preço sugerido; depois de toda mudança de preço o sistema confere e avisa.\n- Mudou um lado (Direito/Esquerdo), muda o outro: o sistema oferece aplicar a mesma mudança no outro lado.\n- Trava de estoque: não sugere subir produto zerado, com o outro lado zerado ou com um lado do Par faltando.\n\nADS:\n\n- Clicando na campanha: funil com impressões, cliques, CTR, impressões por clique, CPC, conversão, custo por venda, gráfico por dia, os anúncios da campanha com sinais e a análise da IA.\n\nFinance:\n\n- Notas de fornecedores: o Hub de Pedidos e o Organizar notas (Google Drive) dentro do Finance, com simulação, organização, histórico e o botão Reconectar o Google Drive.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.73",
     "data": "2026-10-13",
     "titulo": "Botões do STOCK Ops de volta",

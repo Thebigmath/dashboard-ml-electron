@@ -5,7 +5,7 @@
     "tag": "Finance",
     "titulo": "Finance: DRE, conciliação e margem por produto",
     "resumo": "O resultado do mês, o dinheiro do Mercado Pago conferido venda por venda e a margem de cada produto, nas duas contas.",
-    "texto": "No app Finance da barra (clique em Atualizar o mês para buscar as vendas no Mercado Livre e no Mercado Pago):\n\n- Resultado do mês (DRE): faturamento, cupons, devoluções, CMV, tarifas do ML, frete, impostos, margem de contribuição, ADS, custos operacionais e lucro líquido.\n- Conciliação com o Mercado Pago: quanto já foi liberado, o que está a liberar (com as datas), o que está retido (data de liberação vencida), estornos, coberturas do ML e se o Mercado Pago creditou o que devia, venda por venda.\n- Margem por produto: receita, CMV, tarifas, frete, impostos, devoluções e MC% de cada anúncio.\n- Custos operacionais: cadastro do mês (salários, aluguel, embalagem...), com copiar do mês anterior.",
+    "texto": "No app Finance da barra (clique em Atualizar o mês para buscar as vendas no Mercado Livre e no Mercado Pago):\n\n- Resultado do mês (DRE): faturamento, cupons, devoluções, CMV, tarifas do ML, frete, impostos, margem de contribuição, ADS, custos operacionais e lucro líquido.\n- Conciliação com o Mercado Pago: quanto já foi liberado, o que está a liberar (com as datas), o que está retido (data de liberação vencida), estornos, coberturas do ML e se o Mercado Pago creditou o que devia, venda por venda.\n- Margem por produto: receita, CMV, tarifas, frete, impostos, devoluções e MC% de cada anúncio.\n- Custos operacionais: cadastro do mês (salários, aluguel, embalagem...), com copiar do mês anterior.\n- Notas de fornecedores: o Hub de Pedidos e o Organizar notas (Google Drive) dentro do Finance.",
     "video": "",
     "imagens": [],
     "link": ""
@@ -38,7 +38,7 @@
     "tag": "AD HEALTH",
     "titulo": "Defesa, Campanhas ADS e Promoções",
     "resumo": "Os produtos tracionados com as ameaças de cada um, as campanhas de ADS e o calendário das promoções.",
-    "texto": "No card Defesa do AD HEALTH:\n\n- Defender: os tracionados (margem de 15% ou mais e vendendo) com as ameaças de cada um: concorrente mais barato, posição na busca, vendas caindo nos últimos 7 dias e estoque acabando. Status protegido, atenção ou ameaçado.\n- Campanhas ADS: investimento, vendas e retorno de cada campanha de Product Ads.\n- Promoções: as campanhas do Mercado Livre em que cada anúncio está ou pode entrar, com o calendário de quando cada uma fecha para adesão e quando termina.",
+    "texto": "No card Defesa do AD HEALTH:\n\n- Defender: os tracionados (margem de 15% ou mais e vendendo) com as ameaças de cada um: concorrente mais barato, posição na busca, vendas caindo nos últimos 7 dias e estoque acabando. Status protegido, atenção ou ameaçado.\n- Campanhas ADS: investimento, vendas e retorno; clicando na campanha, o funil (impressões, cliques, CTR, impressões por clique, CPC, conversão, custo por venda), os anúncios e a análise da IA.\n- Promoções: as campanhas do Mercado Livre em que cada anúncio está ou pode entrar, com o calendário de quando cada uma fecha para adesão e quando termina.",
     "video": "",
     "imagens": [],
     "link": ""

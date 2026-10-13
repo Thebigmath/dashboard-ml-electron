@@ -473,6 +473,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
 
                 <!-- ADS e Promocoes vivem dentro do card Defesa (Analise com IA); aqui ficam guardados -->
                 <div id="rdDefDepot" style="display:none">
+                <div class="pc-fundo" id="adFundo" onclick="if(event.target===this)adFechar()"><div class="pc" id="adBox" style="width:min(1150px,96vw)"></div></div>
                 <div class="rd-def-view" id="view-ads">
                     <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
                         <div><h3>Campanhas ADS</h3><small>Product Ads · <span id="adPeriodo">—</span></small></div>
@@ -498,8 +499,8 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                     </div>
                     <div class="dashboard-card" style="padding:0;overflow:auto">
                         <table class="sv-tab ep-tab" style="width:100%"><thead><tr>
-                            <th>Campanha</th><th class="num">Orçamento/dia</th><th class="num">Gasto</th><th class="num">Receita</th><th class="num">ACoS (alvo)</th><th class="num">ROAS</th><th class="num">Cliques</th><th class="num">Vendas</th>
-                        </tr></thead><tbody id="adTabela"><tr><td colspan="8"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
+                            <th>Campanha</th><th class="num">Orçamento/dia</th><th class="num">Gasto</th><th class="num">Receita</th><th class="num">ACoS (alvo)</th><th class="num">ROAS</th><th class="num">Impressões</th><th class="num">Cliques</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">Vendas</th><th class="num">Conversão</th>
+                        </tr></thead><tbody id="adTabela"><tr><td colspan="12"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
                     </div>
                 </div>
 
@@ -573,7 +574,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         <table class="sv-tab ep-tab" style="width:100%"><thead><tr>
                             <th>Produto</th><th class="num">Estoque</th><th class="num">Vendas 30d</th><th class="num">Tempo p/ esgotar</th>
                             <th class="num">Preço</th><th class="num">Custo</th><th class="num">Faturamento em potencial</th><th>Ação</th>
-                        </tr></thead><tbody id="epTabela"><tr><td colspan="8"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
+                        </tr></thead><tbody id="epTabela"><tr><td colspan="12"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
                     </div>
                 </div>
 
@@ -913,9 +914,9 @@ function epDesenhar(d) {
 async function adCarregar(forcar, sincronizar) {
     const dias = $('adDias').value;
     if (!forcar && cache.ads && cache.ads.dias == dias) return adDesenhar(cache.ads);
-    $('adTabela').innerHTML = '<tr><td colspan="8"><div class="sv-vazio">Carregando…</div></td></tr>';
+    $('adTabela').innerHTML = '<tr><td colspan="12"><div class="sv-vazio">Carregando…</div></td></tr>';
     try { cache.ads = await api(`/api/seven/ads?dias=${dias}${sincronizar ? '&forcar=1' : ''}`); adDesenhar(cache.ads); }
-    catch (e) { $('adTabela').innerHTML = `<tr><td colspan="8"><div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div></td></tr>`; }
+    catch (e) { $('adTabela').innerHTML = `<tr><td colspan="12"><div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div></td></tr>`; }
 }
 function adGrafico(serie) {
     if (!serie.length) return '<div class="sv-vazio">Sem série diária.</div>';
@@ -929,6 +930,53 @@ function adGrafico(serie) {
         <path d="${area}" fill="#30D158" opacity=".12"/><path d="${linha('receita')}" fill="none" stroke="#30D158" stroke-width="2"/>
         <path d="${linha('gasto')}" fill="none" stroke="#ff6b35" stroke-width="2"/>${pts('receita', '#30D158')}${pts('gasto', '#ff6b35')}${dias}</svg>`;
 }
+
+// ---- Funil de uma campanha de ADS: impressoes -> cliques (CTR) -> vendas (conversao), CPC e a analise da IA ----
+const adPct = (v) => v == null ? '—' : String(v).replace('.', ',') + '%';
+let adDet = null;
+async function adAbrir(id) {
+  if ($('adFundo').parentElement !== document.body) document.body.appendChild($('adFundo'));   // fora do deposito escondido da Defesa
+  $('adFundo').classList.add('on'); $('adBox').innerHTML = '<div class="sv-vazio">Lendo o funil da campanha no Mercado Livre…</div>';
+  try { adDet = await api(`/api/seven/ads/${id}?dias=${$('adDias').value}`); adDet.ia = null; adDesenharDet(); }
+  catch (e) { $('adBox').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div><button class="btn-acao" onclick="adFechar()">Fechar</button>`; return; }
+  try { adDet.ia = await api(`/api/seven/ads/${id}/ia`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dias: $('adDias').value }) }); }
+  catch (e) { adDet.ia = { erro: e.message }; }
+  if (adDet && String(adDet.campanha.id) === String(id)) adDesenharDet();
+}
+function adFechar() { $('adFundo').classList.remove('on'); }
+function adDesenharDet() {
+  const d = adDet, c = d.campanha, n = (v) => Number(v || 0).toLocaleString('pt-BR');
+  const card = (r, v, s, cor) => `<div class="ep-card"><small>${r}</small><b style="${cor ? 'color:' + cor : ''}">${v}</b><span>${s || '&nbsp;'}</span></div>`;
+  const ia = d.ia;
+  const iaHtml = !ia ? '<div class="pc-sug"><i class="bi bi-stars" style="color:#0A84FF;font-size:18px"></i><div><b>A IA está analisando o funil da campanha…</b><div class="pia-fraco">CTR, impressões por clique, CPC e conversão, campanha e anúncios.</div></div></div>'
+    : ia.erro ? `<div class="pc-sug"><i class="bi bi-exclamation-triangle" style="color:#ff9f0a"></i><div><b>Sem análise da IA agora</b><div class="pia-fraco">${esc(ia.erro)}</div></div></div>`
+    : `<div class="pc-sug" style="align-items:flex-start"><i class="bi bi-stars" style="color:#0A84FF;font-size:18px;margin-top:2px"></i><div style="flex:1"><b>Análise da IA</b>
+        <div style="margin-top:4px">${esc(ia.resumo || '')}</div>
+        <div class="pia-fraco" style="margin-top:6px">${ia.ctr ? '<b>CTR:</b> ' + esc(ia.ctr) + '<br>' : ''}${ia.cpc ? '<b>CPC:</b> ' + esc(ia.cpc) + '<br>' : ''}${ia.conversao ? '<b>Conversão:</b> ' + esc(ia.conversao) : ''}</div>
+        ${(ia.acoes || []).length ? `<div style="margin-top:8px"><b>O que fazer</b>${ia.acoes.map(a => `<div>• ${esc(a)}</div>`).join('')}</div>` : ''}
+        ${(ia.anuncios || []).length ? `<div style="margin-top:8px"><b>Anúncios</b>${ia.anuncios.map(a => `<div>• <b>${esc(a.item_id)}</b>: ${esc(a.problema)} → ${esc(a.acao)}</div>`).join('')}</div>` : ''}
+        <div class="pia-fraco" style="margin-top:6px">${esc(ia.modelo || '')}</div></div></div>`;
+  const maxC = Math.max(...d.serie.map(x => x.cliques), 1);
+  const serie = d.serie.length ? `<div class="pia-sec" style="margin-top:14px">Por dia</div><div style="display:flex;align-items:flex-end;gap:3px;height:90px">${d.serie.map(x => `<div title="${diaBR(x.dia)}: ${n(x.impressoes)} impressões · ${n(x.cliques)} cliques (CTR ${adPct(x.ctr)}) · CPC ${x.cpc == null ? '—' : epBRL(x.cpc)} · ${x.vendas} vendas (conversão ${adPct(x.conversao)}) · gasto ${epBRL(x.gasto)}" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%">
+      <div style="background:#0A84FF;border-radius:3px 3px 0 0;height:${Math.max(2, x.cliques / maxC * 100)}%;position:relative"><i style="position:absolute;left:0;right:0;bottom:0;background:#30D158;height:${x.cliques ? Math.min(100, x.vendas / x.cliques * 100 * 4) : 0}%"></i></div></div>`).join('')}</div>
+      <div class="pia-fraco">azul = cliques · verde = proporção que virou venda · passe o mouse para ver o dia</div>` : '';
+  const sinal = (s) => `<span class="pr-rec ${s === 'converte bem' ? 'ENTRAR' : 'SAIR'}" style="margin-right:4px">${esc(s)}</span>`;
+  const ads = d.anuncios.filter(a => a.impressoes > 0);
+  $('adBox').innerHTML = `<div class="pc-topo"><div style="flex:1"><b>${esc(c.nome)}</b> <span class="ad-st ${esc(c.status)}">${c.status === 'active' ? 'ativa' : esc(c.status)}</span>
+      <div class="pia-fraco">${esc(c.estrategia || '')} · ${diaBR(d.de)} a ${diaBR(d.ate)} · orçamento ${epBRL(c.orcamento_dia)}/dia${c.acos_alvo ? ' · ACoS alvo ' + adPct(c.acos_alvo) : ''}</div></div>
+      <button class="btn-acao" onclick="adFechar()"><i class="bi bi-x-lg"></i></button></div>
+    <div class="pia-sec">Funil</div>
+    <div class="ep-cards">${card('Impressões', n(c.impressoes), 'vezes que os anúncios apareceram')}${card('Cliques', n(c.cliques), `CTR ${adPct(c.ctr)}`)}${card('Impressões por clique', c.imp_por_clique == null ? '—' : n(c.imp_por_clique), `1 clique a cada ${c.imp_por_clique == null ? '—' : n(c.imp_por_clique)} impressões`)}${card('Vendas', n(c.vendas), `conversão ${adPct(c.conversao)} dos cliques`)}</div>
+    <div class="ep-cards">${card('CPC', c.cpc == null ? '—' : epBRL(c.cpc), 'custo por clique')}${card('Custo por venda', c.custo_por_venda == null ? '—' : epBRL(c.custo_por_venda), `gasto ${epBRL(c.gasto)}`)}${card('ACoS', adPct(c.acos), 'gasto ÷ receita', c.acos_alvo && c.acos > c.acos_alvo ? '#ff453a' : '')}${card('ROAS', c.roas == null ? '—' : String(c.roas).replace('.', ',') + 'x', `receita ${epBRL(c.receita)}`)}</div>
+    ${iaHtml}${serie}
+    <div class="pia-sec" style="margin-top:14px">Anúncios da campanha (os que mais gastam primeiro)</div>
+    <div style="max-height:46vh;overflow:auto;border:1px solid var(--sep);border-radius:12px"><table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Anúncio</th><th class="num">Impressões</th><th class="num">Cliques</th><th class="num">CTR</th><th class="num">Imp./clique</th><th class="num">CPC</th><th class="num">Vendas</th><th class="num">Conversão</th><th class="num">Gasto</th><th class="num">ACoS</th></tr></thead><tbody>
+      ${ads.map(a => `<tr><td style="min-width:240px"><b>${esc(rtCurto(a.titulo, 56))}</b><div class="pia-fraco">${esc(a.item_id)} · ${epBRL(a.preco)}</div>${a.sinais.length ? `<div style="margin-top:3px">${a.sinais.map(sinal).join('')}</div>` : ''}</td>
+        <td class="num">${n(a.impressoes)}</td><td class="num">${n(a.cliques)}</td><td class="num">${adPct(a.ctr)}</td><td class="num">${a.imp_por_clique == null ? '—' : n(a.imp_por_clique)}</td><td class="num">${a.cpc == null ? '—' : epBRL(a.cpc)}</td>
+        <td class="num">${a.vendas}</td><td class="num">${adPct(a.conversao)}</td><td class="num">${epBRL(a.gasto)}</td><td class="num">${adPct(a.acos)}</td></tr>`).join('') || '<tr><td colspan="10"><div class="sv-vazio">Nenhum anúncio com impressões no período.</div></td></tr>'}
+    </tbody></table></div>
+    <div class="pia-fraco" style="margin-top:8px">CTR = cliques ÷ impressões · conversão = vendas ÷ cliques · CPC = gasto ÷ cliques. Os sinais comparam cada anúncio com a média da campanha.</div>`;
+}
 function adDesenhar(d) {
     const g7 = d.serie.reduce((s, x) => s + x.gasto, 0), r7 = d.serie.reduce((s, x) => s + x.receita, 0);
     $('adLeg').innerHTML = `<span>Tendência dos últimos 7 dias</span><span><i style="background:#ff6b35"></i>Gasto ${epBRL(g7)}</span><span><i style="background:#30D158"></i>Receita ${epBRL(r7)}</span><span><b>ROAS ${g7 ? (r7 / g7).toFixed(2).replace('.', ',') : '—'}x</b></span>`;
@@ -941,12 +989,13 @@ function adDesenhar(d) {
     $('adTot').textContent = d.total; $('adAt').textContent = d.ativas; $('adPa').textContent = d.pausadas; $('adConv').textContent = d.conversoes;
     $('adTabela').innerHTML = d.campanhas.map(c => {
         const acima = c.acos != null && c.acos_alvo && c.acos > c.acos_alvo;
-        return `<tr><td><b>${esc(c.nome)}</b> <span class="ad-st ${esc(c.status)}">${c.status === 'active' ? 'ativa' : c.status === 'paused' ? 'pausada' : esc(c.status)}</span>
-            <div class="pia-fraco">${esc(c.estrategia || '')}</div></td>
+        return `<tr style="cursor:pointer" onclick="adAbrir('${esc(c.id)}')" title="Ver o funil da campanha: impressões, cliques, CTR, CPC, conversão e a análise da IA"><td><b>${esc(c.nome)}</b> <span class="ad-st ${esc(c.status)}">${c.status === 'active' ? 'ativa' : c.status === 'paused' ? 'pausada' : esc(c.status)}</span>
+            <div class="pia-fraco">${esc(c.estrategia || '')} · <span style="color:#0A84FF">ver funil ›</span></div></td>
             <td class="num">${epBRL(c.orcamento_dia)}</td><td class="num">${epBRL(c.gasto)}</td><td class="num">${epBRL(c.receita)}</td>
             <td class="num ${acima ? 'ad-ruim' : ''}">${c.acos == null ? '—' : String(c.acos).replace('.', ',') + '%'}${c.acos_alvo ? ` <span class="pia-fraco">(${String(c.acos_alvo).replace('.', ',')}%)</span>` : ''}</td>
-            <td class="num">${c.roas == null ? '—' : String(c.roas).replace('.', ',') + 'x'}</td><td class="num">${Number(c.cliques).toLocaleString('pt-BR')}</td><td class="num">${c.vendas}</td></tr>`;
-    }).join('') || '<tr><td colspan="8"><div class="sv-vazio">Nenhuma campanha.</div></td></tr>';
+            <td class="num">${c.roas == null ? '—' : String(c.roas).replace('.', ',') + 'x'}</td><td class="num">${Number(c.impressoes).toLocaleString('pt-BR')}</td><td class="num">${Number(c.cliques).toLocaleString('pt-BR')}</td>
+            <td class="num">${adPct(c.ctr)}</td><td class="num">${c.cpc == null ? '—' : epBRL(c.cpc)}</td><td class="num">${c.vendas}</td><td class="num">${adPct(c.conversao)}</td></tr>`;
+    }).join('') || '<tr><td colspan="12"><div class="sv-vazio">Nenhuma campanha.</div></td></tr>';
 }
 
 // ---- Central de Promoções (so leitura) -------------------------------------------------------------
@@ -1164,6 +1213,8 @@ async function rgAplicar(item, preco, forcar) {
         const r = await fetch('/api/seven/regras_preco/' + item, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco, forcar: !!forcar }) }).then(x => x.json());
         if (!r.ok) throw new Error(r.erro || 'o ML recusou');
         alert(`Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}. O anúncio sai da lista e fica em observação por 3 dias.`);
+        await ladoDepoisDeMudar(item, r.depois / r.antes);   // mudou um lado, muda o outro
+        pmDepoisDeMudar(item);                               // o Premium continua acima do Classico?
     } catch (e) { alert('Não alterou: ' + e.message); }
     delete cache.regras; rd.dados = null; rgRedesenhar(true); rdResumo();
 }
@@ -1223,6 +1274,61 @@ async function vmCarregar(forcar) {
     $('vmTabela').innerHTML = '<div class="sv-vazio">Lendo as vendas no Mercado Livre…</div>';
     try { cache.vendasmc = await api('/api/seven/vendas_mc?periodo=' + encodeURIComponent(per)); vmDesenhar(); }
     catch (e) { $('vmTabela').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
+}
+// Regra do usuario: mudou um lado (Direito/Esquerdo), muda o outro tambem — mesma variacao (%), mesmo tipo de anuncio
+async function ladoDepoisDeMudar(itemId, fator) {
+  let o; try { o = await api('/api/seven/lados/opostos?item=' + encodeURIComponent(itemId)); } catch { return; }
+  const alt = (cache.vendasmc && cache.vendasmc.alterados) || {};
+  const L = (o.itens || []).filter(x => !alt[x.item_id]).map(x => ({ ...x, depois: Math.round(x.preco * fator * 100) / 100 }));
+  if (!L.length) return;
+  const pct = ((fator - 1) * 100).toFixed(1).replace('.', ',');
+  if (!confirm(`Mudou o lado do ${o.sku}: mudar também o lado ${o.lado_oposto} (${o.oposto})?\n\nMesma mudança (${fator > 1 ? '+' : ''}${pct}%):\n` +
+      L.map(x => `${x.item_id} · ${pcR$(x.preco)} → ${pcR$(x.depois)}${x.estoque === 0 ? ' (sem estoque)' : ''}`).join('\n'))) return;
+  const res = [];
+  for (const x of L) {
+    try {
+      const a = await fetch(`/api/seven/preco/${x.item_id}/aplicar`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preco: x.depois, confirmacao: 'APLICAR', motivo: `Mesma mudança do outro lado (${o.sku}, ${itemId})` }) }).then(z => z.json());
+      if (a.ok) { if (cache.vendasmc) { cache.vendasmc.alterados = cache.vendasmc.alterados || {}; cache.vendasmc.alterados[x.item_id] = { quando: new Date().toISOString(), antes: a.antes, depois: a.depois }; } res.push(`✓ ${x.item_id}: ${pcR$(a.antes)} → ${pcR$(a.depois)}`); }
+      else res.push(`✗ ${x.item_id}: ${a.erro || 'não aplicou'}`);
+    } catch (e) { res.push(`✗ ${x.item_id}: ${e.message}`); }
+  }
+  if (cache.vendasmc && $('vmTabela')) vmDesenhar();
+  alert('Outro lado:\n\n' + res.join('\n'));
+}
+// ---- Monitor Premium x Classico (regra: a margem do Premium tem que ser maior que a do Classico do mesmo produto) ----
+let pm = null;
+async function pmCarregar(forcar) {
+  try { pm = await api('/api/seven/premium' + (forcar ? '?forcar=1' : '')); } catch (e) { const x = $('pmCorpo'); if (x) x.innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; return; }
+  pmDesenhar();
+}
+function pmConferirAgora() { const x = $('pmCorpo'); if (x) x.innerHTML = '<div class="sv-vazio">Conferindo de novo no Mercado Livre…</div>'; pmCarregar(true); }
+function pmDesenhar() {
+  const el = $('pmCorpo'); if (!el || !pm) return;
+  const pct = (v) => v == null ? '—' : String(v).replace('.', ',') + '%';
+  const linha = (x) => `<tr><td class="t"><b>${esc(rtCurto(x.titulo, 60))}</b><div class="pia-fraco">${esc(x.sku)}</div></td>
+      <td class="num">${pcR$(x.classico.preco)}<div class="pia-fraco">${esc(x.classico.item_id)}</div></td><td class="num"><b>${pct(x.classico.margem_pct)}</b></td>
+      <td class="num">${pcR$(x.premium.preco)}<div class="pia-fraco">${esc(x.premium.item_id)}</div></td><td class="num"><b style="color:${x.status === 'subir' ? '#ff453a' : x.status === 'ok' ? '#30D158' : 'var(--l3)'}">${pct(x.premium.margem_pct)}</b></td>
+      <td>${x.status === 'subir' ? `<div style="font-size:12px">${esc(x.motivo)}</div>${x.sugestao ? `<button class="ep-btn" style="margin-top:4px;border-color:#30D158;color:#30D158" onclick="pmAjustar('${esc(x.premium.item_id)}', ${x.sugestao.preco})">Subir o Premium para ${pcR$(x.sugestao.preco)} (+${String(x.sugestao.aumento_pct).replace('.', ',')}%)</button>` : ''}`
+        : x.status === 'ok' ? '<span class="pia-fraco">Premium acima do Clássico</span>' : `<span class="pia-fraco">${esc(x.motivo || 'sem dados')}</span>`}</td></tr>`;
+  const sub = pm.pares.filter(x => x.status === 'subir'), resto = pm.pares.filter(x => x.status !== 'subir');
+  el.innerHTML = `<div class="pia-fraco" style="margin-bottom:10px">Regra: para o mesmo produto, a margem do anúncio <b>Premium</b> tem que ser <b>maior</b> que a do <b>Clássico</b>. A sugestão deixa o Premium ${pm.pontos_acima} ponto acima do Clássico. ${pm.total} produto(s) com os dois anúncios · conferido às ${new Date(pm.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+      <button class="ep-btn" style="margin-left:8px" onclick="pmConferirAgora()"><i class="bi bi-arrow-clockwise"></i> Conferir agora</button></div>
+    <div class="pia-sec">${sub.length ? `<span style="color:#ff453a">${sub.length} Premium precisa(m) subir</span>` : '<span style="color:#30D158">Todos os Premium estão acima do Clássico</span>'}</div>
+    ${sub.length ? `<table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Produto</th><th class="num">Clássico</th><th class="num">Margem</th><th class="num">Premium</th><th class="num">Margem</th><th></th></tr></thead><tbody>${sub.map(linha).join('')}</tbody></table>` : ''}
+    ${resto.length ? `<details style="margin-top:14px"><summary class="pia-fraco" style="cursor:pointer">Ver os ${resto.length} produto(s) em dia ou sem dados</summary><table class="sv-tab ep-tab" style="width:100%;margin-top:8px"><tbody>${resto.map(linha).join('')}</tbody></table></details>` : ''}`;
+}
+async function pmAjustar(id, preco) { await pcAbrir(id, ''); if (pc && pc.item_id === id) pcRecalcular(preco); }
+// Depois de mudar um preco: confere o par Premium x Classico desse anuncio e avisa se o Premium ficou para tras
+async function pmDepoisDeMudar(itemId) {
+  let r; try { r = await api('/api/seven/premium/checar?item=' + encodeURIComponent(itemId)); } catch { return; }
+  if (!r.tem_par) return;
+  if (pm) { pm.pares = pm.pares.map(x => x.premium.item_id === r.par.premium.item_id ? r.par : x); pm.subir = pm.pares.filter(x => x.status === 'subir').length; pmDesenhar(); }
+  if (r.par.status !== 'subir') return;
+  const x = r.par;
+  const txt = `Atenção: Premium × Clássico\n\n${x.titulo}\n${x.motivo}\n\nClássico ${pcR$(x.classico.preco)} (${x.classico.margem_pct}%) · Premium ${pcR$(x.premium.preco)} (${x.premium.margem_pct}%)`
+    + (x.sugestao ? `\n\nAbrir o Premium para subir para ${pcR$(x.sugestao.preco)} (margem ${x.sugestao.margem_pct}%)?` : '');
+  if (x.sugestao) { if (confirm(txt)) pmAjustar(x.premium.item_id, x.sugestao.preco); } else alert(txt);
 }
 // Depois de mudar o preco pela Analise de vendas: o anuncio sai da lista e, se o mesmo produto (mesmo SKU) aparece
 // em outros anuncios que venderam, oferece aplicar a mesma variacao (%) neles tambem, cada um sobre o proprio preco.
@@ -1629,12 +1735,17 @@ const pcR$ = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR'
 async function pcAbrir(item, sinal, ctx) {
   $('pcFundo').classList.add('on'); $('pcBox').innerHTML = '<div class="sv-vazio">Calculando a margem com os dados do Mercado Livre…</div>';
   try {
+    // a conta das regras sai em paralelo com os dados do anuncio (rapida); a revisao da IA vem depois, sem travar a tela
+    const pedeIA = (extra) => api(`/api/seven/preco/${item}/ia`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ctx, ...extra }) });
+    const regraP = ctx ? pedeIA({ so_regra: true }).catch(() => null) : null;
     pc = await api(`/api/seven/preco/${item}?sinal=${encodeURIComponent(sinal || '')}`); pc.sinal = sinal; pc.ia_ctx = ctx || null; pc.ia = null; pcDesenhar(pc.preco_atual);
     if (ctx) {
       const alvo = pc;
-      try { alvo.ia = await api(`/api/seven/preco/${item}/ia`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ctx) }); }
-      catch (e) { alvo.ia = { erro: e.message }; }
-      if (pc && pc.item_id === alvo.item_id) { pc.ia = alvo.ia; pcDesenhar(Number(($('pcPreco') || {}).value) || pc.preco); }
+      const regra = await regraP;
+      if (regra && pc && pc.item_id === alvo.item_id && !pc.ia) { pc.ia = { ...regra, revisando: true }; pcDesenhar(Number(($('pcPreco') || {}).value) || pc.preco); }
+      let final;
+      try { final = await pedeIA({}); } catch (e) { final = regra ? { ...regra, aviso_ia: 'IA indisponível agora: mostrando a conta das regras.' } : { erro: e.message }; }
+      if (pc && pc.item_id === alvo.item_id) { pc.ia = final; pcDesenhar(Number(($('pcPreco') || {}).value) || pc.preco); }
     }
   }
   catch (e) { $('pcBox').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div><button class="btn-acao" onclick="pcFechar()">Fechar</button>`; }
@@ -1661,7 +1772,8 @@ function pcDesenhar(precoMostrado) {
       <div style="flex:1"><b>Sugestão da análise: ${sg.direcao < 0 ? 'baixar 1%' : sg.direcao > 0 ? 'subir 1%' : 'manter'} → ${pcR$(sg.preco)}</b><div class="pia-fraco">${esc(sg.motivo)}</div></div>
       ${sg.direcao ? `<button class="btn-acao" onclick="pcRecalcular(${sg.preco})">Usar sugestão</button>` : ''}</div>`}
     <div class="pc-lin" style="font-size:14px;margin-bottom:6px"><span><b>Novo preço</b></span>
-      <span><input id="pcPreco" type="number" step="0.01" min="0" value="${d.preco}"> <button class="btn-acao" onclick="pcRecalcular()">Recalcular</button></span></div>
+      <span><button class="btn-acao" onclick="pcPasso(-1)" title="Projeta 1% abaixo do preço digitado">−1%</button> <button class="btn-acao" onclick="pcPasso(1)" title="Projeta 1% acima do preço digitado (clique de novo para somar mais 1%)">+1%</button>
+        <input id="pcPreco" type="number" step="0.01" min="0" value="${d.preco}"> <button class="btn-acao" onclick="pcRecalcular()">Recalcular</button></span></div>
     <div class="pc-lin" style="margin-bottom:10px"><span>Custo usado ${d.custo_origem && d.custo_origem !== 'digitado' ? '(planilha de custos)' : d.custo == null ? '<b style="color:#FF9F0A">— não está na planilha de custos</b>' : '(digitado)'}</span>
       <span><input id="pcCusto" type="number" step="0.01" min="0" value="${d.custo ?? ''}" placeholder="custo"></span></div>
     <div class="pc-cols">${col('gold_special')}${col('gold_pro')}</div>
@@ -1682,15 +1794,21 @@ function pcBlocoIA(d) {
   const dif = x.base && x.base.preco_atual ? (x.preco / x.base.preco_atual - 1) * 100 : 0;
   const titulo = x.acao === 'subir' ? `subir para ${pcR$(x.preco)} (+${dif.toFixed(1).replace('.', ',')}%)` : x.acao === 'baixar' ? `baixar para ${pcR$(x.preco)} (${dif.toFixed(1).replace('.', ',')}%)` : 'manter o preço';
   return `<div class="pc-sug" style="align-items:flex-start"><i class="bi bi-stars" style="color:#0A84FF;font-size:18px;margin-top:2px"></i>
-    <div style="flex:1"><b>Sugestão da ${x.fonte === 'ia' ? 'IA' : 'regra'}: ${titulo}</b>${x.confianca ? ` <span class="pia-fraco">· confiança ${esc(x.confianca)}</span>` : ''}
+    <div style="flex:1"><b>Sugestão da ${x.fonte === 'ia' ? 'IA' : 'regra'}: ${titulo}</b>${x.revisando ? ' <span class="pia-fraco"><i class="bi bi-hourglass-split"></i> a IA está revisando…</span>' : ''}${x.confianca ? ` <span class="pia-fraco">· confiança ${esc(x.confianca)}</span>` : ''}
       <div style="margin-top:4px">${esc(x.motivo)}</div>
       ${(x.riscos || []).length ? `<div class="pia-fraco" style="margin-top:4px">Riscos: ${x.riscos.map(esc).join(' · ')}</div>` : ''}
       ${(x.travas || []).length ? `<div class="pia-fraco" style="margin-top:4px;color:#ff9f0a">Travas: ${x.travas.map(esc).join(' ')}</div>` : ''}
       <div class="pia-fraco" style="margin-top:4px">MC% real ${x.base.mc_real_pct != null ? String(x.base.mc_real_pct).replace('.', ',') + '%' : '—'} · margem do anúncio ${x.base.margem_anuncio_pct != null ? String(x.base.margem_anuncio_pct).replace('.', ',') + '%' : '—'} · ${x.base.vendas_periodo ?? '—'} vendida(s) no período · média ${x.base.media_dia ?? '—'}/dia${x.base.rank_nub ? ` · ${x.base.rank_nub}º no grupo` : ''}${x.base.df_lider_pct != null ? ` · ${String(x.base.df_lider_pct).replace('.', ',')}% vs líder` : ''}${x.aviso_ia ? ' · ' + esc(x.aviso_ia) : ''}</div></div>
     ${x.acao !== 'manter' ? `<button class="btn-acao" onclick="pcRecalcular(${x.preco})">Usar sugestão</button>` : ''}</div>`;
 }
+// -1% / +1%: projeta o preco e a margem; cada clique soma mais 1% sobre o valor que esta na caixa
+function pcPasso(pct) {
+  const atual = Number(($('pcPreco') || {}).value) || pc.preco;
+  pcRecalcular(Math.round(atual * (1 + pct / 100) * 100) / 100);
+}
 async function pcRecalcular(preco) {
-  const p = preco ?? Number($('pcPreco').value); const c = $('pcCusto').value;
+  const p = preco ?? Number($('pcPreco').value);
+  const cx = $('pcCusto').value, c = cx !== '' && Number(cx) !== Number(pc.custo) ? cx : '';   // so manda o custo se voce mudou
   if (!(p > 0)) return;
   $('pcMsg').textContent = 'Recalculando…';
   try {
@@ -1711,8 +1829,10 @@ async function pcAplicar(confirmarGrande) {
       body: JSON.stringify({ preco: pc.preco, confirmacao: 'APLICAR', confirmarGrande: !!confirmarGrande, motivo: (pc.ia && pc.ia.motivo) || pc.sugestao.motivo }) }).then(x => x.json());
     if (r.ok) {
       $('pcMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${pcR$(r.antes)} → ${pcR$(r.depois)}</b>`;
-      if (pc.ia_ctx && cache.vendasmc) { const feito = pc; setTimeout(() => vmDepoisDeAplicar(feito, r), 900); }
-      else setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500);
+      const mudado = pc.item_id, fator = r.depois / r.antes;
+      // depois de aplicar: outros anuncios do mesmo SKU -> o outro lado (D/E) -> Premium x Classico
+      if (pc.ia_ctx && cache.vendasmc) { const feito = pc; setTimeout(async () => { await vmDepoisDeAplicar(feito, r); await ladoDepoisDeMudar(mudado, fator); pmDepoisDeMudar(mudado); }, 900); }
+      else { setTimeout(() => pcAbrir(pc.item_id, pc.sinal), 1500); setTimeout(async () => { await ladoDepoisDeMudar(mudado, fator); pmDepoisDeMudar(mudado); }, 2500); }
     }
     else if (r.precisa_confirmar) { if (confirm(r.erro)) return pcAplicar(true); $('pcMsg').textContent = 'Cancelado.'; $('pcAplicar').disabled = false; }
     else { $('pcMsg').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; $('pcAplicar').disabled = false; }
@@ -1768,8 +1888,10 @@ function rdDesenhar() {
     rd.abaRank = rd.aba;
     const abas = `<div class="rd-abas"><button class="${rd.aba === 'vendas' ? 'on' : ''}" onclick="rdAba('vendas')"><i class="bi bi-receipt"></i> Análise de vendas</button>
       <button class="${rd.aba === 'preco' ? 'on' : ''}" onclick="rdAba('preco')"><i class="bi bi-currency-dollar"></i> Mudança de preço</button>
+      <button class="${rd.aba === 'premium' ? 'on' : ''}" onclick="rdAba('premium')"><i class="bi bi-gem"></i> Premium × Clássico${pm && pm.subir ? ` <span class="pia-tag" style="background:#ff453a;color:#fff">${pm.subir}</span>` : ''}</button>
       <button class="${rd.aba === 'precif' ? 'on' : ''}" onclick="rdAba('precif')"><i class="bi bi-sliders"></i> Precificação</button>
       <button class="${rd.aba === 'ia' ? 'on' : ''}" onclick="rdAba('ia')"><i class="bi bi-stars"></i> Análise da IA</button></div>`;
+    if (rd.aba === 'premium') { el.innerHTML = abas + '<div id="pmCorpo"><div class="sv-vazio">Comparando as margens do Premium e do Clássico de cada produto…</div></div>'; pmCarregar(false); return; }
     if (rd.aba === 'vendas') {
       // Analise de vendas (MC% real, venda por venda) + Precificar com a sugestao da IA
       el.innerHTML = abas + '<div id="rdVendasSlot"></div>';
