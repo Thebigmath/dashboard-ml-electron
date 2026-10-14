@@ -1389,11 +1389,13 @@ function vmDesenhar() {
     $('vmAtual').textContent += ` · ${r.pedidos} venda(s) · MC% média ${prPct(r.mc_pct)}${r.sem_custo ? ` · ${r.sem_custo} sem custo na planilha` : ''}`;
     const q = ($('vmBusca').value || '').trim().toLowerCase(), so = $('vmSoAbaixo').checked;
     // preco mudado nos ultimos 3 dias: a venda sai da lista (a nao ser que peca para mostrar)
+    // so as vendas ANTERIORES a mudanca saem; a venda que veio depois (ja no preco novo) continua aparecendo
     const alt = d.alterados || {}, mostrarAlt = $('vmMostrarAlt').checked;
-    const qAlt = new Set(d.vendas.filter(v => alt[v.item_id]).map(v => v.item_id)).size;
+    const antesDaMudanca = (x) => !!alt[x.item_id] && new Date(x.data) <= new Date(alt[x.item_id].quando);
+    const qAlt = d.vendas.filter(antesDaMudanca).length;
     $('vmQtdAlt').textContent = qAlt ? `(${qAlt})` : '';
     const filtra = (x) => (!q || String(x.sku).toLowerCase().includes(q) || String(x.titulo).toLowerCase().includes(q)) && (!so || (x.mc_pct != null && x.mc_pct < d.mc_alvo))
-        && (mostrarAlt || !alt[x.item_id]);
+        && (mostrarAlt || !antesDaMudanca(x));
     const ord = (L) => { if (!vmOrdem.campo) return L; const k = vmOrdem.campo; return [...L].sort((a, b) => ((a[k] ?? -1e9) > (b[k] ?? -1e9) ? 1 : -1) * (vmOrdem.desc ? -1 : 1)); };
     const th = (t, k) => `<th onclick="vmOrdenar('${k}')">${t}${vmOrdem.campo === k ? (vmOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
     const mcCel = (x) => `<td class="vm-mc ${vmClasse(x.mc_pct)}">${x.mc_pct == null ? '<span class="pia-fraco">sem custo</span>' : prPct(x.mc_pct)}</td>`;

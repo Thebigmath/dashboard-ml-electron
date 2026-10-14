@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.80",
+    "data": "2026-10-14",
+    "titulo": "Vendas depois da mudança de preço voltam para a Análise de vendas",
+    "texto": "- Análise de vendas: quando o preço de um anúncio muda, só saem da lista as vendas de ANTES da mudança; as vendas que vieram depois (já no preço novo) continuam aparecendo, com a etiqueta \"preço atualizado\".\n- \"mostrar os já atualizados (N)\" agora conta as vendas escondidas.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.79",
     "data": "2026-10-14",
     "titulo": "Coluna de SKU na Análise de vendas",
