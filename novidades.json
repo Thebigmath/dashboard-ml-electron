@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.83",
+    "data": "2026-10-14",
+    "titulo": "Agenda do Full (versão base)",
+    "texto": "- STOCK Ops > Agenda do Full: todos os envios Full da conta (status, data reservada, até quando dá para mudar, galpão, unidades) direto do Central de Vendedores, e as mudanças de data/status registradas.\n- Horários livres: calendário por galpão (os galpões que o Mercado Livre oferece para cada envio), como no site do ML.\n- Vigiar uma vaga: envio, dia, faixa de horário e galpões; o SEVEN consulta a cada 15 s a 2 min e avisa na hora que abrir (aviso do Windows com som + alerta na tela), mostrando também em quanto tempo a vaga fechou.\n- Conexão pela extensão \"SEVEN · Agenda do Full\" no Chrome em que a conta já está logada (sem login novo, sem abrir abas).\n- Fase de testes: o botão Confirmar está desligado; nada é marcado.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.82",
     "data": "2026-10-14",
     "titulo": "A IA do SEVEN se chama Cris",

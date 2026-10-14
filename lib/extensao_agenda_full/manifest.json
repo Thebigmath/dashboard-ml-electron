@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "SEVEN · Agenda do Full",
+  "version": "1.0.1",
+  "description": "Liga o SEVEN à Gestão de envios Full do Mercado Livre usando o login que já está neste Chrome. Não abre abas e não marca nada sozinha.",
+  "permissions": [
+    "alarms",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://vendedores.mercadolivre.com.br/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "SEVEN · Agenda do Full",
+    "default_popup": "popup.html"
+  }
+}

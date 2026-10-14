@@ -1264,6 +1264,27 @@ router.post('/seven/ia/perguntar', auth, (req, res) => {
 router.post('/seven/ia/saude', auth, (req, res) => {
     ndjson(res, ia.perguntarSaude({ modelo: (req.body && req.body.modelo) || undefined }));
 });
+// Agenda do Full: Chrome proprio fora da tela, envios, horarios livres e vigias (confirmar DESLIGADO nesta fase)
+{
+    const C = () => require('../lib/central_ml');
+    // extensao do Chrome: pede tarefas (long-poll de 20 s) e devolve o resultado
+    router.get('/agenda-full/ext/tarefas', (req, res) => C().extPedir({ seller: req.query.seller || '', v: req.query.v || '', st: req.query.st || '', er: req.query.er || '' }).then(d => res.json(d)).catch(erroJson(res)));
+    router.post('/agenda-full/ext/resultado', (req, res) => res.json(C().extResultado(req.body || {})));
+    router.post('/agenda-full/extensao/abrir', auth, (req, res) => { try { res.json(C().abrirPastaExtensao()); } catch (e) { res.status(500).json({ erro: e.message }); } });
+    router.get('/agenda-full/estado', auth, (req, res) => C().estado({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)));
+    router.post('/agenda-full/conectar', auth, (req, res) => C().conectar().then(d => res.json(d)).catch(erroJson(res)));
+    router.post('/agenda-full/esconder', auth, (req, res) => C().esconder().then(d => res.json(d)).catch(erroJson(res)));
+    router.post('/agenda-full/fechar', auth, (req, res) => C().fechar().then(d => res.json(d)).catch(erroJson(res)));
+    router.get('/agenda-full/envios', auth, (req, res) => C().envios({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)));
+    router.get('/agenda-full/historico', auth, (req, res) => res.json(C().historico(80)));
+    router.get('/agenda-full/horarios/:id', auth, (req, res) => C().horarios(req.params.id, req.query.tipo || 'ftl').then(d => res.json(d)).catch(erroJson(res)));
+    router.get('/agenda-full/vigias', auth, (req, res) => res.json(C().vigias()));
+    router.post('/agenda-full/vigias', auth, (req, res) => { try { res.json(C().criarVigia(req.body || {})); } catch (e) { res.status(400).json({ erro: e.message }); } });
+    router.post('/agenda-full/vigias/:id/:acao', auth, (req, res) => {
+        if (req.params.acao === 'confirmar') return C().confirmar(req.params.id, req.body && req.body.chave).then(d => res.json(d)).catch(e => res.status(400).json({ erro: e.message }));
+        try { res.json(C().mudarVigia(req.params.id, req.params.acao)); } catch (e) { res.status(400).json({ erro: e.message }); }
+    });
+}
 // Hub da IA (clique no 7 do Inicio): conversa sobre os anuncios, com chave propria opcional
 router.get('/seven/hub/estado', auth, (req, res) => require('../lib/hub_ia').estado().then(d => res.json(d)).catch(erroJson(res)));
 router.post('/seven/hub/perguntar', auth, (req, res) => require('../lib/hub_ia').perguntar(req.body || {}).then(d => res.json(d)).catch(erroJson(res)));

@@ -9,6 +9,8 @@ const app = express();
 require('./lib/cotas').ligarAxios(require('axios'));
 let httpServer = null;
 
+// a extensao da Agenda do Full devolve a agenda inteira do ML (centenas de horarios): limite maior so nessa rota
+app.use('/api/agenda-full/ext', express.json({ limit: '15mb' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -22,6 +24,13 @@ app.use((req, res, next) => {
     const porta = httpServer && httpServer.address() ? String(httpServer.address().port) : null;
     const m = host.match(/^(127\.0\.0\.1|localhost)(?::(\d+))?$/);
     if (!m || (porta && m[2] && m[2] !== porta)) return res.status(403).send('Acesso negado.');
+    // Agenda do Full: a extensao do Chrome (Origin chrome-extension://) pega tarefas e devolve resultados.
+    // Nessas duas rotas so ela entra: pagina de site (Sec-Fetch-Site cross-site / Origin http) e recusada.
+    if (req.path.startsWith('/api/agenda-full/ext/')) {
+        const origin = String(req.headers.origin || ''), site = req.headers['sec-fetch-site'];
+        if (origin.startsWith('chrome-extension://') || (!origin && (!site || site === 'none'))) return next();
+        return res.status(403).json({ erro: 'Só a extensão do SEVEN usa esta rota.' });
+    }
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
         const site = req.headers['sec-fetch-site'];
         if (site && !['same-origin', 'none'].includes(site)) return res.status(403).json({ erro: 'Pedido de outro site bloqueado.' });
@@ -58,6 +67,7 @@ app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/aviso
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
 app.get('/finance', (req, res) => res.sendFile(path.join(__dirname, 'public/finance.html')));
 app.get('/parados', (req, res) => res.sendFile(path.join(__dirname, 'public/parados.html')));
+app.get('/agenda-full', (req, res) => res.sendFile(path.join(__dirname, 'public/agenda_full.html')));
 
 // Arquivos estáticos
 // etag: true + maxAge 0 faz o navegador revalidar a cada carga em vez de
@@ -85,7 +95,8 @@ module.exports = {
         require('./lib/avisos').iniciarAgendador();
         // ranking ML (Issacar direto na busca do ML): todo dia a partir das 7h, para as duas contas
         require('./lib/ranking_mt').iniciarAgendador();
-        require('./lib/motor_preco').iniciarAgendador();   // modo automatico das regras de preco (so se ligado)
+        require('./lib/motor_preco').iniciarAgendador();
+        require('./lib/central_ml').iniciarAgendador();   // vigias da Agenda do Full (so se houver vigia ativa)   // modo automatico das regras de preco (so se ligado)
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
         setTimeout(() => { try { require('./lib/novidades').avisarSeAtualizou(); } catch {} }, 8000);
