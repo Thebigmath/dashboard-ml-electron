@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.79",
+    "data": "2026-10-14",
+    "titulo": "Coluna de SKU na Análise de vendas",
+    "texto": "- Análise de vendas: coluna própria de SKU (ordena ao clicar); embaixo do nome fica só o número do pedido.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.78",
     "data": "2026-10-13",
     "titulo": "Imposto de 7% nas margens",

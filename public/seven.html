@@ -309,7 +309,7 @@
         @media (max-width: 700px) { .cl-grade { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         .vm-tab { width:100%; border-collapse:collapse; font-size:12.5px; }
         .vm-tab th { position:sticky; top:0; background:var(--s1); z-index:1; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--l3); padding:9px 8px; text-align:right; cursor:pointer; white-space:nowrap; border-bottom:1px solid var(--sep); }
-        .vm-tab th:first-child, .vm-tab td:first-child { text-align:left; }
+        .vm-tab th:first-child, .vm-tab td:first-child, .vm-tab th:nth-child(2) { text-align:left; }
         .vm-tab td { padding:8px; border-bottom:1px solid var(--sep); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
         .vm-tab td.t { white-space:normal; min-width:220px; max-width:320px; }
         .vm-mc { font-weight:800; } .vm-mc.ruim { color:#ff453a; } .vm-mc.baixo { color:#ff9f0a; } .vm-mc.bom { color:#30D158; }
@@ -1399,9 +1399,9 @@ function vmDesenhar() {
     const mcCel = (x) => `<td class="vm-mc ${vmClasse(x.mc_pct)}">${x.mc_pct == null ? '<span class="pia-fraco">sem custo</span>' : prPct(x.mc_pct)}</td>`;
     {
         const L = ord(d.vendas.filter(filtra));
-        $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('Data', 'data')}${th('Frete', 'logistica')}${th('Valor unit.', 'valor')}${th('Qtd', 'qtd')}${th('Faturamento', 'faturamento')}${th('Custo (−)', 'custo')}${th('Imposto (−)', 'imposto')}${th('Tarifa (−)', 'tarifa')}${th('Frete comprador', 'frete_comprador')}${th('Frete vendedor (−)', 'frete_vendedor')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}<th></th></tr>
-          ${L.map((v, i) => `<tr><td class="t"><b>${esc(rtCurto(v.titulo, 56))}</b>${alt[v.item_id] ? ` <span class="pr-rec ENTRAR" title="Preço mudado em ${new Date(alt[v.item_id].quando).toLocaleString('pt-BR')}">preço atualizado ${pcR$(alt[v.item_id].antes)} → ${pcR$(alt[v.item_id].depois)}</span>` : ''}<div class="pia-fraco">${esc(v.sku)} · pedido ${esc(v.pedido)}${v.cupom ? ` · cupom ${epBRL(v.cupom)}` : ''}</div></td>
-            <td>${new Date(v.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${esc(v.logistica)}</td>
+        $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('SKU', 'sku')}${th('Data', 'data')}${th('Frete', 'logistica')}${th('Valor unit.', 'valor')}${th('Qtd', 'qtd')}${th('Faturamento', 'faturamento')}${th('Custo (−)', 'custo')}${th('Imposto (−)', 'imposto')}${th('Tarifa (−)', 'tarifa')}${th('Frete comprador', 'frete_comprador')}${th('Frete vendedor (−)', 'frete_vendedor')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}<th></th></tr>
+          ${L.map((v, i) => `<tr><td class="t"><b>${esc(rtCurto(v.titulo, 56))}</b>${alt[v.item_id] ? ` <span class="pr-rec ENTRAR" title="Preço mudado em ${new Date(alt[v.item_id].quando).toLocaleString('pt-BR')}">preço atualizado ${pcR$(alt[v.item_id].antes)} → ${pcR$(alt[v.item_id].depois)}</span>` : ''}<div class="pia-fraco">pedido ${esc(v.pedido)}${v.cupom ? ` · cupom ${epBRL(v.cupom)}` : ''}</div></td>
+            <td style="text-align:left;font-weight:700">${esc(v.sku || '—')}</td><td>${new Date(v.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${esc(v.logistica)}</td>
             <td>${epBRL(v.valor)}</td><td>${v.qtd}</td><td>${epBRL(v.faturamento)}</td><td style="color:#ff9f0a">${v.custo == null ? '—' : epBRL(v.custo)}</td>
             <td style="color:#ff453a">${epBRL(v.imposto)}</td><td style="color:#c9a227">${epBRL(v.tarifa)}</td><td class="pia-fraco">${v.frete_comprador == null ? '—' : epBRL(v.frete_comprador)}</td>
             <td style="color:#0a84ff">${v.frete_vendedor == null ? '—' : epBRL(v.frete_vendedor)}</td><td><b>${v.mc == null ? '—' : epBRL(v.mc)}</b></td>${mcCel(v)}
