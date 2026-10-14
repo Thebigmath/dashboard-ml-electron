@@ -39,6 +39,65 @@
         .ini-tag { white-space:nowrap; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; border:1px solid var(--sep); color:var(--l3); border-radius:999px; padding:1px 8px; }
         .ini-vazio { padding:22px; text-align:center; color:var(--l3); font-size:13px; }
         .ini-erro { color:#ff453a; }
+
+        /* ---- Hub da IA: clique no 7 ---- */
+        .ini-7 { cursor:pointer; transition:transform .25s ease, filter .25s ease; }
+        .ini-7:hover { transform:scale(1.05); filter:drop-shadow(0 0 22px rgba(63,227,255,.75)); }
+        .ini-7-dica { text-align:center; font-size:12px; color:var(--l3); margin-top:6px; }
+        #hub { position:fixed; inset:0; z-index:5000; background:var(--bg, #0b0b0f); display:none; flex-direction:column; }
+        #hub.aberto { display:flex; animation:hubEntra .28s cubic-bezier(.22,1,.36,1); }
+        @keyframes hubEntra { from { opacity:0; transform:scale(.985); } to { opacity:1; transform:none; } }
+        .hub-topo { display:flex; align-items:center; gap:12px; padding:14px 22px; border-bottom:1px solid var(--sep); }
+        .hub-topo .m7 { width:34px; height:34px; color:#3fe3ff; filter:drop-shadow(0 0 6px rgba(63,227,255,.5)); }
+        .hub-topo .nome { font-size:17px; font-weight:700; color:var(--l1); }
+        .hub-topo .sub { font-size:12px; color:var(--l3); }
+        .hub-topo .dir { margin-left:auto; display:flex; align-items:center; gap:8px; }
+        .hub-btn { background:var(--s1); border:1px solid var(--sep); color:var(--l2); border-radius:10px; padding:7px 12px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+        .hub-btn:hover { color:var(--l1); background:var(--s2); }
+        .hub-btn.on { border-color:#3fe3ff; color:#3fe3ff; }
+        .hub-modo { display:inline-flex; border:1px solid var(--sep); border-radius:10px; overflow:hidden; }
+        .hub-modo button { background:transparent; border:0; color:var(--l3); padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+        .hub-modo button.on { background:var(--s2); color:var(--l1); }
+        .hub-corpo { flex:1; overflow-y:auto; padding:24px 16px 10px; }
+        .hub-col { max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+        .hub-bemvindo { text-align:center; padding:6vh 0 10px; }
+        .hub-bemvindo .g7 { width:96px; height:96px; color:#3fe3ff; margin:0 auto 14px; filter:drop-shadow(0 0 14px rgba(63,227,255,.55)); }
+        .hub-bemvindo h2 { font-size:28px; font-weight:300; color:var(--l1); margin:0 0 6px; }
+        .hub-bemvindo p { color:var(--l3); font-size:14px; margin:0; }
+        .hub-sug { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:26px; text-align:left; }
+        @media (max-width: 700px) { .hub-sug { grid-template-columns:1fr; } }
+        .hub-sug button { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:12px 14px; color:var(--l2); font-size:13px; text-align:left; cursor:pointer; line-height:1.4; }
+        .hub-sug button:hover { border-color:#3fe3ff; color:var(--l1); }
+        .hub-sug button b { display:block; color:var(--l1); font-size:13.5px; margin-bottom:2px; }
+        .hub-msg { display:flex; gap:12px; align-items:flex-start; }
+        .hub-msg.eu { justify-content:flex-end; }
+        .hub-msg.eu .bolha { background:#0a84ff; color:#fff; border-radius:16px 16px 4px 16px; max-width:75%; white-space:pre-wrap; }
+        .hub-msg.ia .av { width:28px; height:28px; flex:0 0 28px; color:#3fe3ff; margin-top:2px; }
+        .hub-msg.ia .bolha { background:var(--s1); border:1px solid var(--sep); color:var(--l1); border-radius:4px 16px 16px 16px; max-width:calc(100% - 40px); overflow-x:auto; }
+        .bolha { padding:11px 15px; font-size:14px; line-height:1.6; }
+        .bolha p { margin:0 0 8px; } .bolha p:last-child { margin-bottom:0; }
+        .bolha ul { margin:4px 0 8px; padding-left:20px; } .bolha li { margin:2px 0; }
+        .bolha h4 { font-size:14.5px; font-weight:700; margin:10px 0 4px; }
+        .bolha table { border-collapse:collapse; margin:6px 0 10px; font-size:12.5px; }
+        .bolha th, .bolha td { border:1px solid var(--sep); padding:4px 8px; text-align:left; white-space:nowrap; }
+        .bolha th { background:var(--s2); }
+        .bolha code { background:var(--s2); border-radius:5px; padding:0 4px; font-size:12.5px; }
+        .hub-meta { font-size:11px; color:var(--l3); margin-top:6px; }
+        .hub-erro { color:#ff453a; }
+        .hub-pensando span { display:inline-block; width:7px; height:7px; border-radius:50%; background:#3fe3ff; margin-right:4px; animation:hubPonto 1.2s infinite ease-in-out; }
+        .hub-pensando span:nth-child(2) { animation-delay:.15s; } .hub-pensando span:nth-child(3) { animation-delay:.3s; }
+        @keyframes hubPonto { 0%,80%,100% { opacity:.25; transform:scale(.8); } 40% { opacity:1; transform:none; } }
+        .hub-pe { padding:10px 16px 18px; border-top:1px solid var(--sep); }
+        .hub-entrada { max-width:900px; margin:0 auto; display:flex; gap:10px; align-items:flex-end; background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:8px 8px 8px 14px; }
+        .hub-entrada:focus-within { border-color:#3fe3ff; }
+        .hub-entrada textarea { flex:1; background:transparent; border:0; outline:0; color:var(--l1); resize:none; font-size:14px; line-height:1.5; height:36px; min-height:36px; max-height:180px; padding:7px 0; }
+        .hub-enviar { background:#3fe3ff; color:#002a33; border:0; border-radius:11px; width:38px; height:38px; font-size:17px; cursor:pointer; }
+        .hub-enviar:disabled { opacity:.4; cursor:default; }
+        .hub-status { max-width:900px; margin:7px auto 0; font-size:11.5px; color:var(--l3); display:flex; gap:10px; flex-wrap:wrap; }
+        .hub-status .ok { color:#30d158; } .hub-status .nao { color:#ff9f0a; }
+        .hub-cfg { max-width:900px; margin:0 auto; background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; display:none; }
+        .hub-cfg.aberto { display:block; }
+        .hub-cfg input { background:var(--s2); border:1px solid var(--sep); color:var(--l1); border-radius:9px; padding:7px 10px; font-size:13px; width:min(420px, 100%); }
     </style>
 <script src="/assets/js/shell.js"></script>
 </head>
@@ -53,10 +112,11 @@
             <div class="ini-topo">Início</div>
 
             <section class="ini-heroi">
-                <div class="ini-7" aria-label="SEVEN"><svg viewBox="0 0 200 200">
+                <div><div class="ini-7" aria-label="Abrir o Hub da IA" title="Abrir o Hub da IA" role="button" tabindex="0" onclick="hubAbrir()" onkeydown="if(event.key==='Enter')hubAbrir()"><svg viewBox="0 0 200 200">
                     <circle class="circ" cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="7" transform="rotate(-90 100 100)"/>
                     <circle class="circ" cx="100" cy="100" r="75" fill="none" stroke="currentColor" stroke-width="3" transform="rotate(-90 100 100)"/>
                     <path class="sete" d="M66 58 H146 L100 152 H84 L124 74 H56 Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg></div>
+                    <div class="ini-7-dica"><i class="bi bi-stars"></i> clique para falar com a IA</div></div>
                 <div class="ini-ola">
                     <h1 id="saudacao">Olá</h1>
                     <div class="hora" id="relogio">&nbsp;</div>
@@ -76,6 +136,44 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- Hub da IA (tela inteira) -->
+<div id="hub" role="dialog" aria-label="Hub da IA">
+    <div class="hub-topo">
+        <svg class="m7" viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="9"/><path d="M66 58 H146 L100 152 H84 L124 74 H56 Z" fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round"/></svg>
+        <div><div class="nome">SEVEN IA</div><div class="sub" id="hubConta">Analisa os anúncios desta conta</div></div>
+        <div class="dir">
+            <div class="hub-modo" title="Rápido: respostas em segundos · Profundo: modelo mais forte, demora mais">
+                <button id="hubModoRapido" class="on" onclick="hubModo('rapido')">Rápido</button><button id="hubModoProfundo" onclick="hubModo('profundo')">Profundo</button>
+            </div>
+            <button class="hub-btn" onclick="hubNova()" title="Começar outra conversa"><i class="bi bi-plus-lg"></i> Nova conversa</button>
+            <button class="hub-btn" id="hubBtnCfg" onclick="hubCfg()" title="Chave da IA"><i class="bi bi-key"></i></button>
+            <button class="hub-btn" onclick="hubFechar()" title="Fechar (Esc)"><i class="bi bi-x-lg"></i></button>
+        </div>
+    </div>
+    <div class="hub-corpo" id="hubCorpo">
+        <div class="hub-col">
+            <div class="hub-cfg" id="hubCfg">
+                <div style="font-weight:700;color:var(--l1);margin-bottom:4px"><i class="bi bi-key"></i> Chave da IA do Hub</div>
+                <div class="pia-fraco" style="font-size:12.5px;color:var(--l3);margin-bottom:10px" id="hubCfgEstado">…</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <input type="password" id="hubChave" placeholder="Cole a chave do Google AI Studio (Gemini)" autocomplete="off">
+                    <button class="hub-btn" onclick="hubSalvarChave()">Salvar</button>
+                    <button class="hub-btn" id="hubRemover" onclick="hubRemoverChave()" style="display:none">Remover</button>
+                </div>
+                <div style="font-size:12px;color:var(--l3);margin-top:8px">A chave fica só neste computador. Sem chave própria, o Hub usa as chaves do AD HEALTH.</div>
+            </div>
+            <div id="hubMsgs"></div>
+        </div>
+    </div>
+    <div class="hub-pe">
+        <div class="hub-entrada">
+            <textarea id="hubTexto" rows="1" placeholder="Pergunte sobre seus anúncios… (ex.: o que está vendendo com margem baixa?)" oninput="hubAltura()" onkeydown="hubTecla(event)"></textarea>
+            <button class="hub-enviar" id="hubEnviar" onclick="hubEnviar()" title="Enviar (Enter)"><i class="bi bi-arrow-up"></i></button>
+        </div>
+        <div class="hub-status" id="hubStatus"></div>
+    </div>
 </div>
 
 <script>
@@ -125,6 +223,134 @@ async function carregarAtualizacoes() {
 
 carregarNoticias();
 carregarAtualizacoes();
+
+// ---- Hub da IA ----
+const HUB_SUG = [
+    ['Margem baixa', 'Quais anúncios venderam ontem com MC abaixo de 15% e quanto subir em pontos?'],
+    ['Ruptura', 'Quais anúncios que vendem bem estão com pouca cobertura de estoque no Full?'],
+    ['Quedas', 'Quais anúncios curva A pararam de vender ou caíram em relação à média?'],
+    ['Concorrência', 'Onde estou caro demais em relação ao líder do Nubimetrics e perdendo venda?'],
+    ['Premium × Clássico', 'Quais Premium estão com margem abaixo do Clássico e qual o preço sugerido?'],
+    ['Resumo do dia', 'Faça um resumo de ontem: faturamento, MC, o que foi bem e as 3 prioridades de hoje.'],
+];
+const HUB_ICONE = '<svg class="av" viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="10"/><path d="M66 58 H146 L100 152 H84 L124 74 H56 Z" fill="none" stroke="currentColor" stroke-width="9" stroke-linejoin="round"/></svg>';
+let hub = { msgs: [], modo: 'rapido', ocupado: false, estado: null };
+try { const s = JSON.parse(localStorage.getItem('hub7') || 'null'); if (s && Array.isArray(s.msgs)) hub.msgs = s.msgs.slice(-40); if (s && s.modo) hub.modo = s.modo; } catch {}
+function hubGuardar() { try { localStorage.setItem('hub7', JSON.stringify({ msgs: hub.msgs.slice(-40), modo: hub.modo })); } catch {} }
+
+// markdown simples da resposta: titulos, listas, tabela, negrito, codigo
+function hubMd(t) {
+    const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/(^|[^*])\*([^*\s][^*]*?)\*/g, '$1<i>$2</i>');
+    const L = String(t || '').replace(/\r/g, '').split('\n'), out = [];
+    for (let i = 0; i < L.length; i++) {
+        const l = L[i];
+        if (/^\s*\|.*\|\s*$/.test(l)) {
+            const rows = []; while (i < L.length && /^\s*\|.*\|\s*$/.test(L[i])) rows.push(L[i++]); i--;
+            const cel = (r) => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+            const corpo = rows.filter(r => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+            out.push('<table>' + corpo.map((r, k) => '<tr>' + cel(r).map(c => k === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`).join('') + '</tr>').join('') + '</table>');
+        } else if (/^\s*([-*•]|\d+[.)])\s+/.test(l)) {
+            const it = []; while (i < L.length && /^\s*([-*•]|\d+[.)])\s+/.test(L[i])) it.push(L[i++].replace(/^\s*([-*•]|\d+[.)])\s+/, '')); i--;
+            out.push('<ul>' + it.map(x => `<li>${inline(x)}</li>`).join('') + '</ul>');
+        } else if (/^\s*#{1,4}\s+/.test(l)) out.push(`<h4>${inline(l.replace(/^\s*#{1,4}\s+/, ''))}</h4>`);
+        else if (l.trim()) out.push(`<p>${inline(l)}</p>`);
+    }
+    return out.join('');
+}
+
+function hubDesenhar() {
+    const el = document.getElementById('hubMsgs');
+    if (!hub.msgs.length) {
+        el.innerHTML = `<div class="hub-bemvindo">${HUB_ICONE.replace('class="av"', 'class="g7"')}
+            <h2>Como posso ajudar hoje?</h2><p>Eu leio todos os anúncios desta conta: vendas, estoque, margem de ontem, concorrência e as regras de preço da loja.</p>
+            <div class="hub-sug">${HUB_SUG.map((s, i) => `<button onclick="hubSugestao(${i})"><b>${esc(s[0])}</b>${esc(s[1])}</button>`).join('')}</div></div>`;
+    } else {
+        el.innerHTML = hub.msgs.map(m => m.papel === 'eu'
+            ? `<div class="hub-msg eu"><div class="bolha">${esc(m.texto)}</div></div>`
+            : `<div class="hub-msg ia">${HUB_ICONE}<div><div class="bolha ${m.erro ? 'hub-erro' : ''}">${m.erro ? esc(m.texto) : hubMd(m.texto)}</div>${m.meta ? `<div class="hub-meta">${esc(m.meta)}</div>` : ''}</div></div>`).join('')
+            + (hub.ocupado ? `<div class="hub-msg ia">${HUB_ICONE}<div class="bolha"><div class="hub-pensando"><span></span><span></span><span></span> <span style="background:none;width:auto;height:auto;animation:none;color:var(--l3);font-size:12.5px" id="hubSeg">analisando os anúncios…</span></div></div></div>` : '');
+    }
+    document.getElementById('hubEnviar').disabled = hub.ocupado;
+    document.getElementById('hubModoRapido').classList.toggle('on', hub.modo === 'rapido');
+    document.getElementById('hubModoProfundo').classList.toggle('on', hub.modo === 'profundo');
+    const c = document.getElementById('hubCorpo'); c.scrollTop = c.scrollHeight;
+}
+
+function hubStatus() {
+    const e = hub.estado, el = document.getElementById('hubStatus');
+    if (!e) { el.innerHTML = ''; return; }
+    const d = e.dados;
+    const sim = (ok, t) => `<span class="${ok ? 'ok' : 'nao'}"><i class="bi bi-${ok ? 'check-circle' : 'exclamation-circle'}"></i> ${t}</span>`;
+    el.innerHTML = (d ? `<span>${d.ativos} anúncios ativos · dados de ${new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>`
+        + sim(d.mc_ontem, 'MC de ontem') + sim(d.nubimetrics, 'Nubimetrics') + sim(d.premium, 'Premium × Clássico') : '<span>os dados dos anúncios carregam na primeira pergunta</span>')
+        + `<span>${e.chave_hub ? 'chave do Hub ••••' + esc(e.chave_hub) : e.chaves_ad_health ? 'usando as chaves do AD HEALTH' : '<span class="nao">sem chave da IA</span>'}</span>`
+        + `<span>A IA só analisa: mudanças de preço continuam no Precificar.</span>`;
+    document.getElementById('hubCfgEstado').textContent = e.chave_hub ? `Usando a chave própria do Hub (final ${e.chave_hub}). Se a cota dela acabar, o Hub usa as do AD HEALTH.` : `Sem chave própria: usando ${e.chaves_ad_health} chave(s) do AD HEALTH.`;
+    document.getElementById('hubRemover').style.display = e.chave_hub ? '' : 'none';
+    document.getElementById('hubBtnCfg').classList.toggle('on', !!e.chave_hub);
+    if (!e.online) document.getElementById('hubCfg').classList.add('aberto');
+}
+async function hubCarregarEstado() {
+    try { hub.estado = await fetch('/api/seven/hub/estado').then(r => r.json()); } catch { hub.estado = null; }
+    hubStatus();
+}
+
+function hubAbrir() {
+    document.getElementById('hub').classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+    if (location.hash !== '#hub') history.replaceState(null, '', '#hub');
+    hubDesenhar(); hubCarregarEstado();
+    setTimeout(() => document.getElementById('hubTexto').focus(), 60);
+}
+function hubFechar() {
+    document.getElementById('hub').classList.remove('aberto');
+    document.body.style.overflow = '';
+    history.replaceState(null, '', location.pathname);
+}
+function hubNova() { if (hub.ocupado) return; hub.msgs = []; hubGuardar(); hubDesenhar(); document.getElementById('hubTexto').focus(); }
+function hubModo(m) { hub.modo = m; hubGuardar(); hubDesenhar(); }
+function hubCfg() { document.getElementById('hubCfg').classList.toggle('aberto'); }
+function hubAltura() { const t = document.getElementById('hubTexto'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; }
+function hubTecla(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); hubEnviar(); } }
+function hubSugestao(i) { document.getElementById('hubTexto').value = HUB_SUG[i][1]; hubEnviar(); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('hub').classList.contains('aberto')) hubFechar(); });
+
+async function hubEnviar() {
+    const t = document.getElementById('hubTexto'), texto = t.value.trim();
+    if (!texto || hub.ocupado) return;
+    t.value = ''; hubAltura();
+    hub.msgs.push({ papel: 'eu', texto }); hub.ocupado = true; hubGuardar(); hubDesenhar();
+    const t0 = Date.now(), tick = setInterval(() => { const s = document.getElementById('hubSeg'); if (s) s.textContent = `analisando os anúncios… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+    try {
+        const r = await fetch('/api/seven/hub/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modo: hub.modo, mensagens: hub.msgs.filter(m => !m.erro).map(m => ({ papel: m.papel, texto: m.texto })) }) });
+        const d = await r.json();
+        if (!r.ok || d.erro || d.error) throw new Error(d.erro || d.error || ('erro ' + r.status));
+        hub.msgs.push({ papel: 'ia', texto: d.texto + (d.cortada ? '\n\n_(resposta cortada no limite de tamanho; peça para continuar)_' : ''),
+            meta: `${d.modelo} · ${(d.ms / 1000).toFixed(1)} s${d.detalhe ? ' · com o detalhe dos anúncios citados' : ''}` });
+        if (d.info) { hub.estado = hub.estado || {}; hub.estado.dados = d.info; hubStatus(); }
+    } catch (e) {
+        hub.msgs.push({ papel: 'ia', erro: true, texto: 'Não consegui responder: ' + e.message });
+    } finally {
+        clearInterval(tick); hub.ocupado = false; hubGuardar(); hubDesenhar();
+        document.getElementById('hubTexto').focus();
+    }
+}
+async function hubSalvarChave() {
+    const v = document.getElementById('hubChave').value.trim(); if (!v) return;
+    try {
+        const d = await fetch('/api/seven/hub/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: v }) }).then(r => r.json());
+        if (!d.ok) throw new Error(d.erro || 'não salvou');
+        document.getElementById('hubChave').value = ''; document.getElementById('hubCfg').classList.remove('aberto');
+        hubCarregarEstado();
+    } catch (e) { alert('Chave não salva: ' + e.message); }
+}
+async function hubRemoverChave() {
+    if (!confirm('Remover a chave própria do Hub? Ele volta a usar as chaves do AD HEALTH.')) return;
+    await fetch('/api/seven/hub/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remover: true }) }).catch(() => {});
+    hubCarregarEstado();
+}
+if (location.hash === '#hub') hubAbrir();
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>

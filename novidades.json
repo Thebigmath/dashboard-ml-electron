@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.81",
+    "data": "2026-10-14",
+    "titulo": "Hub da IA: clique no 7",
+    "texto": "- Clique no 7 do Início: abre o Hub da IA (SEVEN IA) em tela inteira, para conversar sobre os anúncios desta conta.\n- A IA lê todos os anúncios (preço, estoque, trânsito, vendas, cobertura, curva ABC, MC de ontem, Nubimetrics, metas e Premium × Clássico); citando um MLB ou SKU ela puxa a margem atual, as vendas dia a dia e as mudanças de preço daquele anúncio.\n- As regras de preço são aplicadas pelo SEVEN (listas prontas: margem de ontem, ruptura, quedas, concorrência); a IA explica e prioriza, não muda preço.\n- Atalhos de pergunta, modo Rápido ou Profundo, Nova conversa e chave própria da IA (ícone de chave).",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.80",
     "data": "2026-10-14",
     "titulo": "Vendas depois da mudança de preço voltam para a Análise de vendas",

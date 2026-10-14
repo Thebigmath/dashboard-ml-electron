@@ -1264,6 +1264,14 @@ router.post('/seven/ia/perguntar', auth, (req, res) => {
 router.post('/seven/ia/saude', auth, (req, res) => {
     ndjson(res, ia.perguntarSaude({ modelo: (req.body && req.body.modelo) || undefined }));
 });
+// Hub da IA (clique no 7 do Inicio): conversa sobre os anuncios, com chave propria opcional
+router.get('/seven/hub/estado', auth, (req, res) => require('../lib/hub_ia').estado().then(d => res.json(d)).catch(erroJson(res)));
+router.post('/seven/hub/perguntar', auth, (req, res) => require('../lib/hub_ia').perguntar(req.body || {}).then(d => res.json(d)).catch(erroJson(res)));
+router.post('/seven/hub/dados', auth, (req, res) => require('../lib/hub_ia').dados({ forcar: true }).then(d => res.json(d.info)).catch(erroJson(res)));
+router.post('/seven/hub/chave', auth, (req, res) => {
+    try { const h = require('../lib/hub_ia'); res.json(req.body && req.body.remover ? h.removerChave() : h.salvarChave(req.body && req.body.chave)); }
+    catch (e) { res.status(400).json({ ok: false, erro: e.message }); }
+});
 // Precificador do SEVEN: margem (Classico/Premium) e alteracao de preco com confirmacao
 const precificador = require('../lib/precificador');
 router.get('/seven/preco/historico', auth, (req, res) => res.json(precificador.historico(req.query.item || undefined)));
