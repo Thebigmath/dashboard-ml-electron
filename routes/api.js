@@ -1268,13 +1268,14 @@ router.post('/seven/ia/saude', auth, (req, res) => {
 {
     const C = () => require('../lib/central_ml');
     // extensao do Chrome: pede tarefas (long-poll de 20 s) e devolve o resultado
-    router.get('/agenda-full/ext/tarefas', (req, res) => C().extPedir({ seller: req.query.seller || '', v: req.query.v || '', st: req.query.st || '', er: req.query.er || '' }).then(d => res.json(d)).catch(erroJson(res)));
+    router.get('/agenda-full/ext/tarefas', (req, res) => C().extPedir({ conta: req.query.conta || '', seller: req.query.seller || '', v: req.query.v || '', st: req.query.st || '', er: req.query.er || '' }).then(d => res.json(d)).catch(erroJson(res)));
     router.post('/agenda-full/ext/resultado', (req, res) => res.json(C().extResultado(req.body || {})));
     router.post('/agenda-full/extensao/abrir', auth, (req, res) => { try { res.json(C().abrirPastaExtensao()); } catch (e) { res.status(500).json({ erro: e.message }); } });
     router.get('/agenda-full/estado', auth, (req, res) => C().estado({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)));
     router.post('/agenda-full/conectar', auth, (req, res) => C().conectar().then(d => res.json(d)).catch(erroJson(res)));
     router.post('/agenda-full/esconder', auth, (req, res) => C().esconder().then(d => res.json(d)).catch(erroJson(res)));
     router.post('/agenda-full/fechar', auth, (req, res) => C().fechar().then(d => res.json(d)).catch(erroJson(res)));
+    router.post('/agenda-full/abrir-ml/:id', auth, (req, res) => C().abrirNoML(req.params.id).then(d => res.json(d)).catch(e => res.status(400).json({ erro: e.message })));
     router.get('/agenda-full/envios', auth, (req, res) => C().envios({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)));
     router.get('/agenda-full/historico', auth, (req, res) => res.json(C().historico(80)));
     router.get('/agenda-full/horarios/:id', auth, (req, res) => C().horarios(req.params.id, req.query.tipo || 'ftl').then(d => res.json(d)).catch(erroJson(res)));

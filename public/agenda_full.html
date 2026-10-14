@@ -161,7 +161,7 @@
     <div style="font-size:42px">🟢</div>
     <h2>Vaga encontrada!</h2>
     <div class="q" id="alTexto"></div>
-    <div class="linha" style="justify-content:center"><button class="bt verde" id="alConfirmar"><i class="bi bi-check2-circle"></i> Confirmar e marcar</button><button class="bt" onclick="fecharAlerta()">Agora não</button></div>
+    <div class="linha" style="justify-content:center"><button class="bt pri" id="alAbrir"><i class="bi bi-box-arrow-up-right"></i> Abrir agendamento no ML</button><button class="bt verde" id="alConfirmar"><i class="bi bi-check2-circle"></i> Confirmar e marcar</button><button class="bt" onclick="fecharAlerta()">Agora não</button></div>
     <div class="aviso-fase" id="alFase"></div>
 </div></div>
 
@@ -204,9 +204,21 @@ async function carregarEstado(forcar) {
 // modo extensao: a conta ja logada no Chrome do dia a dia, sem login novo
 function desenharExtensao() {
     const p = document.getElementById('cxPill'), t = document.getElementById('cxTexto'), b = document.getElementById('cxBotoes');
+    if (est.extensao_antiga && !est.conectado) {
+        p.className = 'pill nao'; p.textContent = 'trocar a extensão';
+        t.innerHTML = `Agora cada conta tem a <b>sua</b> extensão (uma não mexe mais na outra). No Chrome da conta <b>${esc(est.conta_nome)}</b>:<ol style="margin:10px 0 4px;padding-left:20px;color:var(--l2)">
+            <li>Abra <b>chrome://extensions</b> e clique em <b>Remover</b> no cartão antigo <b>SEVEN · Agenda do Full</b>.</li>
+            <li>Clique em <b>Abrir a pasta da extensão</b> abaixo.</li>
+            <li>Em <b>Carregar sem compactação</b>, escolha a pasta <b>${esc((est.pasta_extensao || '').split(/[\\/]/).pop())}</b>.</li></ol>
+            <span style="font-size:12px;color:var(--l3)">O cartão novo se chama <b>SEVEN · Agenda do Full (${esc(est.conta_nome)})</b>.</span>`;
+        b.innerHTML = `<button class="bt pri" onclick="abrirPasta()"><i class="bi bi-folder2-open"></i> Abrir a pasta da extensão</button>
+            <button class="bt" onclick="copiarExt(this)"><i class="bi bi-clipboard"></i> Copiar chrome://extensions</button>
+            <button class="bt" onclick="carregarEstado(true)"><i class="bi bi-arrow-repeat"></i> Verificar</button>`;
+        return;
+    }
     if (est.extensao_desatualizada) {
         p.className = 'pill nao'; p.textContent = 'recarregar a extensão';
-        t.innerHTML = `A extensão no Chrome está na versão ${esc(est.extensao_desatualizada)} e a pasta já tem a nova. Só desta vez: abra <b>chrome://extensions</b> e clique no botão <b>recarregar</b> (seta circular) do cartão <b>SEVEN · Agenda do Full</b>. Das próximas vezes ela se atualiza sozinha.`;
+        t.innerHTML = `A extensão no Chrome está na versão ${esc(est.extensao_desatualizada)} e a pasta já tem a nova. Ela se atualiza sozinha em até 2 minutos; se não, abra <b>chrome://extensions</b> e clique em <b>recarregar</b> (seta circular) no cartão <b>SEVEN · Agenda do Full (${esc(est.conta_nome)})</b>.`;
         b.innerHTML = `<button class="bt" onclick="copiarExt(this)"><i class="bi bi-clipboard"></i> Copiar chrome://extensions</button><button class="bt" onclick="carregarEstado(true)"><i class="bi bi-arrow-repeat"></i> Verificar</button>`;
         return;
     }
@@ -220,7 +232,7 @@ function desenharExtensao() {
             <li>Clique em <b>Abrir a pasta da extensão</b> (abre no Explorer).</li>
             <li>No <b>Chrome em que a conta já está logada</b>, abra <b>chrome://extensions</b> (botão Copiar abaixo e cole na barra de endereço).</li>
             <li>Ligue o <b>Modo do desenvolvedor</b> (chave no canto superior direito).</li>
-            <li>Clique em <b>Carregar sem compactação</b> e escolha a pasta <b>extensao_agenda_full</b> que abriu.</li></ol>
+            <li>Clique em <b>Carregar sem compactação</b> e escolha a pasta <b>${esc((est.pasta_extensao || '').split(/[\\/]/).pop())}</b> que abriu.</li></ol>
             <span style="font-size:12px;color:var(--l3)">Pronto: sem login novo. A extensão usa a sessão desse Chrome, não abre abas e o SEVEN reconhece a conta sozinho.</span>`;
         b.innerHTML = `<button class="bt pri" onclick="abrirPasta()"><i class="bi bi-folder2-open"></i> Abrir a pasta da extensão</button>
             <button class="bt" onclick="copiarExt(this)"><i class="bi bi-clipboard"></i> Copiar chrome://extensions</button>
@@ -265,7 +277,7 @@ async function carregarHistorico() {
     try {
         const h = await j('/api/agenda-full/historico');
         document.getElementById('historico').innerHTML = h.length ? `<table class="tab"><tr><th>Quando</th><th>Envio</th><th>Mudança</th></tr>${h.slice(0, 20).map(x => `<tr><td class="f">${quando(x.quando)}</td><td>#${esc(x.id)} <span class="f">${esc(x.nome || '')}</span></td>
-            <td>${x.tipo === 'data' ? `data: ${x.antes ? quando(x.antes) : 'sem data'} → <b>${x.depois ? quando(x.depois) : 'sem data'}</b>` : x.tipo === 'status' ? `status: ${esc(x.antes)} → <b>${esc(x.depois)}</b>` : x.tipo === 'novo' ? 'envio novo' : x.tipo === 'confirmacao' ? `confirmação ${esc(x.galpao)} ${quando(x.slot_date)} (ML respondeu ${esc(x.resultado)})` : esc(x.tipo)}</td></tr>`).join('')}</table>` : '<div class="vazio">Nada registrado ainda. A partir da próxima leitura, toda remarcação aparece aqui.</div>';
+            <td>${x.tipo === 'data' ? `data: ${x.antes ? quando(x.antes) : 'sem data'} → <b>${x.depois ? quando(x.depois) : 'sem data'}</b>` : x.tipo === 'status' ? `status: ${esc(x.antes)} → <b>${esc(x.depois)}</b>` : x.tipo === 'novo' ? 'envio novo' : x.tipo === 'conseguido' ? `<b style="color:#30D158">conseguido: ${quando(x.depois)} em ${esc(x.galpao)}</b>` : x.tipo === 'confirmacao' ? `confirmação ${esc(x.galpao)} ${quando(x.slot_date)} (ML respondeu ${esc(x.resultado)})` : esc(x.tipo)}</td></tr>`).join('')}</table>` : '<div class="vazio">Nada registrado ainda. A partir da próxima leitura, toda remarcação aparece aqui.</div>';
     } catch {}
 }
 
@@ -328,7 +340,10 @@ function usarHorario(dia, hora, gid) {
 }
 
 // ---- vigias ----
+let criando = false;
 async function criarVigia() {
+    if (criando) return; criando = true;   // um clique so (antes cada clique criava uma vigia igual)
+    setTimeout(() => { criando = false; }, 1500);
     const msg = document.getElementById('fMsg'); msg.textContent = '';
     const id = document.getElementById('fEnvio').value, e = (ev && ev.envios.find(x => x.id === id)) || {};
     try {
@@ -362,6 +377,7 @@ async function carregarVigias() {
             <div class="m">${v.checagens || 0} consultas · última há ${ha(v.ultima_em)}${v.ultimo_erro ? ` · <span class="erro">${esc(v.ultimo_erro)}</span>` : ''}</div>
             ${(v.dia_pedido || []).length ? `<div class="m">Agora no dia ${dataBr(v.data)}: ${v.dia_pedido.map(g => `${esc(nomeG(g.galpao, g.titulo))}: ${g.horas.length ? g.horas.join(' ') : 'lotado'}`).join(' · ')}</div>` : ''}
             ${abertos.map(a => `<div class="achado"><i class="bi bi-check-circle-fill" style="color:#30D158"></i> <b>Vaga aberta: ${dataBr(a.slot_date)} às ${a.hora}</b> · ${esc(nomeG(a.galpao, a.galpao_titulo))} · vista há ${ha(a.visto_em)}
+                <button class="bt pri mini" onclick="abrirML('${esc(v.envio_id)}')"><i class="bi bi-box-arrow-up-right"></i> Abrir no ML</button>
                 <button class="bt verde mini" ${lig ? '' : 'disabled title="Desligado na fase de testes"'} onclick="confirmarVaga('${v.id}','${esc(a.chave)}')">Confirmar</button></div>`).join('')}
             ${fechados.map(a => `<div class="achado fechou"><i class="bi bi-x-circle"></i> ${dataBr(a.slot_date)} às ${a.hora} · ${esc(nomeG(a.galpao, a.galpao_titulo))} · abriu ${quando(a.visto_em)} e fechou em ${Math.max(1, Math.round((new Date(a.sumiu_em) - new Date(a.visto_em)) / 1000))} s</div>`).join('')}
         </div>`;
@@ -379,9 +395,12 @@ function mostrarAlerta(v, a) {
     document.getElementById('alTexto').innerHTML = `Encontrei vaga para <b>${dataBr(a.slot_date)} às ${a.hora}</b> no <b>${esc(nomeG(a.galpao, a.galpao_titulo))}</b><br><span style="font-size:13px;color:var(--l3)">Envio #${esc(v.envio_id)} ${esc(v.envio_nome)}</span><br>Gostaria de confirmar?`;
     const b = document.getElementById('alConfirmar'), lig = est && est.confirmar_ligado;
     b.disabled = !lig; b.onclick = () => confirmarVaga(v.id, a.chave);
+    document.getElementById('alAbrir').onclick = () => abrirML(v.envio_id);
     document.getElementById('alFase').textContent = lig ? '' : 'Fase de testes: a confirmação está desligada. Nada será marcado.';
     document.getElementById('alerta').classList.add('on'); bip();
 }
+// abre a tela de data do envio no Chrome da conta (pela extensao), para marcar na hora
+async function abrirML(id) { try { await post('/api/agenda-full/abrir-ml/' + id); } catch (e) { alert(e.message); } }
 function fecharAlerta() { document.getElementById('alerta').classList.remove('on'); }
 
 const hoje = new Date(); document.getElementById('fData').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;

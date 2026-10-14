@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.84",
+    "data": "2026-10-14",
+    "titulo": "Agenda do Full: uma extensão por conta e Abrir no ML",
+    "texto": "- Agenda do Full: agora cada conta tem a sua extensão do Chrome (\"SEVEN · Agenda do Full (Flavia)\" e \"(Cordeiro)\", em pastas separadas): a versão de uma conta nunca mexe na outra.\n- Botão \"Abrir no ML\" no aviso e na vaga encontrada: abre a tela de data do envio direto no Chrome da conta.\n- A vigia encerra sozinha quando o envio fica no dia/horário pedido (\"conseguido\"), e os envios são atualizados a cada 5 min mesmo com a tela fechada.\n- Vigia repetida não é criada duas vezes.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.83",
     "data": "2026-10-14",
     "titulo": "Agenda do Full (versão base)",
