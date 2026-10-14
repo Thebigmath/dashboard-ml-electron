@@ -112,11 +112,11 @@
             <div class="ini-topo">Início</div>
 
             <section class="ini-heroi">
-                <div><div class="ini-7" aria-label="Abrir o Hub da IA" title="Abrir o Hub da IA" role="button" tabindex="0" onclick="hubAbrir()" onkeydown="if(event.key==='Enter')hubAbrir()"><svg viewBox="0 0 200 200">
+                <div><div class="ini-7" aria-label="Falar com o Cris" title="Falar com o Cris" role="button" tabindex="0" onclick="hubAbrir()" onkeydown="if(event.key==='Enter')hubAbrir()"><svg viewBox="0 0 200 200">
                     <circle class="circ" cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="7" transform="rotate(-90 100 100)"/>
                     <circle class="circ" cx="100" cy="100" r="75" fill="none" stroke="currentColor" stroke-width="3" transform="rotate(-90 100 100)"/>
                     <path class="sete" d="M66 58 H146 L100 152 H84 L124 74 H56 Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg></div>
-                    <div class="ini-7-dica"><i class="bi bi-stars"></i> clique para falar com a IA</div></div>
+                    <div class="ini-7-dica"><i class="bi bi-stars"></i> clique para falar com o Cris</div></div>
                 <div class="ini-ola">
                     <h1 id="saudacao">Olá</h1>
                     <div class="hora" id="relogio">&nbsp;</div>
@@ -139,37 +139,37 @@
 </div>
 
 <!-- Hub da IA (tela inteira) -->
-<div id="hub" role="dialog" aria-label="Hub da IA">
+<div id="hub" role="dialog" aria-label="Cris, a IA do SEVEN">
     <div class="hub-topo">
         <svg class="m7" viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="9"/><path d="M66 58 H146 L100 152 H84 L124 74 H56 Z" fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round"/></svg>
-        <div><div class="nome">SEVEN IA</div><div class="sub" id="hubConta">Analisa os anúncios desta conta</div></div>
+        <div><div class="nome">Cris</div><div class="sub" id="hubConta">a IA do SEVEN · analisa os anúncios desta conta</div></div>
         <div class="dir">
             <div class="hub-modo" title="Rápido: respostas em segundos · Profundo: modelo mais forte, demora mais">
                 <button id="hubModoRapido" class="on" onclick="hubModo('rapido')">Rápido</button><button id="hubModoProfundo" onclick="hubModo('profundo')">Profundo</button>
             </div>
             <button class="hub-btn" onclick="hubNova()" title="Começar outra conversa"><i class="bi bi-plus-lg"></i> Nova conversa</button>
-            <button class="hub-btn" id="hubBtnCfg" onclick="hubCfg()" title="Chave da IA"><i class="bi bi-key"></i></button>
+            <button class="hub-btn" id="hubBtnCfg" onclick="hubCfg()" title="Chave do Cris"><i class="bi bi-key"></i></button>
             <button class="hub-btn" onclick="hubFechar()" title="Fechar (Esc)"><i class="bi bi-x-lg"></i></button>
         </div>
     </div>
     <div class="hub-corpo" id="hubCorpo">
         <div class="hub-col">
             <div class="hub-cfg" id="hubCfg">
-                <div style="font-weight:700;color:var(--l1);margin-bottom:4px"><i class="bi bi-key"></i> Chave da IA do Hub</div>
+                <div style="font-weight:700;color:var(--l1);margin-bottom:4px"><i class="bi bi-key"></i> Chave do Cris</div>
                 <div class="pia-fraco" style="font-size:12.5px;color:var(--l3);margin-bottom:10px" id="hubCfgEstado">…</div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
                     <input type="password" id="hubChave" placeholder="Cole a chave do Google AI Studio (Gemini)" autocomplete="off">
                     <button class="hub-btn" onclick="hubSalvarChave()">Salvar</button>
                     <button class="hub-btn" id="hubRemover" onclick="hubRemoverChave()" style="display:none">Remover</button>
                 </div>
-                <div style="font-size:12px;color:var(--l3);margin-top:8px">A chave fica só neste computador. Sem chave própria, o Hub usa as chaves do AD HEALTH.</div>
+                <div style="font-size:12px;color:var(--l3);margin-top:8px">A chave fica só neste computador. Sem chave própria, o Cris usa as chaves do AD HEALTH.</div>
             </div>
             <div id="hubMsgs"></div>
         </div>
     </div>
     <div class="hub-pe">
         <div class="hub-entrada">
-            <textarea id="hubTexto" rows="1" placeholder="Pergunte sobre seus anúncios… (ex.: o que está vendendo com margem baixa?)" oninput="hubAltura()" onkeydown="hubTecla(event)"></textarea>
+            <textarea id="hubTexto" rows="1" placeholder="Pergunte ao Cris sobre seus anúncios… (ex.: o que está vendendo com margem baixa?)" oninput="hubAltura()" onkeydown="hubTecla(event)"></textarea>
             <button class="hub-enviar" id="hubEnviar" onclick="hubEnviar()" title="Enviar (Enter)"><i class="bi bi-arrow-up"></i></button>
         </div>
         <div class="hub-status" id="hubStatus"></div>
@@ -262,13 +262,13 @@ function hubDesenhar() {
     const el = document.getElementById('hubMsgs');
     if (!hub.msgs.length) {
         el.innerHTML = `<div class="hub-bemvindo">${HUB_ICONE.replace('class="av"', 'class="g7"')}
-            <h2>Como posso ajudar hoje?</h2><p>Eu leio todos os anúncios desta conta: vendas, estoque, margem de ontem, concorrência e as regras de preço da loja.</p>
+            <h2>Oi, eu sou o Cris. Como posso ajudar hoje?</h2><p>Eu leio todos os anúncios desta conta: vendas, estoque, margem de ontem, concorrência e as regras de preço da loja.</p>
             <div class="hub-sug">${HUB_SUG.map((s, i) => `<button onclick="hubSugestao(${i})"><b>${esc(s[0])}</b>${esc(s[1])}</button>`).join('')}</div></div>`;
     } else {
         el.innerHTML = hub.msgs.map(m => m.papel === 'eu'
             ? `<div class="hub-msg eu"><div class="bolha">${esc(m.texto)}</div></div>`
             : `<div class="hub-msg ia">${HUB_ICONE}<div><div class="bolha ${m.erro ? 'hub-erro' : ''}">${m.erro ? esc(m.texto) : hubMd(m.texto)}</div>${m.meta ? `<div class="hub-meta">${esc(m.meta)}</div>` : ''}</div></div>`).join('')
-            + (hub.ocupado ? `<div class="hub-msg ia">${HUB_ICONE}<div class="bolha"><div class="hub-pensando"><span></span><span></span><span></span> <span style="background:none;width:auto;height:auto;animation:none;color:var(--l3);font-size:12.5px" id="hubSeg">analisando os anúncios…</span></div></div></div>` : '');
+            + (hub.ocupado ? `<div class="hub-msg ia">${HUB_ICONE}<div class="bolha"><div class="hub-pensando"><span></span><span></span><span></span> <span style="background:none;width:auto;height:auto;animation:none;color:var(--l3);font-size:12.5px" id="hubSeg">o Cris está analisando os anúncios…</span></div></div></div>` : '');
     }
     document.getElementById('hubEnviar').disabled = hub.ocupado;
     document.getElementById('hubModoRapido').classList.toggle('on', hub.modo === 'rapido');
@@ -283,9 +283,9 @@ function hubStatus() {
     const sim = (ok, t) => `<span class="${ok ? 'ok' : 'nao'}"><i class="bi bi-${ok ? 'check-circle' : 'exclamation-circle'}"></i> ${t}</span>`;
     el.innerHTML = (d ? `<span>${d.ativos} anúncios ativos · dados de ${new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>`
         + sim(d.mc_ontem, 'MC de ontem') + sim(d.nubimetrics, 'Nubimetrics') + sim(d.premium, 'Premium × Clássico') : '<span>os dados dos anúncios carregam na primeira pergunta</span>')
-        + `<span>${e.chave_hub ? 'chave do Hub ••••' + esc(e.chave_hub) : e.chaves_ad_health ? 'usando as chaves do AD HEALTH' : '<span class="nao">sem chave da IA</span>'}</span>`
-        + `<span>A IA só analisa: mudanças de preço continuam no Precificar.</span>`;
-    document.getElementById('hubCfgEstado').textContent = e.chave_hub ? `Usando a chave própria do Hub (final ${e.chave_hub}). Se a cota dela acabar, o Hub usa as do AD HEALTH.` : `Sem chave própria: usando ${e.chaves_ad_health} chave(s) do AD HEALTH.`;
+        + `<span>${e.chave_hub ? 'chave do Cris ••••' + esc(e.chave_hub) : e.chaves_ad_health ? 'usando as chaves do AD HEALTH' : '<span class="nao">sem chave da IA</span>'}</span>`
+        + `<span>O Cris só analisa: mudanças de preço continuam no Precificar.</span>`;
+    document.getElementById('hubCfgEstado').textContent = e.chave_hub ? `Usando a chave própria do Cris (final ${e.chave_hub}). Se a cota dela acabar, ele usa as do AD HEALTH.` : `Sem chave própria: usando ${e.chaves_ad_health} chave(s) do AD HEALTH.`;
     document.getElementById('hubRemover').style.display = e.chave_hub ? '' : 'none';
     document.getElementById('hubBtnCfg').classList.toggle('on', !!e.chave_hub);
     if (!e.online) document.getElementById('hubCfg').classList.add('aberto');
@@ -320,7 +320,7 @@ async function hubEnviar() {
     if (!texto || hub.ocupado) return;
     t.value = ''; hubAltura();
     hub.msgs.push({ papel: 'eu', texto }); hub.ocupado = true; hubGuardar(); hubDesenhar();
-    const t0 = Date.now(), tick = setInterval(() => { const s = document.getElementById('hubSeg'); if (s) s.textContent = `analisando os anúncios… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+    const t0 = Date.now(), tick = setInterval(() => { const s = document.getElementById('hubSeg'); if (s) s.textContent = `o Cris está analisando os anúncios… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
     try {
         const r = await fetch('/api/seven/hub/perguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ modo: hub.modo, mensagens: hub.msgs.filter(m => !m.erro).map(m => ({ papel: m.papel, texto: m.texto })) }) });
@@ -330,7 +330,7 @@ async function hubEnviar() {
             meta: `${d.modelo} · ${(d.ms / 1000).toFixed(1)} s${d.detalhe ? ' · com o detalhe dos anúncios citados' : ''}` });
         if (d.info) { hub.estado = hub.estado || {}; hub.estado.dados = d.info; hubStatus(); }
     } catch (e) {
-        hub.msgs.push({ papel: 'ia', erro: true, texto: 'Não consegui responder: ' + e.message });
+        hub.msgs.push({ papel: 'ia', erro: true, texto: 'O Cris não conseguiu responder: ' + e.message });
     } finally {
         clearInterval(tick); hub.ocupado = false; hubGuardar(); hubDesenhar();
         document.getElementById('hubTexto').focus();
@@ -346,11 +346,12 @@ async function hubSalvarChave() {
     } catch (e) { alert('Chave não salva: ' + e.message); }
 }
 async function hubRemoverChave() {
-    if (!confirm('Remover a chave própria do Hub? Ele volta a usar as chaves do AD HEALTH.')) return;
+    if (!confirm('Remover a chave própria do Cris? Ele volta a usar as chaves do AD HEALTH.')) return;
     await fetch('/api/seven/hub/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remover: true }) }).catch(() => {});
     hubCarregarEstado();
 }
 if (location.hash === '#hub') hubAbrir();
+window.addEventListener('hashchange', () => { if (location.hash === '#hub') hubAbrir(); });
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>
