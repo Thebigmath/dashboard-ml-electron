@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.87",
+    "data": "2026-10-15",
+    "titulo": "Concorrência e preço: vendas no mesmo período",
+    "texto": "- Concorrência e preço (parados): a tabela agora compara TODOS no mesmo período do Nubimetrics (7 dias), inclusive nós; as nossas vendas de 30 dias ficam no cabeçalho. A nossa outra conta aparece separada, não como concorrente.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.86",
     "data": "2026-10-15",
     "titulo": "Concorrência e preço nos parados, custos corrigidos e menos 429",
