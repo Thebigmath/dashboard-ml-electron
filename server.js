@@ -11,6 +11,8 @@ let httpServer = null;
 
 // a extensao da Agenda do Full devolve a agenda inteira do ML (centenas de horarios): limite maior so nessa rota
 app.use('/api/agenda-full/ext', express.json({ limit: '15mb' }));
+// planilha de estoque do ERP Commander chega em base64
+app.use('/api/olist-estoque/upload/previa', express.json({ limit: '25mb' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -68,6 +70,8 @@ app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.
 app.get('/finance', (req, res) => res.sendFile(path.join(__dirname, 'public/finance.html')));
 // a tela antiga de Parados esta em standby (dependia da ponte do Nubimetrics): vai para o Controle de estoque parado
 app.get('/parados', (req, res) => res.redirect('/seven#parados'));
+app.get('/erp-commander', (req, res) => res.sendFile(path.join(__dirname, 'public/erp_commander.html')));
+app.get('/full-erp', (req, res) => res.redirect('/erp-commander'));
 app.get('/agenda-full', (req, res) => res.sendFile(path.join(__dirname, 'public/agenda_full.html')));
 
 // Arquivos estáticos

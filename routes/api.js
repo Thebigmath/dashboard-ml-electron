@@ -1293,6 +1293,16 @@ router.post('/seven/ia/saude', auth, (req, res) => {
         try { res.json(C().mudarVigia(req.params.id, req.params.acao)); } catch (e) { res.status(400).json({ erro: e.message }); }
     });
 }
+// Mediador de estoque Full x ERP Olist (so mostra as diferencas)
+router.get('/olist-estoque', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').resultado()); } catch (e) { erroJson(res)(e); } });
+router.get('/olist-estoque/depositos', auth, (req, res) => require('../lib/olist_estoque').depositos().then(d => res.json(d)).catch(erroJson(res)));
+router.get('/olist-estoque/upload', auth, (req, res) => res.json(require('../lib/olist_estoque').upload()));
+router.post('/olist-estoque/upload/previa', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').previa(req.body.arquivo, req.body.nome, req.body.deposito)); } catch (e) { erroJson(res)(e); } });
+router.post('/olist-estoque/upload/aplicar', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').aplicar(req.body.skus)); } catch (e) { erroJson(res)(e); } });
+router.post('/olist-estoque/upload/limpar', auth, (req, res) => res.json(require('../lib/olist_estoque').limparUpload()));
+router.post('/olist-estoque/sincronizar', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').sincronizar(req.body.itens)); } catch (e) { erroJson(res)(e); } });
+router.get('/olist-estoque/ajustes', auth, (req, res) => res.json(require('../lib/olist_estoque').ajustes(200)));
+router.post('/olist-estoque/coletar', auth, (req, res) => require('../lib/olist_estoque').coletar().then(d => res.json(d)).catch(erroJson(res)));
 // Hub da IA (clique no 7 do Inicio): conversa sobre os anuncios, com chave propria opcional
 router.get('/seven/hub/estado', auth, (req, res) => require('../lib/hub_ia').estado().then(d => res.json(d)).catch(erroJson(res)));
 router.post('/seven/hub/perguntar', auth, (req, res) => require('../lib/hub_ia').perguntar(req.body || {}).then(d => res.json(d)).catch(erroJson(res)));

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Commander — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .fe { padding:28px 32px 60px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        .fe h1 { font-size:26px; font-weight:700; color:var(--l1); margin:0; }
+        .fe .sub { color:var(--l3); font-size:13.5px; margin:4px 0 16px; }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px; }
+        .card2 { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
+        .card2 small { font-size:11px; text-transform:uppercase; color:var(--l3); letter-spacing:.4px; }
+        .card2 b { display:block; font-size:22px; color:var(--l1); margin-top:4px; }
+        .bl { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:16px 18px; }
+        .linha { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+        .bt { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:9px; border:1px solid var(--sep); background:var(--s2); color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .bt.pri { background:var(--blue); color:#fff; border-color:transparent; }
+        .bt:disabled { opacity:.5; cursor:not-allowed; }
+        .chip { border:1px solid var(--sep); background:var(--s2); color:var(--l2); border-radius:999px; padding:4px 11px; font-size:12.5px; cursor:pointer; }
+        .chip.on { border-color:var(--blue); color:var(--blue); font-weight:700; }
+        .chip.aba { padding:7px 16px; font-size:13.5px; }
+        input.busca, select.busca { background:var(--s2); border:1px solid var(--sep); color:var(--l1); border-radius:9px; padding:7px 10px; font-size:13px; min-width:220px; }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); font-weight:600; padding:8px; border-bottom:1px solid var(--sep); white-space:nowrap; cursor:pointer; }
+        td { padding:8px; border-bottom:1px solid rgba(128,128,128,.10); color:var(--l1); vertical-align:middle; }
+        .num { text-align:right; font-variant-numeric:tabular-nums; }
+        .f { color:var(--l3); font-size:11.5px; }
+        .dif-pos { color:#ff9f0a; font-weight:700; } .dif-neg { color:#ff453a; font-weight:700; } .dif-zero { color:#30D158; font-weight:700; }
+        .pill { font-size:11px; font-weight:700; border-radius:999px; padding:2px 9px; white-space:nowrap; }
+        .pill.ok { background:color-mix(in srgb,#30D158 16%,transparent); color:#30D158; }
+        .pill.dif { background:color-mix(in srgb,#FF9F0A 18%,transparent); color:#FF9F0A; }
+        .pill.nao { background:color-mix(in srgb,var(--l1) 8%,transparent); color:var(--l3); }
+        .barra { height:6px; background:var(--s2); border-radius:6px; overflow:hidden; margin-top:6px; }
+        .barra div { height:100%; background:var(--blue); }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="fe">
+    <h1><i class="bi bi-hdd-network"></i> ERP Commander</h1>
+    <div class="sub">Central do estoque no Olist: compara o "Seu depósito" do Mercado Livre com o ERP, sincroniza com um botão e sobe estoque por planilha.</div>
+    <div class="linha" style="margin-bottom:16px">
+        <span class="chip aba on" id="abaFull" onclick="aba('full')"><i class="bi bi-arrow-left-right"></i> Depósito × ERP</span>
+        <span class="chip aba" id="abaSubir" onclick="aba('subir')"><i class="bi bi-upload"></i> Subir estoque</span>
+    </div>
+
+<div id="secFull">
+    <div class="f" style="margin:-6px 0 12px">"Estoque no depósito" dos anúncios do Mercado Livre (Flavia e Cordeiro; o Full fica de fora) contra o depósito Geral do Olist, SKU por SKU. Só altera o Olist quando você aperta Sincronizar e confirma.</div>
+    <div class="cards" id="cards"></div>
+    <div class="bl">
+        <div class="linha">
+            <button class="bt pri" id="btColetar" onclick="coletar()"><i class="bi bi-arrow-repeat"></i> Atualizar (ML + Olist)</button>
+            <span class="f" id="estado"></span>
+            <span style="margin-left:auto"></span>
+            <input class="busca" id="busca" placeholder="Buscar SKU ou produto…" oninput="desenhar()">
+            <button class="bt" onclick="exportar()"><i class="bi bi-download"></i> Excel (CSV)</button>
+        </div>
+        <div class="linha" id="sincLinha"></div>
+        <div class="linha" id="filtros"></div>
+        <div id="tabela"><div class="f">Carregando…</div></div>
+    </div>
+</div>
+
+<div id="secSubir" style="display:none">
+    <div class="bl" style="margin-bottom:14px">
+        <div style="font-weight:700;margin-bottom:6px">1. Planilha</div>
+        <div class="f" style="margin-bottom:10px">Excel (.xlsx) ou CSV com uma coluna <b>SKU</b> (ou Código) e uma coluna <b>Estoque</b> (ou Quantidade/Saldo). Sem cabeçalho: coluna A = SKU, coluna B = quantidade. O valor da planilha vira o saldo do depósito escolhido (balanço). Primeiro ele só confere; grava no Olist apenas quando você confirmar.</div>
+        <div class="linha">
+            <input type="file" id="arq" accept=".xlsx,.xls,.csv" style="color:var(--l2);font-size:13px">
+            <span class="f">Depósito do Olist:</span>
+            <select id="dep" class="busca" style="min-width:200px"><option value="">carregando…</option></select>
+            <button class="bt pri" id="btPrevia" onclick="fazerPrevia()"><i class="bi bi-search"></i> Conferir (não altera nada)</button>
+        </div>
+        <div id="upEstado" class="f"></div>
+    </div>
+    <div class="bl" id="upPrevia" style="display:none;margin-bottom:14px"></div>
+    <div class="bl"><div style="font-weight:700;margin-bottom:8px">Histórico de ajustes no Olist</div><div id="upHist" class="f">—</div></div>
+</div>
+</div></main></div>
+
+<script>
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const n = (v) => v == null ? '—' : Number(v).toLocaleString('pt-BR');
+const postar = (url, corpo) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) }).then(x => x.json());
+
+// ======== Depósito × ERP ========
+let D = null, filtro = 'diferentes', ordem = { k: 'difabs', desc: true };
+let sel = new Set(), escolha = {}, iniciou = false;   // marcadas para sincronizar; valor escolhido nos conflitos
+const quando = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+const ehConf = (l) => l.situacao === 'conflito entre contas';
+const valorFinal = (l) => ehConf(l) ? (escolha[l.olist_id] ?? null) : l.ml_valor;
+async function carregar() {
+    try { D = await fetch('/api/olist-estoque').then(r => r.json()); } catch (e) { document.getElementById('tabela').innerHTML = `<div class="f" style="color:#ff453a">${esc(e.message)}</div>`; return; }
+    const r = D.resumo, c = D.coleta;
+    document.getElementById('cards').innerHTML = [
+        ['SKUs com depósito no ML', n(r.skus)], ['Iguais', n(r.iguais)], ['Diferentes', n(r.diferentes)], ['Conflito entre contas', n(r.conflitos)], ['Não achados no Olist', n(r.nao_encontrados)],
+        ['Unidades no depósito (ML)', n(r.ml_total)], ['Unidades no Geral (Olist)', n(r.erp_geral)],
+    ].map(([t, v]) => `<div class="card2"><small>${t}</small><b>${v}</b></div>`).join('');
+    const est = document.getElementById('estado');
+    if (!D.tem_token) est.innerHTML = '<span style="color:#ff453a">Token do Olist não cadastrado.</span>';
+    else if (c.rodando) est.innerHTML = `${esc(c.etapa || 'Consultando')}${c.total ? `: ${c.feitos} de ${c.total} SKUs` : '…'}${c.aviso ? ' · ' + esc(c.aviso) : ''}<div class="barra" style="width:220px"><div style="width:${c.total ? (c.feitos / c.total * 100).toFixed(0) : 3}%"></div></div>`;
+    else est.textContent = D.em ? `Última consulta: ${quando(D.em)}${D.parcial ? ' (incompleta)' : ''}${c.erro ? ' · erro: ' + c.erro : ''}` : 'Ainda não consultado: clique em Atualizar.';
+    document.getElementById('btColetar').disabled = c.rodando || !D.tem_token || D.sinc.rodando;
+    // terminada a consulta, ja deixa marcadas as linhas diferentes (conflito so depois de escolher o valor)
+    if (!c.rodando && D.em && !D.parcial && !iniciou) { iniciou = true; (D.linhas || []).filter(l => l.situacao === 'diferente').forEach(l => sel.add(String(l.olist_id))); }
+    desenhar();
+    if (c.rodando || D.sinc.rodando) setTimeout(carregar, 4000);
+}
+function lista() {
+    const q = (document.getElementById('busca').value || '').trim().toLowerCase();
+    const F = { diferentes: l => l.situacao === 'diferente', conflitos: ehConf, todos: () => true, iguais: l => l.situacao === 'igual' || l.situacao === 'sincronizado', nao: l => /não encontrado|sem depósito|erro/.test(l.situacao || '') };
+    let L = (D.linhas || []).filter(F[filtro]).filter(l => !q || String(l.sku).toLowerCase().includes(q) || String(l.titulo).toLowerCase().includes(q) || String(l.erp_nome || '').toLowerCase().includes(q) || (l.rotulos || []).some(x => String(x).toLowerCase().includes(q)));
+    const val = (l) => ordem.k === 'difabs' ? Math.abs(l.diferenca || 0) : l[ordem.k] ?? -1e9;
+    return L.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * (ordem.desc ? -1 : 1));
+}
+function ordenar(k) { ordem = { k, desc: ordem.k === k ? !ordem.desc : true }; desenhar(); }
+const podeSinc = (l) => (l.situacao === 'diferente' || ehConf(l)) && l.erp_geral != null;
+const prontas = () => (D.linhas || []).filter(l => podeSinc(l) && sel.has(String(l.olist_id)) && valorFinal(l) != null && valorFinal(l) !== l.erp_geral);
+function desenharSinc() {
+    const s = D.sinc || {}, li = D.lidas || {};
+    const P = prontas();
+    const fazendo = s.rodando && s.fase === 'sincronizando';
+    document.getElementById('sincLinha').innerHTML = `
+        <button class="bt pri" style="background:#30D158" onclick="sincronizar()" ${P.length && !s.rodando && !D.coleta.rodando && !D.parcial ? '' : 'disabled'}><i class="bi bi-arrow-repeat"></i> Sincronizar ${P.length} com o Olist</button>
+        <span class="f">Grava no depósito <b>Geral</b> do Olist o "Estoque no depósito" do Mercado Livre. Depósito do ML lido em: Flavia ${quando(li.flavia && li.flavia.em)} · Cordeiro ${quando(li.cordeiro && li.cordeiro.em)}${li.flavia && li.flavia.erro ? ' · Flavia: ' + esc(li.flavia.erro) : ''}${li.cordeiro && li.cordeiro.erro ? ' · Cordeiro: ' + esc(li.cordeiro.erro) : ''}</span>
+        ${fazendo ? `<span class="f">Sincronizando: ${s.feitos} de ${s.total}${s.aviso ? ' · ' + esc(s.aviso) : ''}<div class="barra" style="width:220px"><div style="width:${s.total ? (s.feitos / s.total * 100).toFixed(0) : 0}%"></div></div></span>` : ''}
+        ${!s.rodando && s.fase === 'sincronizado' && s.resultado ? `<span class="f" style="color:${s.resultado.falhas ? '#ff9f0a' : '#30D158'}"><b>Sincronizados ${s.resultado.ok}${s.resultado.falhas ? ' · ' + s.resultado.falhas + ' com erro (' + esc(s.erro || '') + ')' : ''}</b></span>` : ''}`;
+}
+function celulaMl(l) {
+    if (!ehConf(l)) return `<b>${n(l.ml_valor)}</b>`;
+    const id = esc(l.olist_id), v = escolha[l.olist_id];
+    const op = (t, x) => `<label style="white-space:nowrap;margin-right:6px;cursor:pointer"><input type="radio" name="e${id}" ${v === x ? 'checked' : ''} onchange="escolher('${id}', ${x})"> ${t} ${n(x)}</label>`;
+    return `<div style="font-size:12px">${op('Flavia', l.dep_flavia)}${op('Cordeiro', l.dep_cordeiro)}<input type="number" min="0" placeholder="outro" value="${v != null && v !== l.dep_flavia && v !== l.dep_cordeiro ? v : ''}" style="width:64px;background:var(--s2);border:1px solid var(--sep);color:var(--l1);border-radius:6px;padding:1px 4px" onchange="escolher('${id}', this.value === '' ? null : Number(this.value))"></div>`;
+}
+function escolher(id, v) { if (v == null || !(v >= 0)) delete escolha[id]; else { escolha[id] = v; sel.add(String(id)); } desenhar(); }
+function marcarL(id, v) { v ? sel.add(String(id)) : sel.delete(String(id)); desenhar(); }
+function marcarTodasL(v) { lista().filter(l => l.situacao === 'diferente').forEach(l => v ? sel.add(String(l.olist_id)) : sel.delete(String(l.olist_id))); desenhar(); }
+function desenhar() {
+    if (!D) return;
+    desenharSinc();
+    const r = D.resumo;
+    const cont = { diferentes: `Com diferença (${r.diferentes})`, conflitos: `Conflito entre contas (${r.conflitos})`, iguais: 'Iguais', nao: 'Não achados / sem depósito', todos: 'Todos' };
+    document.getElementById('filtros').innerHTML = Object.entries(cont).map(([k, t]) => `<span class="chip ${filtro === k ? 'on' : ''}" onclick="filtro='${k}';desenhar()">${t}</span>`).join('');
+    const L = lista(), difs = L.filter(l => l.situacao === 'diferente');
+    const th = (t, k, cls) => `<th class="${cls || ''}" onclick="ordenar('${k}')">${t}${ordem.k === k ? (ordem.desc ? ' ↓' : ' ↑') : ''}</th>`;
+    document.getElementById('tabela').innerHTML = L.length ? `<table><tr><th style="width:28px">${difs.length ? `<input type="checkbox" ${difs.every(l => sel.has(String(l.olist_id))) ? 'checked' : ''} onchange="marcarTodasL(this.checked)">` : ''}</th>${th('SKU', 'sku')}${th('Produto', 'titulo')}${th('Depósito Flavia', 'dep_flavia', 'num')}${th('Depósito Cordeiro', 'dep_cordeiro', 'num')}${th('Valor do ML', 'ml_valor', 'num')}${th('Olist · Geral', 'erp_geral', 'num')}${th('Diferença', 'difabs', 'num')}<th>Situação</th></tr>
+        ${L.map(l => { const vf = valorFinal(l), dif = vf == null || l.erp_geral == null ? null : vf - l.erp_geral; return `<tr>
+            <td>${podeSinc(l) ? `<input type="checkbox" ${sel.has(String(l.olist_id)) ? 'checked' : ''} ${ehConf(l) && escolha[l.olist_id] == null ? 'disabled title="Escolha o valor primeiro"' : ''} onchange="marcarL('${esc(l.olist_id)}', this.checked)">` : ''}</td>
+            <td><b>${esc(l.sku)}</b>${(l.rotulos || []).length > 1 ? `<div class="f">${esc(l.rotulos.join(', '))}</div>` : ''}</td><td>${esc(String(l.titulo || l.erp_nome || '').slice(0, 70))}</td>
+            <td class="num">${n(l.dep_flavia)}</td><td class="num">${n(l.dep_cordeiro)}</td><td class="num">${celulaMl(l)}</td><td class="num"><b>${n(l.erp_geral)}</b></td>
+            <td class="num ${dif == null ? '' : dif === 0 ? 'dif-zero' : dif > 0 ? 'dif-pos' : 'dif-neg'}">${dif == null ? '—' : (dif > 0 ? '+' : '') + n(dif)}</td>
+            <td><span class="pill ${l.situacao === 'igual' || l.situacao === 'sincronizado' ? 'ok' : l.situacao === 'diferente' || ehConf(l) ? 'dif' : 'nao'}">${esc(l.situacao || '')}</span></td></tr>`; }).join('')}</table>
+        <div class="f" style="margin-top:8px">Valor do ML = "Estoque no depósito" do anúncio (não o Full). Nas duas contas com o mesmo número, vale esse número; com números diferentes é conflito e você escolhe. Diferença = valor do ML − depósito Geral do Olist.</div>`
+        : '<div class="f">Nada neste filtro.</div>';
+}
+async function coletar() { const r = await postar('/api/olist-estoque/coletar'); if (!r.ok) alert(r.erro || 'não iniciou'); iniciou = false; sel = new Set(); escolha = {}; carregar(); }
+async function sincronizar() {
+    const L = prontas();
+    const ex = L.slice(0, 8).map(l => `${l.sku}: Olist ${n(l.erp_geral)} → ${n(valorFinal(l))}${ehConf(l) ? ' (escolhido)' : ''}`).join('\n');
+    if (!confirm(`Sincronizar ${L.length} produtos com o Olist?\n\nO saldo do depósito Geral do Olist vai passar a ser o "Estoque no depósito" do Mercado Livre:\n\n${ex}${L.length > 8 ? '\n…' : ''}\n\nFica registrado no histórico com o valor anterior.`)) return;
+    const r = await postar('/api/olist-estoque/sincronizar', { itens: L.map(l => ({ id: l.olist_id, valor: valorFinal(l) })) });
+    if (!r.ok) return alert(r.erro || 'não deu');
+    carregar();
+}
+function exportar() {
+    const L = lista(), cab = ['SKU', 'Produto', 'Deposito Flavia', 'Deposito Cordeiro', 'Valor do ML', 'Olist Geral', 'Diferenca', 'Situacao'];
+    const csv = [cab.join(';')].concat(L.map(l => [l.sku, (l.titulo || l.erp_nome || '').replace(/;/g, ','), l.dep_flavia ?? '', l.dep_cordeiro ?? '', l.ml_valor ?? '', l.erp_geral ?? '', l.diferenca ?? '', l.situacao].join(';'))).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = 'deposito_ml_x_olist.csv'; a.click();
+}
+
+// ======== abas ========
+function aba(q) {
+    document.getElementById('secFull').style.display = q === 'full' ? '' : 'none';
+    document.getElementById('secSubir').style.display = q === 'subir' ? '' : 'none';
+    document.getElementById('abaFull').classList.toggle('on', q === 'full');
+    document.getElementById('abaSubir').classList.toggle('on', q === 'subir');
+    try { localStorage.setItem('erpcmd_aba', q); } catch {}
+    if (q === 'subir') { carregarDepositos(); carregarUpload(); carregarHist(); }
+}
+
+// ======== Subir estoque por planilha ========
+let U = null, marc = new Set(), depsOk = false;
+async function carregarDepositos() {
+    if (depsOk) return;
+    const sel = document.getElementById('dep');
+    try {
+        const L = await fetch('/api/olist-estoque/depositos').then(r => r.json());
+        if (!Array.isArray(L)) throw new Error(L.erro || 'sem depósitos');
+        sel.innerHTML = '<option value="">escolha…</option>' + L.map(d => `<option>${esc(d)}</option>`).join(''); depsOk = true;
+    } catch (e) { sel.innerHTML = '<option value="">erro ao ler depósitos</option>'; }
+}
+async function fazerPrevia() {
+    const f = document.getElementById('arq').files[0], dep = document.getElementById('dep').value;
+    if (!f) return alert('Escolha a planilha.');
+    if (!dep) return alert('Escolha o depósito do Olist.');
+    const b64 = await new Promise((ok, err) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = err; r.readAsDataURL(f); });
+    const r = await postar('/api/olist-estoque/upload/previa', { arquivo: b64, nome: f.name, deposito: dep });
+    if (!r.ok) return alert(r.erro || 'não deu');
+    marc = new Set(); carregarUpload();
+}
+async function carregarUpload() {
+    U = await fetch('/api/olist-estoque/upload').then(r => r.json()).catch(() => null);
+    if (!U) return;
+    const est = document.getElementById('upEstado');
+    document.getElementById('btPrevia').disabled = U.rodando;
+    if (U.rodando) est.innerHTML = `${U.fase === 'aplicando' ? 'Gravando no Olist' : 'Conferindo no Olist'}: ${U.feitos} de ${U.total}${U.aviso ? ' · ' + esc(U.aviso) : ''}<div class="barra" style="width:260px"><div style="width:${U.total ? (U.feitos / U.total * 100).toFixed(0) : 0}%"></div></div>`;
+    else est.textContent = U.erro ? 'Erro: ' + U.erro : '';
+    // terminada a conferencia, ja deixa marcado o que vai mudar (da para desmarcar). Achado so pelo comeco do
+    // rotulo (010tb-polo -> 010TB) fica desmarcado: o usuario confere e marca se for mesmo aquele produto
+    if (U.fase === 'previa' && !U.rodando && !marc.size) U.itens.filter(i => i.situacao === 'vai mudar' && !i.aproximado).forEach(i => marc.add(i.sku));
+    desenharUpload();
+    if (U.rodando) setTimeout(carregarUpload, 3000); else if (U.fase === 'feito') carregarHist();
+}
+function desenharUpload() {
+    const box = document.getElementById('upPrevia');
+    if (!U || !U.fase || /^sincroniz/.test(U.fase)) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    const it = U.itens || [], mudar = it.filter(i => i.situacao === 'vai mudar'), alt = it.filter(i => i.situacao === 'alterado');
+    const cor = (s) => s === 'vai mudar' ? 'dif' : s === 'alterado' || s === 'já está igual' ? 'ok' : 'nao';
+    const podeMarcar = U.fase === 'previa' && !U.rodando;
+    box.innerHTML = `<div class="linha"><div style="font-weight:700">2. ${U.fase === 'previa' ? 'Conferência' : 'Resultado'} · ${esc(U.arquivo)} → depósito <span style="color:var(--blue)">${esc(U.deposito)}</span></div>
+        <span class="f">${it.length} SKUs · ${mudar.length} vão mudar · ${it.filter(i => i.situacao === 'já está igual').length} já iguais · ${it.filter(i => i.situacao && !i.olist_id).length} não achados${alt.length ? ' · ' + alt.length + ' alterados' : ''}${(U.invalidas || []).length ? ' · ' + U.invalidas.length + ' linhas inválidas ignoradas' : ''}</span>
+        <span style="margin-left:auto"></span>
+        ${podeMarcar ? `<button class="bt pri" onclick="aplicarUp()" ${marc.size ? '' : 'disabled'}><i class="bi bi-check2-all"></i> Aplicar ${marc.size} no Olist</button>` : ''}
+        ${!U.rodando ? '<button class="bt" onclick="limparUp()"><i class="bi bi-x-lg"></i> Limpar</button>' : ''}</div>
+        ${(U.invalidas || []).length ? `<div class="f" style="margin-bottom:8px;color:#ff9f0a">Linhas ignoradas (SKU vazio ou quantidade inválida): ${U.invalidas.slice(0, 15).map(v => 'linha ' + v.linha + (v.sku ? ' (' + esc(v.sku) + ': "' + esc(v.valor) + '")' : '')).join(', ')}${U.invalidas.length > 15 ? '…' : ''}</div>` : ''}
+        <table><tr>${podeMarcar ? `<th style="width:28px"><input type="checkbox" ${mudar.length && mudar.every(i => marc.has(i.sku)) ? 'checked' : ''} onchange="marcarTodos(this.checked)"></th>` : ''}<th>SKU</th><th>Produto no Olist</th><th class="num">Hoje no Olist</th><th class="num">Planilha</th><th class="num">Diferença</th><th>Situação</th></tr>
+        ${it.map((i, idx) => `<tr>${podeMarcar ? `<td>${i.situacao === 'vai mudar' ? `<input type="checkbox" ${marc.has(i.sku) ? 'checked' : ''} onchange="marcar(${idx}, this.checked)">` : ''}</td>` : ''}
+            <td><b>${esc(i.sku)}</b>${i.codigo && String(i.codigo).toLowerCase() !== String(i.sku).toLowerCase() ? `<div class="f">no Olist: ${esc(i.codigo)}${i.aproximado ? ' <span style="color:#ff9f0a">(achado sem o final do rótulo: confira antes de marcar)</span>' : ''}</div>` : ''}${i.repetido ? '<div class="f" style="color:#ff9f0a">repetido na planilha: vale a última linha</div>' : ''}</td>
+            <td>${esc(String(i.nome || '').slice(0, 70))}</td><td class="num">${n(i.atual)}</td><td class="num"><b>${n(i.novo)}</b></td>
+            <td class="num ${i.diferenca == null ? '' : i.diferenca === 0 ? 'dif-zero' : i.diferenca > 0 ? 'dif-pos' : 'dif-neg'}">${i.diferenca == null ? '—' : (i.diferenca > 0 ? '+' : '') + n(i.diferenca)}</td>
+            <td><span class="pill ${cor(i.situacao)}">${esc(i.situacao || '…')}</span></td></tr>`).join('')}</table>`;
+}
+function marcar(idx, v) { const s = U.itens[idx].sku; v ? marc.add(s) : marc.delete(s); desenharUpload(); }
+function marcarTodos(v) { U.itens.filter(i => i.situacao === 'vai mudar').forEach(i => v ? marc.add(i.sku) : marc.delete(i.sku)); desenharUpload(); }
+async function aplicarUp() {
+    const L = U.itens.filter(i => marc.has(i.sku) && i.situacao === 'vai mudar');
+    const ex = L.slice(0, 8).map(i => `${i.codigo || i.sku}: ${n(i.atual)} → ${n(i.novo)}`).join('\n');
+    if (!confirm(`Gravar ${L.length} saldos no depósito "${U.deposito}" do Olist?\n\n${ex}${L.length > 8 ? '\n…' : ''}\n\nO valor da planilha vira o saldo (balanço). Fica registrado no histórico com o valor anterior.`)) return;
+    const r = await postar('/api/olist-estoque/upload/aplicar', { skus: L.map(i => i.sku) });
+    if (!r.ok) return alert(r.erro || 'não deu');
+    carregarUpload();
+}
+async function limparUp() { await postar('/api/olist-estoque/upload/limpar'); marc = new Set(); carregarUpload(); }
+async function carregarHist() {
+    const L = await fetch('/api/olist-estoque/ajustes').then(r => r.json()).catch(() => []);
+    document.getElementById('upHist').innerHTML = L.length ? `<table><tr><th>Quando</th><th>SKU</th><th>Produto</th><th>Depósito</th><th class="num">Antes</th><th class="num">Depois</th><th>Planilha</th></tr>
+        ${L.map(a => `<tr><td>${new Date(a.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td><b>${esc(a.sku)}</b></td><td>${esc(String(a.nome || '').slice(0, 60))}</td><td>${esc(a.deposito)}</td><td class="num">${n(a.antes)}</td><td class="num"><b>${n(a.depois)}</b></td><td class="f">${esc(a.arquivo || '')}</td></tr>`).join('')}</table>` : 'Nenhum ajuste feito ainda.';
+}
+
+carregar();
+try { if (localStorage.getItem('erpcmd_aba') === 'subir') aba('subir'); } catch {}
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

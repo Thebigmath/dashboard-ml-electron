@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.92",
+    "data": "2026-10-15",
+    "titulo": "ERP Commander: estoque do Mercado Livre × Olist",
+    "texto": "- Novo ERP Commander no STOCK Ops (integração com o Olist).\n- Depósito × ERP: compara o \"Estoque no depósito\" dos anúncios do Mercado Livre (Flavia e Cordeiro, sem o Full) com o depósito Geral do Olist, SKU por SKU. Quando as duas contas têm números diferentes, mostra os dois e você escolhe. O botão Sincronizar grava no Olist só as linhas marcadas, depois de confirmar.\n- Subir estoque: envie uma planilha (xlsx ou csv) com SKU e quantidade; ele confere no Olist e só grava o que você confirmar.\n- Todo ajuste fica no histórico com o valor anterior.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.91",
     "data": "2026-10-15",
     "titulo": "Agenda do Full: modo simples, sem turbo e sem freio",
