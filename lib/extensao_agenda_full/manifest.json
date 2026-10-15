@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SEVEN · Agenda do Full",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Liga o SEVEN à Gestão de envios Full do Mercado Livre usando o login que já está neste Chrome. Não abre abas e não marca nada sozinha.",
   "permissions": [
     "alarms",

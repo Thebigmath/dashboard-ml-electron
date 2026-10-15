@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.85",
+    "data": "2026-10-15",
+    "titulo": "Agenda do Full: motores, turbo automático e marcação",
+    "texto": "- Agenda do Full: MOTORES por envio — uma consulta serve todas as vigias do envio; envios diferentes em paralelo (até 3 por conta).\n- Turbo de 10 s automático: nos horários em que o SEVEN já viu vaga abrir (aprende sozinho) e por 5 min depois de qualquer vaga nova.\n- Freio de segurança: limite de 30 consultas/min por conta; se o ML ficar lento ou recusar, o ritmo cai pela metade por 10 min, com aviso.\n- Marcação pelo SEVEN (chave geral, desligada de fábrica) e, em cada vigia, \"Marcar sozinho\": só dentro do dia/horário/galpões decididos, com avisos \"Saiu vaga para … estou marcando\" e \"Marcado ✓\" / \"Não deu\".\n- Horários do histórico no horário do Brasil.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.84",
     "data": "2026-10-14",
     "titulo": "Agenda do Full: uma extensão por conta e Abrir no ML",

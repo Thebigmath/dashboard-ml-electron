@@ -1275,11 +1275,13 @@ router.post('/seven/ia/saude', auth, (req, res) => {
     router.post('/agenda-full/conectar', auth, (req, res) => C().conectar().then(d => res.json(d)).catch(erroJson(res)));
     router.post('/agenda-full/esconder', auth, (req, res) => C().esconder().then(d => res.json(d)).catch(erroJson(res)));
     router.post('/agenda-full/fechar', auth, (req, res) => C().fechar().then(d => res.json(d)).catch(erroJson(res)));
+    router.post('/agenda-full/permissao', auth, (req, res) => res.json(C().permissao(!!(req.body && req.body.ligar))));
     router.post('/agenda-full/abrir-ml/:id', auth, (req, res) => C().abrirNoML(req.params.id).then(d => res.json(d)).catch(e => res.status(400).json({ erro: e.message })));
     router.get('/agenda-full/envios', auth, (req, res) => C().envios({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)));
     router.get('/agenda-full/historico', auth, (req, res) => res.json(C().historico(80)));
     router.get('/agenda-full/horarios/:id', auth, (req, res) => C().horarios(req.params.id, req.query.tipo || 'ftl').then(d => res.json(d)).catch(erroJson(res)));
     router.get('/agenda-full/vigias', auth, (req, res) => res.json(C().vigias()));
+    router.get('/agenda-full/motores', auth, (req, res) => res.json(C().statusMotores()));
     router.post('/agenda-full/vigias', auth, (req, res) => { try { res.json(C().criarVigia(req.body || {})); } catch (e) { res.status(400).json({ erro: e.message }); } });
     router.post('/agenda-full/vigias/:id/:acao', auth, (req, res) => {
         if (req.params.acao === 'confirmar') return C().confirmar(req.params.id, req.body && req.body.chave).then(d => res.json(d)).catch(e => res.status(400).json({ erro: e.message }));

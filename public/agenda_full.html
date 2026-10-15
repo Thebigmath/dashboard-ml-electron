@@ -115,13 +115,16 @@
                 <div class="campo"><label>Consultar a cada</label><select id="fIntervalo"><option value="15">15 s</option><option value="30" selected>30 s</option><option value="60">1 min</option><option value="120">2 min</option></select></div>
             </div>
             <div class="campo" style="margin-top:10px"><label>Galpões (nenhum marcado = qualquer um)</label><div class="chips" id="fGalpoes"><span class="vazio" style="padding:4px 0">Escolha o envio para ver os galpões.</span></div></div>
+            <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:13px;color:var(--l2);cursor:pointer"><input type="checkbox" id="fAuto" style="margin-top:3px">
+                <span><b>Marcar sozinho quando achar a vaga</b>: só dentro deste dia, faixa de horário e galpões. Avisa "Saiu vaga para … estou marcando" e depois o resultado. Precisa da marcação pelo SEVEN ligada.</span></label>
             <div class="linha" style="margin-top:14px"><button class="bt pri" onclick="criarVigia()"><i class="bi bi-binoculars"></i> Começar a vigiar</button><span id="fMsg" class="erro"></span></div>
         </div>
 
         <!-- vigias -->
         <div class="bl">
             <h5><i class="bi bi-eye"></i> Vigias</h5>
-            <div class="sub">Cada vigia consulta a agenda no intervalo escolhido. Vaga encontrada fica em verde; quando outro vendedor pega, aparece em quanto tempo ela fechou.</div>
+            <div class="sub">Um motor por envio: uma consulta serve a todas as vigias daquele envio. Ritmo normal = o intervalo da vigia; <b>turbo de 10 s automático</b> nos horários em que o SEVEN já viu vaga abrir e por 5 min depois de qualquer vaga nova; <b>freio</b> se o ML ficar lento ou recusar. Vaga encontrada fica em verde; quando outro vendedor pega, aparece em quanto tempo ela fechou.</div>
+            <div id="motores" style="margin-bottom:12px"></div>
             <div id="vigias"><div class="vazio">Carregando…</div></div>
         </div>
     </div>
@@ -175,7 +178,8 @@ async function j(url, op) {
 }
 const post = (url, body) => j(url, { body: body || {} });
 const dataBr = (iso) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '';
-const quando = (iso) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)} ${iso.slice(11, 16)}` : '—';
+// horario do ML vem com -03:00 (mostra como esta); registro do SEVEN vem em UTC (Z): converte para o horario do Brasil
+const quando = (iso) => { if (!iso) return '—'; if (/Z$/.test(iso)) return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ''); return `${iso.slice(8, 10)}/${iso.slice(5, 7)} ${iso.slice(11, 16)}`; };
 const ha = (iso) => { if (!iso) return '—'; const s = Math.round((Date.now() - new Date(iso)) / 1000); return s < 60 ? `${s} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${Math.round(s / 3600)} h`; };
 const SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 let est = null, ev = null, hr = null, gSel = null, diaSel = null, aba = 'abertos', vigiasCache = [], vistos = new Set(), primeiraVez = true;
@@ -198,7 +202,7 @@ async function carregarEstado(forcar) {
         <button class="bt" onclick="carregarEstado(true)"><i class="bi bi-arrow-repeat"></i> Verificar</button>
         ${est.modo === 'visivel' ? '<button class="bt" onclick="esconder()"><i class="bi bi-eye-slash"></i> Pronto, esconder o Chrome</button>' : ''}
         ${est.rodando ? '<button class="bt" onclick="fecharChrome()"><i class="bi bi-x-circle"></i> Fechar o Chrome</button>' : ''}`;
-    document.getElementById('cxFase').innerHTML = est.confirmar_ligado ? '' : '<i class="bi bi-shield-lock"></i> Fase de testes: o botão Confirmar está desligado. O SEVEN só vigia e avisa; nada é marcado.';
+    desenharPermissao();
     if (est.conectado && est.conta_ok && !ev) carregarEnvios(false);
 }
 // modo extensao: a conta ja logada no Chrome do dia a dia, sem login novo
@@ -238,8 +242,19 @@ function desenharExtensao() {
             <button class="bt" onclick="copiarExt(this)"><i class="bi bi-clipboard"></i> Copiar chrome://extensions</button>
             <button class="bt" onclick="carregarEstado(true)"><i class="bi bi-arrow-repeat"></i> Verificar</button>`;
     }
-    document.getElementById('cxFase').innerHTML = est.confirmar_ligado ? '' : '<i class="bi bi-shield-lock"></i> Fase de testes: o botão Confirmar está desligado. O SEVEN só vigia e avisa; nada é marcado.';
+    desenharPermissao();
     if (est.conectado && est.conta_ok && !ev) carregarEnvios(false);
+}
+// chave geral "Permitir que o SEVEN marque" (desligada de fabrica)
+function desenharPermissao() {
+    document.getElementById('cxFase').innerHTML = est.confirmar_ligado
+        ? `<span style="color:#30D158"><i class="bi bi-unlock"></i> <b>Marcação pelo SEVEN ligada:</b> o botão Confirmar e as vigias automáticas podem marcar.</span> <button class="bt mini" onclick="mudarPermissao(false)">Desligar</button>`
+        : `<i class="bi bi-shield-lock"></i> Marcação pelo SEVEN <b>desligada</b>: o SEVEN só vigia e avisa; nada é marcado. <button class="bt mini" onclick="mudarPermissao(true)">Permitir que o SEVEN marque</button>`;
+}
+async function mudarPermissao(ligar) {
+    if (ligar && !confirm('Permitir que o SEVEN marque horários no Mercado Livre?\n\n- O botão Confirmar passa a marcar na hora.\n- Vigias com "Marcar sozinho" marcam a primeira vaga DENTRO do dia, horário e galpões que vocês definiram, avisando "estou marcando".\n\nFora disso, nada é marcado.')) return;
+    try { await post('/api/agenda-full/permissao', { ligar }); } catch (e) { alert(e.message); }
+    await carregarEstado(false); carregarVigias();
 }
 async function abrirPasta() { try { const r = await post('/api/agenda-full/extensao/abrir'); document.getElementById('cxTexto').insertAdjacentHTML('beforeend', `<div style="font-size:12px;margin-top:6px">Pasta: <code>${esc(r.pasta)}</code></div>`); } catch (e) { alert(e.message); } }
 function copiarExt(btn) { navigator.clipboard.writeText('chrome://extensions').then(() => { btn.innerHTML = '<i class="bi bi-check2"></i> Copiado'; setTimeout(() => btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar chrome://extensions', 2500); }).catch(() => prompt('Copie:', 'chrome://extensions')); }
@@ -349,7 +364,7 @@ async function criarVigia() {
     try {
         await post('/api/agenda-full/vigias', { envio_id: id, envio_nome: e.nome || '', tipo: document.getElementById('fTipo').value, data: document.getElementById('fData').value,
             hora_de: document.getElementById('fDe').value, hora_ate: document.getElementById('fAte').value, intervalo_s: Number(document.getElementById('fIntervalo').value),
-            galpoes: [...document.querySelectorAll('#fGalpoes .chip.on')].map(c => c.dataset.id) });
+            galpoes: [...document.querySelectorAll('#fGalpoes .chip.on')].map(c => c.dataset.id), automatico: document.getElementById('fAuto').checked });
         carregarVigias();
     } catch (err) { msg.textContent = err.message; }
 }
@@ -373,12 +388,14 @@ async function carregarVigias() {
         return `<div class="vg ${v.ativo ? 'ativa' : ''} ${abertos.length ? 'achou' : ''}">
             <div class="linha" style="justify-content:space-between"><div class="t">#${esc(v.envio_id)} ${esc(v.envio_nome)}</div>
             <div class="linha">${v.ativo ? `<span class="pill ok"><i class="bi bi-broadcast"></i> vigiando</span><button class="bt mini" onclick="acaoVigia('${v.id}','pausar')">Pausar</button>` : `<span class="pill off">${esc(v.encerrada || 'parada')}</span><button class="bt mini" onclick="acaoVigia('${v.id}','retomar')">Retomar</button>`}<button class="bt mini" onclick="acaoVigia('${v.id}','apagar')"><i class="bi bi-trash"></i></button></div></div>
+            <div class="linha" style="margin-top:4px">${v.automatico ? `<span class="pill ${lig ? 'ok' : 'nao'}"><i class="bi bi-lightning-charge"></i> marca sozinho${lig ? '' : ' (marcação desligada)'}</span><button class="bt mini" onclick="acaoVigia('${v.id}','auto-desligar')">Só avisar</button>` : `<span class="pill off">só avisa</span><button class="bt mini" onclick="acaoVigia('${v.id}','auto-ligar')">Marcar sozinho</button>`}</div>
             <div class="d"><b>${dataBr(v.data)}</b> entre <b>${v.hora_de}</b> e <b>${v.hora_ate}</b> · ${v.galpoes.length ? v.galpoes.map(esc).join(', ') : 'qualquer galpão'} · ${esc({ ftl: 'Veículo particular', pickup: 'Coleta', supplier: 'Fornecedor' }[v.tipo] || v.tipo)} · a cada ${v.intervalo_s} s</div>
             <div class="m">${v.checagens || 0} consultas · última há ${ha(v.ultima_em)}${v.ultimo_erro ? ` · <span class="erro">${esc(v.ultimo_erro)}</span>` : ''}</div>
             ${(v.dia_pedido || []).length ? `<div class="m">Agora no dia ${dataBr(v.data)}: ${v.dia_pedido.map(g => `${esc(nomeG(g.galpao, g.titulo))}: ${g.horas.length ? g.horas.join(' ') : 'lotado'}`).join(' · ')}</div>` : ''}
-            ${abertos.map(a => `<div class="achado"><i class="bi bi-check-circle-fill" style="color:#30D158"></i> <b>Vaga aberta: ${dataBr(a.slot_date)} às ${a.hora}</b> · ${esc(nomeG(a.galpao, a.galpao_titulo))} · vista há ${ha(a.visto_em)}
+            ${(v.achados || []).filter(a => a.tentativa).slice(-2).map(a => `<div class="achado ${a.tentativa.status === 'falhou' ? 'fechou' : ''}">${a.tentativa.status === 'marcando' ? '<i class="bi bi-hourglass-split"></i> <b>Estou marcando</b>' : a.tentativa.status === 'marcado' ? '<i class="bi bi-check2-all" style="color:#30D158"></i> <b>Marcado ✓</b>' : '<i class="bi bi-x-octagon" style="color:#ff453a"></i> <b>Não deu</b>'} ${dataBr(a.slot_date)} às ${a.hora} · ${esc(nomeG(a.galpao, a.galpao_titulo))} · ${quando(a.tentativa.em)}${a.tentativa.msg ? ' · ' + esc(a.tentativa.msg) : ''}${a.tentativa.manual ? '' : ' (automático)'}</div>`).join('')}
+            ${abertos.filter(a => !a.tentativa || a.tentativa.status === 'falhou').map(a => `<div class="achado"><i class="bi bi-check-circle-fill" style="color:#30D158"></i> <b>Vaga aberta: ${dataBr(a.slot_date)} às ${a.hora}</b> · ${esc(nomeG(a.galpao, a.galpao_titulo))} · vista há ${ha(a.visto_em)}
                 <button class="bt pri mini" onclick="abrirML('${esc(v.envio_id)}')"><i class="bi bi-box-arrow-up-right"></i> Abrir no ML</button>
-                <button class="bt verde mini" ${lig ? '' : 'disabled title="Desligado na fase de testes"'} onclick="confirmarVaga('${v.id}','${esc(a.chave)}')">Confirmar</button></div>`).join('')}
+                <button class="bt verde mini" ${lig ? '' : 'disabled title="Ligue a marcação pelo SEVEN para usar"'} onclick="confirmarVaga('${v.id}','${esc(a.chave)}')">Confirmar</button></div>`).join('')}
             ${fechados.map(a => `<div class="achado fechou"><i class="bi bi-x-circle"></i> ${dataBr(a.slot_date)} às ${a.hora} · ${esc(nomeG(a.galpao, a.galpao_titulo))} · abriu ${quando(a.visto_em)} e fechou em ${Math.max(1, Math.round((new Date(a.sumiu_em) - new Date(a.visto_em)) / 1000))} s</div>`).join('')}
         </div>`;
     }).join('') : '<div class="vazio">Nenhuma vigia. Monte uma acima.</div>';
@@ -390,13 +407,31 @@ async function carregarVigias() {
     primeiraVez = false;
     try { localStorage.setItem('agVistos', JSON.stringify([...vistos].slice(-200))); } catch {}
 }
+// motores: ritmo de cada envio, consultas por minuto, freio e horarios quentes aprendidos
+async function carregarMotores() {
+    let m; try { m = await j('/api/agenda-full/motores'); } catch { return; }
+    const el = document.getElementById('motores');
+    const cor = m.consultas_min >= m.limite_min * 0.8 ? '#ff9f0a' : 'var(--l2)';
+    el.innerHTML = `<div class="linha" style="font-size:12.5px;gap:14px">
+        <span style="color:${cor}"><i class="bi bi-speedometer2"></i> <b>${m.consultas_min}</b> de ${m.limite_min} consultas/min</span>
+        <span>${m.freio ? `<span class="pill err"><i class="bi bi-sign-stop"></i> freio até ${quando(m.freio.ate).slice(-5)}: ${esc(m.freio.motivo)}</span>` : '<span class="pill ok">sem freio</span>'}</span>
+        <span style="color:var(--l3)"><i class="bi bi-fire"></i> horários quentes: ${m.horas_quentes.length ? m.horas_quentes.map(h => h + 'h').join(', ') : 'aprendendo (aparecem quando o SEVEN vir vagas abrindo)'}</span></div>
+        ${m.motores.length ? `<table class="tab" style="margin-top:8px"><tr><th>Motor (envio)</th><th>Vigias</th><th>Ritmo</th><th>Última consulta</th><th>Próxima</th></tr>
+        ${m.motores.map(x => `<tr><td><b>#${esc(x.envio)}</b> <span class="f">${esc(x.nome)}</span></td><td>${x.vigias}</td>
+            <td>${x.modo === 'turbo' ? `<span class="pill ok"><i class="bi bi-lightning-charge-fill"></i> turbo ${x.ritmo_s} s</span>` : x.modo === 'freio' ? `<span class="pill err">freio ${x.ritmo_s} s</span>` : `<span class="pill off">normal ${x.ritmo_s ?? '—'} s</span>`}${x.motivo ? `<div class="f">${esc(x.motivo)}</div>` : ''}</td>
+            <td>${x.ultima_em ? `há ${ha(x.ultima_em)}${x.ultima_ms != null ? ` · ${(x.ultima_ms / 1000).toFixed(1)} s` : ''}` : '—'}${x.erro ? `<div class="erro">${esc(x.erro)}</div>` : ''}</td>
+            <td>${x.proxima_em ? (new Date(x.proxima_em) > new Date() ? `em ${Math.max(0, Math.round((new Date(x.proxima_em) - Date.now()) / 1000))} s` : 'agora') : '—'}</td></tr>`).join('')}</table>` : ''}`;
+}
 function bip() { try { const c = new AudioContext(); [0, .25, .5].forEach(t => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(.25, c.currentTime + t); o.start(c.currentTime + t); o.stop(c.currentTime + t + .18); }); } catch {} }
 function mostrarAlerta(v, a) {
     document.getElementById('alTexto').innerHTML = `Encontrei vaga para <b>${dataBr(a.slot_date)} às ${a.hora}</b> no <b>${esc(nomeG(a.galpao, a.galpao_titulo))}</b><br><span style="font-size:13px;color:var(--l3)">Envio #${esc(v.envio_id)} ${esc(v.envio_nome)}</span><br>Gostaria de confirmar?`;
     const b = document.getElementById('alConfirmar'), lig = est && est.confirmar_ligado;
     b.disabled = !lig; b.onclick = () => confirmarVaga(v.id, a.chave);
     document.getElementById('alAbrir').onclick = () => abrirML(v.envio_id);
-    document.getElementById('alFase').textContent = lig ? '' : 'Fase de testes: a confirmação está desligada. Nada será marcado.';
+    const auto = v.automatico && lig;
+    if (auto) document.getElementById('alTexto').innerHTML = `Saiu vaga para <b>${dataBr(a.slot_date)} às ${a.hora}</b> no <b>${esc(nomeG(a.galpao, a.galpao_titulo))}</b><br><span style="font-size:13px;color:var(--l3)">Envio #${esc(v.envio_id)} ${esc(v.envio_nome)}</span><br><b>Estou marcando…</b> (vigia automática)`;
+    b.style.display = auto ? 'none' : '';
+    document.getElementById('alFase').textContent = lig ? '' : 'A marcação pelo SEVEN está desligada: use Abrir no ML para marcar.';
     document.getElementById('alerta').classList.add('on'); bip();
 }
 // abre a tela de data do envio no Chrome da conta (pela extensao), para marcar na hora
@@ -405,8 +440,9 @@ function fecharAlerta() { document.getElementById('alerta').classList.remove('on
 
 const hoje = new Date(); document.getElementById('fData').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
 carregarEstado(false).then(() => { if (!ev && est && est.rodando) carregarEnvios(false); });
-carregarVigias(); carregarHistorico();
+carregarVigias(); carregarHistorico(); carregarMotores();
 setInterval(carregarVigias, 4000);
+setInterval(carregarMotores, 2000);
 setInterval(() => carregarEstado(false), 10000);
 document.body.classList.add('page-ready');
 </script>
