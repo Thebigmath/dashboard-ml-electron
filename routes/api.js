@@ -1285,6 +1285,7 @@ router.post('/seven/ia/saude', auth, (req, res) => {
     router.get('/agenda-full/horarios/:id', auth, (req, res) => C().horarios(req.params.id, req.query.tipo || 'ftl').then(d => res.json(d)).catch(erroJson(res)));
     router.get('/agenda-full/vigias', auth, (req, res) => res.json(C().vigias()));
     router.get('/agenda-full/motores', auth, (req, res) => res.json(C().statusMotores()));
+    router.post('/agenda-full/freio/soltar', auth, (req, res) => res.json(C().soltarFreio()));
     router.post('/agenda-full/vigias', auth, (req, res) => { try { res.json(C().criarVigia(req.body || {})); } catch (e) { res.status(400).json({ erro: e.message }); } });
     router.post('/agenda-full/vigias/:id/:acao', auth, (req, res) => {
         if (req.params.acao === 'confirmar') return C().confirmar(req.params.id, req.body && req.body.chave).then(d => res.json(d)).catch(e => res.status(400).json({ erro: e.message }));

@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.89",
+    "data": "2026-10-15",
+    "titulo": "Agenda do Full: freio menos sensível",
+    "texto": "- Agenda do Full: o freio por lentidão só liga depois de 3 consultas lentas seguidas, dura 3 min e aumenta o intervalo em 50% (antes: 1 consulta lenta = intervalo dobrado por 10 min). O freio por recusa do ML (429) continua. Botão \"Soltar freio\".",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.88",
     "data": "2026-10-15",
     "titulo": "Concorrência e preço: 7 × 30 dias",

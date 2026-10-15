@@ -414,7 +414,7 @@ async function carregarMotores() {
     const cor = m.consultas_min >= m.limite_min * 0.8 ? '#ff9f0a' : 'var(--l2)';
     el.innerHTML = `<div class="linha" style="font-size:12.5px;gap:14px">
         <span style="color:${cor}"><i class="bi bi-speedometer2"></i> <b>${m.consultas_min}</b> de ${m.limite_min} consultas/min</span>
-        <span>${m.freio ? `<span class="pill err"><i class="bi bi-sign-stop"></i> freio até ${quando(m.freio.ate).slice(-5)}: ${esc(m.freio.motivo)}</span>` : '<span class="pill ok">sem freio</span>'}</span>
+        <span>${m.freio ? `<span class="pill err"><i class="bi bi-sign-stop"></i> freio até ${quando(m.freio.ate).slice(-5)}: ${esc(m.freio.motivo)}</span> <button class="bt mini" onclick="post('/api/agenda-full/freio/soltar').then(carregarMotores)">Soltar freio</button>` : '<span class="pill ok">sem freio</span>'}</span>
         <span style="color:var(--l3)"><i class="bi bi-fire"></i> horários quentes: ${m.horas_quentes.length ? m.horas_quentes.map(h => h + 'h').join(', ') : 'aprendendo (aparecem quando o SEVEN vir vagas abrindo)'}</span></div>
         ${m.motores.length ? `<table class="tab" style="margin-top:8px"><tr><th>Motor (envio)</th><th>Vigias</th><th>Ritmo</th><th>Última consulta</th><th>Próxima</th></tr>
         ${m.motores.map(x => `<tr><td><b>#${esc(x.envio)}</b> <span class="f">${esc(x.nome)}</span></td><td>${x.vigias}</td>
