@@ -1507,20 +1507,24 @@ function ccDesenhar(msg) {
     const d = cc, n = d.nos, k = d.concorrencia, s = d.sugestao || {};
     const cor = { baixar: '#0A84FF', subir: '#30D158', manter: 'var(--l2)' }[s.acao] || 'var(--l2)';
     const velho = k && k.dias_dado != null && k.dias_dado > 10;
-    const linha = (rot, preco, vendas, pos, destaque) => `<tr${destaque ? ' style="font-weight:700"' : ''}><td style="text-align:left">${rot}</td><td class="num">${epBRL(preco)}</td><td class="num">${vendas ?? '—'}</td><td class="num">${pos ? pos + 'º' : '—'}</td></tr>`;
+    // 7 dias = Nubimetrics (o mesmo periodo para todos); 30 dias = real para nos, ritmo de 7 dias x 30/7 para os concorrentes (estimativa)
+    // 30 dias: do Nubimetrics quando o Astra ja coletou; senao, estimativa pelo ritmo dos 7 dias (marcada com ≈)
+    const v30 = (v, v7) => v != null ? v : v7 == null ? '—' : `<span class="pia-fraco" title="estimativa: ritmo dos 7 dias × 30/7">≈${Math.round(v7 * 30 / (k ? k.periodo_dias : 7))}</span>`;
+    const linha = (rot, preco, v7, v30, pos, destaque) => `<tr${destaque ? ' style="font-weight:700"' : ''}><td style="text-align:left">${rot}</td><td class="num">${epBRL(preco)}</td><td class="num">${v7 ?? '—'}</td><td class="num">${v30}</td><td class="num">${pos ? pos + 'º' : '—'}</td></tr>`;
     $('pcBox').innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div>
             <div style="font-weight:700;font-size:16px">${esc(rtCurto(d.titulo, 80))}</div>
             <div class="pia-fraco">${esc(d.sku)} · ${esc(d.item_id)} · ${esc(d.tipo)} · estoque ${n.estoque ?? '—'} · ${n.vendas30} vendas em 30 dias · ${n.dias != null ? n.dias + ' dias para esgotar' : 'sem venda em 30 dias'}</div></div>
             <button class="btn-acao" onclick="pcFechar()" title="Fechar">✕</button></div>
-        ${k ? `<table class="vm-tab" style="margin-top:12px;width:100%"><tr><th style="text-align:left">${esc(k.grupo)}</th><th>Preço</th><th>Vendas ${k.periodo_dias}d</th><th>Posição</th></tr>
-            ${linha('Nós', n.preco, n.vendas_periodo, n.posicao, true)}
-            ${k.outra_conta ? `<tr class="pia-fraco"><td style="text-align:left">Nossa outra conta · ${esc(k.outra_conta.vendedor)}</td><td class="num">${epBRL(k.outra_conta.preco)}</td><td class="num">${k.outra_conta.vendas ?? '—'}</td><td class="num">${k.outra_conta.posicao}º</td></tr>` : ''}
-            ${k.lider ? linha('Líder · ' + esc(k.lider.vendedor), k.lider.preco, k.lider.vendas, k.lider.posicao) : ''}
-            <tr><td style="text-align:left" class="pia-fraco">${k.concorrentes_vendendo} concorrente(s) vendendo</td><td class="num pia-fraco" colspan="3">menor ${epBRL(k.menor)} · mediana ${epBRL(k.mediana)}</td></tr></table>
+        ${k ? `<table class="vm-tab" style="margin-top:12px;width:100%"><tr><th style="text-align:left">${esc(k.grupo)}</th><th>Preço</th><th>${k.periodo_dias} dias</th><th>30 dias</th><th>Posição</th></tr>
+            ${linha('Nós', n.preco, n.vendas_periodo, n.vendas30, n.posicao, true)}
+            ${k.outra_conta ? `<tr class="pia-fraco"><td style="text-align:left">Nossa outra conta · ${esc(k.outra_conta.vendedor)}</td><td class="num">${epBRL(k.outra_conta.preco)}</td><td class="num">${k.outra_conta.vendas ?? '—'}</td><td class="num">${v30(k.outra_conta.vendas_30, k.outra_conta.vendas)}</td><td class="num">${k.outra_conta.posicao}º</td></tr>` : ''}
+            ${k.lider ? linha('Líder · ' + esc(k.lider.vendedor), k.lider.preco, k.lider.vendas, v30(k.lider.vendas_30, k.lider.vendas), k.lider.posicao) : ''}
+            <tr><td style="text-align:left" class="pia-fraco">${k.concorrentes_vendendo} concorrente(s) vendendo</td><td class="num pia-fraco" colspan="4">menor ${epBRL(k.menor)} · mediana ${epBRL(k.mediana)}</td></tr></table>
+            <div style="margin-top:8px;font-size:13px">Nosso ritmo (nossas vendas): <b>${n.vendas7}</b> nos últimos 7 dias × <b>${n.vendas30}</b> em 30 dias${n.ritmo_pct != null ? ` → semana <b style="color:${n.ritmo_pct >= 10 ? '#30D158' : n.ritmo_pct <= -10 ? '#ff453a' : 'var(--l1)'}">${n.ritmo_pct > 0 ? '+' : ''}${n.ritmo_pct}%</b> ${n.ritmo_pct >= 10 ? 'acima da' : n.ritmo_pct <= -10 ? 'abaixo da' : 'em linha com a'} média do mês` : ''}${k.lider && k.lider.vendas_30 != null && n.vendas_30_nubi != null ? ` · em 30 dias (Nubimetrics) o líder vendeu <b>${k.lider.vendas_30}</b> × nossas <b>${n.vendas_30_nubi}</b>` : ''}</div>
             <div style="margin-top:8px;font-size:13px">Diferença para o líder: <b style="color:${k.dif_pct > 3 ? '#ff9f0a' : k.dif_pct < -5 ? '#30D158' : 'var(--l1)'}">${k.dif_pct > 0 ? '+' : ''}${ccPct(k.dif_pct)}</b>
                 · margem atual <b>${ccPct(n.margem_pct)}</b>${d.piso ? ` · piso ${ccPct(d.piso.margem_pct)} = ${epBRL(d.piso.preco)}` : ''}</div>
-            <div class="pia-fraco" style="margin-top:2px;${velho ? 'color:#ff9f0a' : ''}">Vendas da tabela: últimos ${k.periodo_dias} dias, Nubimetrics de ${k.dados_de ? k.dados_de.split('-').reverse().join('/') : '—'}${velho ? ` (${k.dias_dado} dias atrás: rode o Astra para atualizar)` : ''}</div>`
+            <div class="pia-fraco" style="margin-top:2px;${velho ? 'color:#ff9f0a' : ''}">${k.periodo_dias} dias: Nubimetrics, para todos · 30 dias: nossas vendas reais; concorrentes ${k.dados_30_de ? 'pelo Nubimetrics' : 'com ≈ = estimativa pelo ritmo dos 7 dias'} · dados de ${k.dados_de ? k.dados_de.split('-').reverse().join('/') : '—'}${velho ? ` (${k.dias_dado} dias atrás: rode o Astra para atualizar)` : ''}</div>`
           : '<div class="qm-aviso" style="margin-top:12px">Sem grupo de concorrência no Nubimetrics para este anúncio.</div>'}
         <div class="pr-ia" style="margin-top:14px;border:1px solid ${cor};border-radius:12px;padding:12px 14px">
             <div style="font-weight:700;color:${cor};font-size:15px">${s.acao === 'baixar' ? 'Baixar' : s.acao === 'subir' ? 'Subir' : 'Manter'} ${s.acao === 'manter' ? 'o preço' : 'para ' + epBRL(s.preco)}${s.acao !== 'manter' && s.margem_pct != null ? ` · margem ${ccPct(s.margem_pct)}` : ''}</div>
