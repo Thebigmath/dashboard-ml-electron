@@ -123,7 +123,7 @@
         <!-- vigias -->
         <div class="bl">
             <h5><i class="bi bi-eye"></i> Vigias</h5>
-            <div class="sub">Um motor por envio: uma consulta serve a todas as vigias daquele envio. Ritmo normal = o intervalo da vigia; <b>turbo de 10 s automático</b> nos horários em que o SEVEN já viu vaga abrir e por 5 min depois de qualquer vaga nova; <b>freio</b> se o ML ficar lento ou recusar. Vaga encontrada fica em verde; quando outro vendedor pega, aparece em quanto tempo ela fechou.</div>
+            <div class="sub">Cada vigia consulta a agenda no intervalo escolhido (mínimo 15 s), sem turbo e sem freio. Vigias do mesmo envio usam a mesma consulta. Vaga encontrada fica em verde; quando outro vendedor pega, aparece em quanto tempo ela fechou.</div>
             <div id="motores" style="margin-bottom:12px"></div>
             <div id="vigias"><div class="vazio">Carregando…</div></div>
         </div>
@@ -413,9 +413,9 @@ async function carregarMotores() {
     const el = document.getElementById('motores');
     const cor = m.consultas_min >= m.limite_min * 0.8 ? '#ff9f0a' : 'var(--l2)';
     el.innerHTML = `<div class="linha" style="font-size:12.5px;gap:14px">
-        <span style="color:${cor}"><i class="bi bi-speedometer2"></i> <b>${m.consultas_min}</b> de ${m.limite_min} consultas/min</span>
-        <span>${m.freio ? `<span class="pill err"><i class="bi bi-sign-stop"></i> freio até ${quando(m.freio.ate).slice(-5)}: ${esc(m.freio.motivo)}</span> <button class="bt mini" onclick="post('/api/agenda-full/freio/soltar').then(carregarMotores)">Soltar freio</button>` : '<span class="pill ok">sem freio</span>'}</span>
-        <span style="color:var(--l3)"><i class="bi bi-fire"></i> horários quentes: ${m.horas_quentes.length ? m.horas_quentes.map(h => h + 'h').join(', ') : 'aprendendo (aparecem quando o SEVEN vir vagas abrindo)'}</span></div>
+        ${m.simples ? `<span><i class="bi bi-speedometer2"></i> <b>${m.consultas_min}</b> consultas no último minuto · <b>modo simples</b>: cada vigia no seu intervalo, sem turbo e sem freio</span>` : `<span style="color:${cor}"><i class="bi bi-speedometer2"></i> <b>${m.consultas_min}</b> de ${m.limite_min} consultas/min</span>`}
+        <span>${m.simples ? '' : m.freio ? `<span class="pill err"><i class="bi bi-sign-stop"></i> freio até ${quando(m.freio.ate).slice(-5)}: ${esc(m.freio.motivo)}</span> <button class="bt mini" onclick="post('/api/agenda-full/freio/soltar').then(carregarMotores)">Soltar freio</button>` : '<span class="pill ok">sem freio</span>'}</span>
+        <span style="color:var(--l3);${m.simples ? 'display:none' : ''}"><i class="bi bi-fire"></i> horários quentes: ${m.horas_quentes.length ? m.horas_quentes.map(h => h + 'h').join(', ') : 'aprendendo (aparecem quando o SEVEN vir vagas abrindo)'}</span></div>
         ${m.motores.length ? `<table class="tab" style="margin-top:8px"><tr><th>Motor (envio)</th><th>Vigias</th><th>Ritmo</th><th>Última consulta</th><th>Próxima</th></tr>
         ${m.motores.map(x => `<tr><td><b>#${esc(x.envio)}</b> <span class="f">${esc(x.nome)}</span></td><td>${x.vigias}</td>
             <td>${x.modo === 'turbo' ? `<span class="pill ok"><i class="bi bi-lightning-charge-fill"></i> turbo ${x.ritmo_s} s</span>` : x.modo === 'freio' ? `<span class="pill err">freio ${x.ritmo_s} s</span>` : `<span class="pill off">normal ${x.ritmo_s ?? '—'} s</span>`}${x.motivo ? `<div class="f">${esc(x.motivo)}</div>` : ''}</td>

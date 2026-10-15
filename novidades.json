@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.91",
+    "data": "2026-10-15",
+    "titulo": "Agenda do Full: modo simples, sem turbo e sem freio",
+    "texto": "- Agenda do Full em modo simples (como na 1.9.83): cada vigia consulta no intervalo escolhido (mínimo 15 s), sem turbo, sem freio e sem limite por minuto. Turbo/freio ficam guardados (config agenda_full_turbo).",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.90",
     "data": "2026-10-15",
     "titulo": "Parados: preço de promoção e Alterados hoje",
