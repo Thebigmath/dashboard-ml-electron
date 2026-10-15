@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.90",
+    "data": "2026-10-15",
+    "titulo": "Parados: preço de promoção e Alterados hoje",
+    "texto": "- Concorrência e preço (parados): anúncio em promoção compara e calcula a margem pelo preço que o comprador paga, com aviso de que mudar o preço tira da promoção.\n- Depois de aplicar, o produto sai da lista de parados e vai para \"Alterados hoje\" (antes → depois, variação e hora).",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.89",
     "data": "2026-10-15",
     "titulo": "Agenda do Full: freio menos sensível",

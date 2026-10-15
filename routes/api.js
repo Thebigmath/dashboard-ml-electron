@@ -1162,6 +1162,7 @@ router.post('/seven/abertura/feito', auth, (req, res) => {
 router.get('/seven/parados', auth, (req, res) => { require('../lib/parado_controle').controle({ minDias: req.query.dias }).then(d => res.json(d)).catch(erroJson(res)); });
 // Queima-margem: simular nao muda nada; aplicar so com o clique (preco confere com o que a pessoa viu)
 // Controle de estoque parado > Concorrencia e preco (no lugar da queima-margem, 15/10/2026)
+router.get('/seven/parado-conc-alterados', auth, (req, res) => { try { res.json(require('../lib/parado_concorrencia').alteradosHoje()); } catch (e) { erroJson(res)(e); } });
 router.get('/seven/parado-conc/:item', auth, (req, res) => { require('../lib/parado_concorrencia').analisar(req.params.item, { usarIA: req.query.ia !== '0' }).then(d => res.json(d)).catch(erroJson(res)); });
 router.post('/seven/parado-conc/:item', auth, (req, res) => { require('../lib/parado_concorrencia').aplicar(req.params.item, req.body && req.body.preco, req.body && req.body.motivo).then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/seven/queima/:item', auth, (req, res) => { require('../lib/queima').simular(req.params.item).then(d => res.json(d)).catch(erroJson(res)); });

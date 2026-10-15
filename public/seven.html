@@ -575,6 +575,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                             <th>Produto</th><th class="num">Estoque</th><th class="num">Vendas 30d</th><th class="num">Tempo p/ esgotar</th>
                             <th class="num">Preço</th><th class="num">Custo</th><th class="num">Faturamento em potencial</th><th>Ação</th>
                         </tr></thead><tbody id="epTabela"><tr><td colspan="12"><div class="sv-vazio">Carregando…</div></td></tr></tbody></table>
+                        <div id="epAlterados" style="margin-top:18px"></div>
                     </div>
                 </div>
 
@@ -884,11 +885,21 @@ function epTempo(d) {
     if (d >= 365) { const a = Math.floor(d / 365), m = Math.floor((d % 365) / 30); return `<span class="ep-dias longo">${a} ano${a > 1 ? 's' : ''}${m ? ` e ${m} ${m > 1 ? 'meses' : 'mês'}` : ''}</span>`; }
     return `<span class="ep-dias ${d >= 120 ? 'longo' : ''}">${d} dias</span>`;
 }
+// alterados hoje pelo "Concorrencia e preco": saem da lista e aparecem embaixo
+let epAlt = [];
+async function epCarregarAlterados() { try { epAlt = await api('/api/seven/parado-conc-alterados'); } catch { epAlt = []; } }
+function epDesenharAlterados() {
+    const el = $('epAlterados'); if (!el) return;
+    el.innerHTML = epAlt.length ? `<div style="font-weight:700;margin-bottom:6px"><i class="bi bi-check2-circle" style="color:#30D158"></i> Alterados hoje (${epAlt.length})</div>
+        <table class="sv-tab ep-tab" style="width:100%"><thead><tr><th>Produto</th><th class="num">Antes</th><th class="num">Depois</th><th class="num">Variação</th><th class="num">Hora</th></tr></thead><tbody>
+        ${epAlt.map(a => `<tr><td><b>${esc(rtCurto(a.titulo || a.item_id, 70))}</b><div class="pia-fraco">${esc(a.item_id)}</div></td><td class="num">${epBRL(a.antes)}</td><td class="num"><b>${epBRL(a.depois)}</b></td>
+            <td class="num" style="color:${a.depois < a.antes ? '#0A84FF' : '#30D158'}">${a.antes ? ((a.depois / a.antes - 1) * 100).toFixed(1).replace('.', ',') + '%' : '—'}</td><td class="num">${new Date(a.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td></tr>`).join('')}</tbody></table>` : '';
+}
 async function epCarregar(forcar) {
     const dias = $('epDias').value;
     if (!forcar && cache.parados && cache.parados.min_dias == dias) return epDesenhar(cache.parados);
     $('epTabela').innerHTML = '<tr><td colspan="8"><div class="sv-vazio">Carregando… (na 1ª vez do dia lê as campanhas de ADS e as promoções)</div></td></tr>';
-    cache.parados = await api('/api/seven/parados?dias=' + encodeURIComponent(dias));
+    [cache.parados] = await Promise.all([api('/api/seven/parados?dias=' + encodeURIComponent(dias)), epCarregarAlterados()]);
     epDesenhar(cache.parados);
 }
 function epDesenhar(d) {
@@ -900,7 +911,9 @@ function epDesenhar(d) {
     $('epColeta').textContent = d.coletado_em ? 'coleta de ' + new Date(d.coletado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'sem coleta';
     const av = $('epAviso');
     if (d.avisos && d.avisos.length) { av.style.display = ''; av.textContent = 'Etiquetas incompletas: ' + d.avisos.join(' · '); } else av.style.display = 'none';
-    $('epTabela').innerHTML = (d.itens || []).map(l => `<tr>
+    const altIds = new Set(epAlt.map(a => a.item_id));
+    epDesenharAlterados();
+    $('epTabela').innerHTML = (d.itens || []).filter(l => !altIds.has(l.item_id)).map(l => `<tr>
         <td style="min-width:280px"><b>${esc(rtCurto(l.titulo, 70))}</b><div class="pia-fraco">${esc(l.item_id)} · ${esc(l.sku || '')}</div>
             ${l.promocao ? `<span class="ep-tag promo">Em ${esc(l.promocao)}</span>` : ''}${l.ads ? `<span class="ep-tag ads">ADS · ${esc(l.ads)}</span>` : ''}</td>
         <td class="num">${l.estoque}</td><td class="num">${l.vendas30}</td><td class="num">${epTempo(l.dias)}</td>
@@ -1514,6 +1527,7 @@ function ccDesenhar(msg) {
     $('pcBox').innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div>
             <div style="font-weight:700;font-size:16px">${esc(rtCurto(d.titulo, 80))}</div>
+            ${d.promocao ? `<div style="margin:4px 0;font-size:13px;color:#ff9f0a"><i class="bi bi-tag-fill"></i> Em promoção <b>${esc(d.promocao.nome)}</b>: o comprador paga <b>${epBRL(d.promocao.preco_comprador)}</b> (de ${epBRL(d.promocao.preco_cheio)}). A comparação e a margem abaixo usam o preço da promoção.</div>` : ''}
             <div class="pia-fraco">${esc(d.sku)} · ${esc(d.item_id)} · ${esc(d.tipo)} · estoque ${n.estoque ?? '—'} · ${n.vendas30} vendas em 30 dias · ${n.dias != null ? n.dias + ' dias para esgotar' : 'sem venda em 30 dias'}</div></div>
             <button class="btn-acao" onclick="pcFechar()" title="Fechar">✕</button></div>
         ${k ? `<table class="vm-tab" style="margin-top:12px;width:100%"><tr><th style="text-align:left">${esc(k.grupo)}</th><th>Preço</th><th>${k.periodo_dias} dias</th><th>30 dias</th><th>Posição</th></tr>
@@ -1538,15 +1552,15 @@ function ccDesenhar(msg) {
         <div id="ccMsg" style="margin-top:8px">${msg || ''}</div>`;
 }
 async function ccAplicar() {
-    const novo = Number($('ccPreco').value), antes = cc.nos.preco;
+    const novo = Number($('ccPreco').value), antes = cc.preco_anuncio ?? cc.nos.preco;
     if (!(novo > 0) || Math.abs(novo - antes) < 0.01) { $('ccMsg').innerHTML = '<span class="pia-fraco">O preço é o mesmo de agora.</span>'; return; }
-    if (!confirm(`Mudar ${cc.sku} de ${epBRL(antes)} para ${epBRL(novo)} (${novo > antes ? '+' : ''}${((novo / antes - 1) * 100).toFixed(1).replace('.', ',')}%)?`)) return;
+    if (!confirm(`Mudar ${cc.sku} de ${epBRL(antes)} para ${epBRL(novo)} (${novo > antes ? '+' : ''}${((novo / antes - 1) * 100).toFixed(1).replace('.', ',')}%)?${cc.promocao ? `\n\nATENÇÃO: o anúncio está na promoção "${cc.promocao.nome}". Mudar o preço tira ele da promoção.` : ''}`)) return;
     $('ccBtn').disabled = true; $('ccMsg').textContent = 'Enviando ao Mercado Livre…';
     try {
         const r = await fetch('/api/seven/parado-conc/' + cc.item_id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco: novo, motivo: (cc.sugestao && cc.sugestao.motivo) || '' }) }).then(x => x.json());
         if (!r.ok) throw new Error(r.erro || 'o ML recusou');
         $('ccMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}.</b>`;
-        delete cache.parados;
+        await epCarregarAlterados(); if (cache.parados) epDesenhar(cache.parados);   // sai da lista e vai para "Alterados hoje"
         if (typeof ladoDepoisDeMudar === 'function') ladoDepoisDeMudar(cc.item_id, r.antes, r.depois);   // mudou um lado, muda o outro
     } catch (e) { $('ccMsg').innerHTML = `<span style="color:#ff453a">${esc(e.message)}</span>`; $('ccBtn').disabled = false; }
 }
