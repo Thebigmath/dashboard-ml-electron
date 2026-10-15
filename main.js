@@ -178,7 +178,7 @@ app.whenReady().then(() => {
             mainWindow.hide();
             if (!avisouBandeja && tray) {
                 avisouBandeja = true;
-                tray.displayBalloon({ title: 'Flavia Stock continua rodando', content: 'O monitor de frete segue ativo aqui na bandeja. Clique duas vezes no ícone para abrir.', iconType: 'info' });
+                tray.displayBalloon({ title: 'Flavia Stock continua rodando', content: 'O SEVEN segue rodando aqui na bandeja (vigias da Agenda do Full, avisos). Clique duas vezes no ícone para abrir.', iconType: 'info' });
             }
         });
 
@@ -197,14 +197,9 @@ app.whenReady().then(() => {
 function criarBandeja() {
     const icone = nativeImage.createFromPath(path.join(__dirname, 'public/assets/img/tray.png'));
     tray = new Tray(icone);
-    tray.setToolTip('Flavia Stock — monitor de frete ativo');
+    tray.setToolTip('Flavia Stock — rodando na bandeja');
     tray.setContextMenu(Menu.buildFromTemplate([
         { label: 'Abrir Flavia Stock', click: () => mostrarJanela() },
-        { label: 'Frete: verificar agora', click: () => {
-            require('./lib/frete').verificar({ forcarTabela: true, origem: 'bandeja' }).catch(() => {});
-            mostrarJanela();
-            mainWindow?.loadURL('http://localhost:3001/frete');
-        } },
         { type: 'separator' },
         { label: 'Verificar atualização', click: () => { verificarUpdate(); mostrarJanela(); } },
         { label: 'Sair', click: () => { encerrando = true; server.stop(); app.quit(); } },

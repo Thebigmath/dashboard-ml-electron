@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.86",
+    "data": "2026-10-15",
+    "titulo": "Concorrência e preço nos parados, custos corrigidos e menos 429",
+    "texto": "- Controle de estoque parado: a queima-margem saiu; entrou \"Concorrência e preço\" (nós × líder do grupo do Nubimetrics, sugestão de preço da regra revisada pela IA e aplicar ao anúncio).\n- Análise de vendas: alertas de custo suspeito (fora da média) e de frete acima de 30% da venda.\n- Custos: custo 0 conta como sem custo; pares e SKUs com sufixo (-kit, -m, -nac…) não pegam mais o custo de outro produto; busca sem diferenciar maiúsculas.\n- Trocar preço: se o ML limitar (429), o SEVEN espera e tenta de novo sozinho.\n- Monitor de frete em standby (saiu do menu e da bandeja).\n- STOCK Ops > Parados abre o Controle de estoque parado.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.85",
     "data": "2026-10-15",
     "titulo": "Agenda do Full: motores, turbo automático e marcação",

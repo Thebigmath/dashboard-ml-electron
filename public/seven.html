@@ -567,7 +567,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         <div class="ep-card"><small>Faturamento em potencial</small><b class="roxo" id="epPot">—</b><span id="epProd">&nbsp;</span></div>
                         <div class="ep-card"><small>Unidades paradas</small><b id="epUn">—</b><span id="epUnSub">&nbsp;</span></div>
                         <div class="ep-card"><small>Sem venda em 30 dias</small><b id="epSem">—</b><span>anúncios</span></div>
-                        <div class="ep-card"><small>Queima-margem</small><b>5%</b><span>de margem no Desconto Direto, só manual</span></div>
+                        <div class="ep-card"><small>Concorrência e preço</small><b>IA</b><span>nós × líder do grupo; a regra calcula, a IA confirma</span></div>
                     </div>
                     <div class="sv-aviso" id="epAviso" style="display:none"></div>
                     <div class="dashboard-card" style="padding:0;overflow:auto">
@@ -906,7 +906,7 @@ function epDesenhar(d) {
         <td class="num">${l.estoque}</td><td class="num">${l.vendas30}</td><td class="num">${epTempo(l.dias)}</td>
         <td class="num">${epBRL(l.preco)}</td><td class="num">${l.custo == null ? '<span class="pia-fraco">sem custo</span>' : epBRL(l.custo)}</td>
         <td class="num" style="color:#a855f7;font-weight:600">${epBRL(l.potencial)}</td>
-        <td><button class="ep-btn" ${l.custo == null ? 'disabled title="Sem custo na planilha: não dá para calcular a margem"' : ''} onclick="qmAbrir('${esc(l.item_id)}')">Queima-margem</button></td>
+        <td><button class="ep-btn" onclick="ccAbrir('${esc(l.item_id)}')" title="Compara com os concorrentes do grupo (Nubimetrics) e sugere o preço">Concorrência e preço</button></td>
     </tr>`).join('') || '<tr><td colspan="8"><div class="sv-vazio">Nenhum anúncio do Full parado acima desse prazo.</div></td></tr>';
 }
 
@@ -1386,7 +1386,7 @@ function vmDesenhar() {
     const d = cache.vendasmc; if (!d) return;
     const r = d.resumo, dia = (x) => x.split('-').reverse().join('/');
     $('vmAtual').textContent = (d.de === d.ate ? dia(d.de) : `${dia(d.de)} a ${dia(d.ate)}`) + ' · atualizado às ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    $('vmAtual').textContent += ` · ${r.pedidos} venda(s) · MC% média ${prPct(r.mc_pct)}${r.sem_custo ? ` · ${r.sem_custo} sem custo na planilha` : ''}`;
+    $('vmAtual').textContent += ` · ${r.pedidos} venda(s) · MC% média ${prPct(r.mc_pct)}${r.sem_custo ? ` · ${r.sem_custo} sem custo na planilha` : ''}${r.custo_suspeito ? ` · ${r.custo_suspeito} com custo suspeito (fora da média)` : ''}${r.frete_alto ? ` · ${r.frete_alto} com frete acima de 30% da venda` : ''}`;
     const q = ($('vmBusca').value || '').trim().toLowerCase(), so = $('vmSoAbaixo').checked;
     // preco mudado nos ultimos 3 dias: a venda sai da lista (a nao ser que peca para mostrar)
     // so as vendas ANTERIORES a mudanca saem; a venda que veio depois (ja no preco novo) continua aparecendo
@@ -1404,9 +1404,9 @@ function vmDesenhar() {
         $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('SKU', 'sku')}${th('Data', 'data')}${th('Frete', 'logistica')}${th('Valor unit.', 'valor')}${th('Qtd', 'qtd')}${th('Faturamento', 'faturamento')}${th('Custo (−)', 'custo')}${th('Imposto (−)', 'imposto')}${th('Tarifa (−)', 'tarifa')}${th('Frete comprador', 'frete_comprador')}${th('Frete vendedor (−)', 'frete_vendedor')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}<th></th></tr>
           ${L.map((v, i) => `<tr><td class="t"><b>${esc(rtCurto(v.titulo, 56))}</b>${alt[v.item_id] ? ` <span class="pr-rec ENTRAR" title="Preço mudado em ${new Date(alt[v.item_id].quando).toLocaleString('pt-BR')}">preço atualizado ${pcR$(alt[v.item_id].antes)} → ${pcR$(alt[v.item_id].depois)}</span>` : ''}<div class="pia-fraco">pedido ${esc(v.pedido)}${v.cupom ? ` · cupom ${epBRL(v.cupom)}` : ''}</div></td>
             <td style="text-align:left;font-weight:700">${esc(v.sku || '—')}</td><td>${new Date(v.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${esc(v.logistica)}</td>
-            <td>${epBRL(v.valor)}</td><td>${v.qtd}</td><td>${epBRL(v.faturamento)}</td><td style="color:#ff9f0a">${v.custo == null ? '—' : epBRL(v.custo)}</td>
+            <td>${epBRL(v.valor)}</td><td>${v.qtd}</td><td>${epBRL(v.faturamento)}</td><td style="color:#ff9f0a">${v.custo == null ? '—' : epBRL(v.custo)}${v.custo_suspeito ? '<div class="pr-rec SAIR" title="Custo da planilha maior que 1,5x o preço de venda: confira a planilha de custos. Esta venda fica fora da MC% média.">custo suspeito</div>' : ''}</td>
             <td style="color:#ff453a">${epBRL(v.imposto)}</td><td style="color:#c9a227">${epBRL(v.tarifa)}</td><td class="pia-fraco">${v.frete_comprador == null ? '—' : epBRL(v.frete_comprador)}</td>
-            <td style="color:#0a84ff">${v.frete_vendedor == null ? '—' : epBRL(v.frete_vendedor)}</td><td><b>${v.mc == null ? '—' : epBRL(v.mc)}</b></td>${mcCel(v)}
+            <td style="color:#0a84ff">${v.frete_vendedor == null ? '—' : epBRL(v.frete_vendedor)}${v.frete_alto ? '<div class="pr-rec SAIR" title="Frete pago pelo vendedor acima de 30% do valor da venda: confira peso/medidas do anúncio.">frete alto</div>' : ''}</td><td><b>${v.mc == null ? '—' : epBRL(v.mc)}</b></td>${mcCel(v)}
             <td><button class="ep-btn" style="border-color:${v.mc_pct != null && v.mc_pct < d.mc_alvo ? '#30D158' : 'var(--sep)'};color:${v.mc_pct != null && v.mc_pct < d.mc_alvo ? '#30D158' : 'var(--l2)'}" onclick="vmPrecificar('${esc(v.pedido)}','${esc(v.item_id)}')" title="Abre o precificador com a sugestão da IA"><i class="bi bi-stars"></i> Precificar</button></td></tr>`).join('')}</table>`
           : '<div class="sv-vazio">Nenhuma venda com esse filtro.</div>';
     }
@@ -1492,6 +1492,58 @@ async function clClonar(mlb, btn) {
     try { const x = await api('/api/seven/clonagem/' + mlb + '/clonar', { method: 'POST' }); if (x.status !== 'clonado') alert('O Mercado Livre recusou: ' + (x.validacao?.erro || 'erro')); }
     catch (e) { alert('Erro ao clonar: ' + e.message); }
     await clCarregar();
+}
+
+// ---- Concorrência e preço (no lugar da queima-margem): nós x concorrentes do grupo + sugestão (regra + IA) ----
+let cc = null;
+const ccPct = (v) => v == null ? '—' : String(v).replace('.', ',') + '%';
+async function ccAbrir(item) {
+    $('pcFundo').classList.add('on');
+    $('pcBox').innerHTML = '<div class="sv-vazio">Comparando com os concorrentes e pedindo a sugestão à IA…</div>';
+    try { cc = await api('/api/seven/parado-conc/' + item); ccDesenhar(); }
+    catch (e) { $('pcBox').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div><button class="btn-acao" onclick="pcFechar()">Fechar</button>`; }
+}
+function ccDesenhar(msg) {
+    const d = cc, n = d.nos, k = d.concorrencia, s = d.sugestao || {};
+    const cor = { baixar: '#0A84FF', subir: '#30D158', manter: 'var(--l2)' }[s.acao] || 'var(--l2)';
+    const velho = k && k.dias_dado != null && k.dias_dado > 10;
+    const linha = (rot, preco, vendas, pos, destaque) => `<tr${destaque ? ' style="font-weight:700"' : ''}><td style="text-align:left">${rot}</td><td class="num">${epBRL(preco)}</td><td class="num">${vendas ?? '—'}</td><td class="num">${pos ? pos + 'º' : '—'}</td></tr>`;
+    $('pcBox').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div>
+            <div style="font-weight:700;font-size:16px">${esc(rtCurto(d.titulo, 80))}</div>
+            <div class="pia-fraco">${esc(d.sku)} · ${esc(d.item_id)} · ${esc(d.tipo)} · estoque ${n.estoque ?? '—'} · ${n.dias != null ? n.dias + ' dias para esgotar' : 'sem venda em 30 dias'}</div></div>
+            <button class="btn-acao" onclick="pcFechar()" title="Fechar">✕</button></div>
+        ${k ? `<table class="vm-tab" style="margin-top:12px;width:100%"><tr><th style="text-align:left">${esc(k.grupo)}</th><th>Preço</th><th>Vendas 30d</th><th>Posição</th></tr>
+            ${linha('Nós', n.preco, n.vendas30, n.posicao, true)}
+            ${k.lider ? linha('Líder · ' + esc(k.lider.vendedor), k.lider.preco, k.lider.vendas, k.lider.posicao) : ''}
+            <tr><td style="text-align:left" class="pia-fraco">${k.concorrentes_vendendo} concorrente(s) vendendo</td><td class="num pia-fraco" colspan="3">menor ${epBRL(k.menor)} · mediana ${epBRL(k.mediana)}</td></tr></table>
+            <div style="margin-top:8px;font-size:13px">Diferença para o líder: <b style="color:${k.dif_pct > 3 ? '#ff9f0a' : k.dif_pct < -5 ? '#30D158' : 'var(--l1)'}">${k.dif_pct > 0 ? '+' : ''}${ccPct(k.dif_pct)}</b>
+                · margem atual <b>${ccPct(n.margem_pct)}</b>${d.piso ? ` · piso ${ccPct(d.piso.margem_pct)} = ${epBRL(d.piso.preco)}` : ''}</div>
+            <div class="pia-fraco" style="margin-top:2px;${velho ? 'color:#ff9f0a' : ''}">Dados do Nubimetrics de ${k.dados_de ? k.dados_de.split('-').reverse().join('/') : '—'}${velho ? ` (${k.dias_dado} dias atrás: rode o Astra para atualizar)` : ''}</div>`
+          : '<div class="qm-aviso" style="margin-top:12px">Sem grupo de concorrência no Nubimetrics para este anúncio.</div>'}
+        <div class="pr-ia" style="margin-top:14px;border:1px solid ${cor};border-radius:12px;padding:12px 14px">
+            <div style="font-weight:700;color:${cor};font-size:15px">${s.acao === 'baixar' ? 'Baixar' : s.acao === 'subir' ? 'Subir' : 'Manter'} ${s.acao === 'manter' ? 'o preço' : 'para ' + epBRL(s.preco)}${s.acao !== 'manter' && s.margem_pct != null ? ` · margem ${ccPct(s.margem_pct)}` : ''}</div>
+            <div style="font-size:13px;margin-top:4px">${esc(s.motivo || '')}</div>
+            ${s.estrategia ? `<div class="pia-fraco" style="margin-top:4px">Próximo passo: ${esc(s.estrategia)}</div>` : ''}
+            <div class="pia-fraco" style="margin-top:4px;font-size:11px">${s.fonte === 'ia' ? `IA (${esc(s.modelo || '')}) revisou a regra${s.ia_segurou ? ' e segurou a mudança' : ''}` : esc(s.aviso_ia || 'Decisão da regra')}</div></div>
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <span class="pia-fraco">Novo preço</span><input id="ccPreco" type="number" step="0.01" value="${s.preco ?? n.preco}" style="width:110px;background:var(--s2);border:1px solid var(--sep);color:var(--l1);border-radius:8px;padding:6px 8px">
+            <button class="btn-acao" onclick="pcFechar()">Fechar</button>
+            <button class="btn-acao" id="ccBtn" style="background:#0A84FF;color:#fff;border-color:#0A84FF" ${d.custo == null ? 'disabled title="Sem custo na planilha"' : ''} onclick="ccAplicar()">Aplicar ao anúncio</button></div>
+        <div id="ccMsg" style="margin-top:8px">${msg || ''}</div>`;
+}
+async function ccAplicar() {
+    const novo = Number($('ccPreco').value), antes = cc.nos.preco;
+    if (!(novo > 0) || Math.abs(novo - antes) < 0.01) { $('ccMsg').innerHTML = '<span class="pia-fraco">O preço é o mesmo de agora.</span>'; return; }
+    if (!confirm(`Mudar ${cc.sku} de ${epBRL(antes)} para ${epBRL(novo)} (${novo > antes ? '+' : ''}${((novo / antes - 1) * 100).toFixed(1).replace('.', ',')}%)?`)) return;
+    $('ccBtn').disabled = true; $('ccMsg').textContent = 'Enviando ao Mercado Livre…';
+    try {
+        const r = await fetch('/api/seven/parado-conc/' + cc.item_id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preco: novo, motivo: (cc.sugestao && cc.sugestao.motivo) || '' }) }).then(x => x.json());
+        if (!r.ok) throw new Error(r.erro || 'o ML recusou');
+        $('ccMsg').innerHTML = `<b style="color:#30D158">Preço alterado: ${epBRL(r.antes)} → ${epBRL(r.depois)}.</b>`;
+        delete cache.parados;
+        if (typeof ladoDepoisDeMudar === 'function') ladoDepoisDeMudar(cc.item_id, r.antes, r.depois);   // mudou um lado, muda o outro
+    } catch (e) { $('ccMsg').innerHTML = `<span style="color:#ff453a">${esc(e.message)}</span>`; $('ccBtn').disabled = false; }
 }
 
 let qm = null;
