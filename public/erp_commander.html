@@ -53,7 +53,7 @@
     </div>
 
 <div id="secFull">
-    <div class="f" style="margin:-6px 0 12px">"Estoque no depósito" dos anúncios do Mercado Livre (Flavia e Cordeiro; o Full fica de fora) contra o depósito Geral do Olist, SKU por SKU. Só altera o Olist quando você aperta Sincronizar e confirma.</div>
+    <div class="f" style="margin:-6px 0 12px">"Estoque no depósito" dos anúncios da conta Flavia no Mercado Livre (o Full fica de fora; a Cordeiro está em standby) contra o depósito Geral do Olist, SKU por SKU. Só altera o Olist quando você aperta Sincronizar e confirma.</div>
     <div class="cards" id="cards"></div>
     <div class="bl">
         <div class="linha">
@@ -97,11 +97,13 @@ let sel = new Set(), escolha = {}, iniciou = false;   // marcadas para sincroniz
 const quando = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
 const ehConf = (l) => l.situacao === 'conflito entre contas';
 const valorFinal = (l) => ehConf(l) ? (escolha[l.olist_id] ?? null) : l.ml_valor;
+// so a Flavia vai para o Olist; a Cordeiro esta em standby (volta quando entrar em contas no servidor)
+const comCordeiro = () => (D.contas || []).includes('cordeiro');
 async function carregar() {
     try { D = await fetch('/api/olist-estoque').then(r => r.json()); } catch (e) { document.getElementById('tabela').innerHTML = `<div class="f" style="color:#ff453a">${esc(e.message)}</div>`; return; }
     const r = D.resumo, c = D.coleta;
     document.getElementById('cards').innerHTML = [
-        ['SKUs com depósito no ML', n(r.skus)], ['Iguais', n(r.iguais)], ['Diferentes', n(r.diferentes)], ['Conflito entre contas', n(r.conflitos)], ['Não achados no Olist', n(r.nao_encontrados)],
+        ['SKUs com depósito no ML', n(r.skus)], ['Iguais', n(r.iguais)], ['Diferentes', n(r.diferentes)], ...(comCordeiro() ? [['Conflito entre contas', n(r.conflitos)]] : []), ['Não achados no Olist', n(r.nao_encontrados)],
         ['Unidades no depósito (ML)', n(r.ml_total)], ['Unidades no Geral (Olist)', n(r.erp_geral)],
     ].map(([t, v]) => `<div class="card2"><small>${t}</small><b>${v}</b></div>`).join('');
     const est = document.getElementById('estado');
@@ -130,7 +132,7 @@ function desenharSinc() {
     const fazendo = s.rodando && s.fase === 'sincronizando';
     document.getElementById('sincLinha').innerHTML = `
         <button class="bt pri" style="background:#30D158" onclick="sincronizar()" ${P.length && !s.rodando && !D.coleta.rodando && !D.parcial ? '' : 'disabled'}><i class="bi bi-arrow-repeat"></i> Sincronizar ${P.length} com o Olist</button>
-        <span class="f">Grava no depósito <b>Geral</b> do Olist o "Estoque no depósito" do Mercado Livre. Depósito do ML lido em: Flavia ${quando(li.flavia && li.flavia.em)} · Cordeiro ${quando(li.cordeiro && li.cordeiro.em)}${li.flavia && li.flavia.erro ? ' · Flavia: ' + esc(li.flavia.erro) : ''}${li.cordeiro && li.cordeiro.erro ? ' · Cordeiro: ' + esc(li.cordeiro.erro) : ''}</span>
+        <span class="f">Grava no depósito <b>Geral</b> do Olist o "Estoque no depósito" do Mercado Livre. Depósito do ML lido em: Flavia ${quando(li.flavia && li.flavia.em)}${comCordeiro() ? ' · Cordeiro ' + quando(li.cordeiro && li.cordeiro.em) : ' · Cordeiro em standby'}${li.flavia && li.flavia.erro ? ' · Flavia: ' + esc(li.flavia.erro) : ''}${li.cordeiro && li.cordeiro.erro ? ' · Cordeiro: ' + esc(li.cordeiro.erro) : ''}</span>
         ${fazendo ? `<span class="f">Sincronizando: ${s.feitos} de ${s.total}${s.aviso ? ' · ' + esc(s.aviso) : ''}<div class="barra" style="width:220px"><div style="width:${s.total ? (s.feitos / s.total * 100).toFixed(0) : 0}%"></div></div></span>` : ''}
         ${!s.rodando && s.fase === 'sincronizado' && s.resultado ? `<span class="f" style="color:${s.resultado.falhas ? '#ff9f0a' : '#30D158'}"><b>Sincronizados ${s.resultado.ok}${s.resultado.falhas ? ' · ' + s.resultado.falhas + ' com erro (' + esc(s.erro || '') + ')' : ''}</b></span>` : ''}`;
 }
@@ -147,18 +149,18 @@ function desenhar() {
     if (!D) return;
     desenharSinc();
     const r = D.resumo;
-    const cont = { diferentes: `Com diferença (${r.diferentes})`, conflitos: `Conflito entre contas (${r.conflitos})`, iguais: 'Iguais', nao: 'Não achados / sem depósito', todos: 'Todos' };
+    const cont = { diferentes: `Com diferença (${r.diferentes})`, ...(comCordeiro() ? { conflitos: `Conflito entre contas (${r.conflitos})` } : {}), iguais: 'Iguais', nao: 'Não achados / sem depósito', todos: 'Todos' };
     document.getElementById('filtros').innerHTML = Object.entries(cont).map(([k, t]) => `<span class="chip ${filtro === k ? 'on' : ''}" onclick="filtro='${k}';desenhar()">${t}</span>`).join('');
     const L = lista(), difs = L.filter(l => l.situacao === 'diferente');
     const th = (t, k, cls) => `<th class="${cls || ''}" onclick="ordenar('${k}')">${t}${ordem.k === k ? (ordem.desc ? ' ↓' : ' ↑') : ''}</th>`;
-    document.getElementById('tabela').innerHTML = L.length ? `<table><tr><th style="width:28px">${difs.length ? `<input type="checkbox" ${difs.every(l => sel.has(String(l.olist_id))) ? 'checked' : ''} onchange="marcarTodasL(this.checked)">` : ''}</th>${th('SKU', 'sku')}${th('Produto', 'titulo')}${th('Depósito Flavia', 'dep_flavia', 'num')}${th('Depósito Cordeiro', 'dep_cordeiro', 'num')}${th('Valor do ML', 'ml_valor', 'num')}${th('Olist · Geral', 'erp_geral', 'num')}${th('Diferença', 'difabs', 'num')}<th>Situação</th></tr>
+    document.getElementById('tabela').innerHTML = L.length ? `<table><tr><th style="width:28px">${difs.length ? `<input type="checkbox" ${difs.every(l => sel.has(String(l.olist_id))) ? 'checked' : ''} onchange="marcarTodasL(this.checked)">` : ''}</th>${th('SKU', 'sku')}${th('Produto', 'titulo')}${th('Depósito Flavia', 'dep_flavia', 'num')}${comCordeiro() ? th('Depósito Cordeiro', 'dep_cordeiro', 'num') : ''}${th('Valor do ML', 'ml_valor', 'num')}${th('Olist · Geral', 'erp_geral', 'num')}${th('Diferença', 'difabs', 'num')}<th>Situação</th></tr>
         ${L.map(l => { const vf = valorFinal(l), dif = vf == null || l.erp_geral == null ? null : vf - l.erp_geral; return `<tr>
             <td>${podeSinc(l) ? `<input type="checkbox" ${sel.has(String(l.olist_id)) ? 'checked' : ''} ${ehConf(l) && escolha[l.olist_id] == null ? 'disabled title="Escolha o valor primeiro"' : ''} onchange="marcarL('${esc(l.olist_id)}', this.checked)">` : ''}</td>
             <td><b>${esc(l.sku)}</b>${(l.rotulos || []).length > 1 ? `<div class="f">${esc(l.rotulos.join(', '))}</div>` : ''}</td><td>${esc(String(l.titulo || l.erp_nome || '').slice(0, 70))}</td>
-            <td class="num">${n(l.dep_flavia)}</td><td class="num">${n(l.dep_cordeiro)}</td><td class="num">${celulaMl(l)}</td><td class="num"><b>${n(l.erp_geral)}</b></td>
+            <td class="num">${n(l.dep_flavia)}</td>${comCordeiro() ? `<td class="num">${n(l.dep_cordeiro)}</td>` : ''}<td class="num">${celulaMl(l)}</td><td class="num"><b>${n(l.erp_geral)}</b></td>
             <td class="num ${dif == null ? '' : dif === 0 ? 'dif-zero' : dif > 0 ? 'dif-pos' : 'dif-neg'}">${dif == null ? '—' : (dif > 0 ? '+' : '') + n(dif)}</td>
             <td><span class="pill ${l.situacao === 'igual' || l.situacao === 'sincronizado' ? 'ok' : l.situacao === 'diferente' || ehConf(l) ? 'dif' : 'nao'}">${esc(l.situacao || '')}</span></td></tr>`; }).join('')}</table>
-        <div class="f" style="margin-top:8px">Valor do ML = "Estoque no depósito" do anúncio (não o Full). Nas duas contas com o mesmo número, vale esse número; com números diferentes é conflito e você escolhe. Diferença = valor do ML − depósito Geral do Olist.</div>`
+        <div class="f" style="margin-top:8px">Valor do ML = "Estoque no depósito" do anúncio (não o Full)${comCordeiro() ? '. Nas duas contas com o mesmo número, vale esse número; com números diferentes é conflito e você escolhe' : ' da conta Flavia (a Cordeiro está em standby)'}. Diferença = valor do ML − depósito Geral do Olist.</div>`
         : '<div class="f">Nada neste filtro.</div>';
 }
 async function coletar() { const r = await postar('/api/olist-estoque/coletar'); if (!r.ok) alert(r.erro || 'não iniciou'); iniciou = false; sel = new Set(); escolha = {}; carregar(); }

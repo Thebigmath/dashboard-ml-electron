@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.93",
+    "data": "2026-10-15",
+    "titulo": "ERP Commander: só a conta Flavia vai para o Olist",
+    "texto": "- ERP Commander: o Depósito × ERP agora manda para o Olist só o \"Estoque no depósito\" da conta Flavia. A Cordeiro fica em standby (não é lida nem enviada).\n- A tela não mostra mais a coluna da Cordeiro nem conflito entre contas.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.92",
     "data": "2026-10-15",
     "titulo": "ERP Commander: estoque do Mercado Livre × Olist",
