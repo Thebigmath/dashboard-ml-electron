@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.95",
+    "data": "2026-10-16",
+    "titulo": "Flex automático com trava de segurança",
+    "texto": "- Flex automático com trava de segurança: só tira um anúncio do Flex quando o estoque está zerado no Olist E no depósito do Mercado Livre.\n- Quando os dois discordam (Olist 0, Mercado Livre com estoque), não mexe: o anúncio aparece em \"Divergências\" na tela do ERP Commander para você conferir.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.94",
     "data": "2026-10-16",
     "titulo": "Lista ERP, Flex automático pelo Olist e alerta de estoque em atenção",

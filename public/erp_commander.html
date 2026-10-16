@@ -53,7 +53,7 @@
     </div>
 
 <div id="secFull">
-    <div class="f" style="margin:-6px 0 12px">Quando o estoque do produto <b>zera no Olist</b> (depósito Geral), os anúncios da conta Flavia que estão com Flex <b>saem do Flex</b>. Quando o estoque volta, eles <b>voltam ao Flex</b>. Anúncio que não está no Olist não é tocado.</div>
+    <div class="f" style="margin:-6px 0 12px">Quando o estoque do produto <b>zera no Olist</b> (depósito Geral) <b>e também no depósito do Mercado Livre</b>, os anúncios da conta Flavia que estão com Flex <b>saem do Flex</b>. Se os dois discordarem, nada muda e aparece em Divergências. Quando o estoque volta, eles <b>voltam ao Flex</b>. Anúncio que não está no Olist não é tocado.</div>
     <div class="cards" id="cards"></div>
     <div class="bl" style="margin-bottom:14px">
         <div class="linha">
@@ -65,6 +65,7 @@
         </div>
         <div id="simulacao"></div>
     </div>
+    <div class="bl" style="margin-bottom:14px"><div style="font-weight:700;margin-bottom:4px"><i class="bi bi-exclamation-triangle" style="color:#ff9f0a"></i> Divergências (não mexi)</div><div class="f" style="margin-bottom:8px">Olist com 0, mas o anúncio tem estoque no depósito do Mercado Livre. O Flex automático só tira do Flex quando os dois estão zerados: confira o estoque físico e acerte o Olist ou o anúncio.</div><div id="divergencias" class="f">—</div></div>
     <div class="bl" style="margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">Fora do Flex por estoque zerado</div><div id="removidos" class="f">—</div></div>
     <div class="bl"><div style="font-weight:700;margin-bottom:8px">Histórico do Flex</div><div id="historico" class="f">—</div></div>
 </div>
@@ -107,13 +108,17 @@ async function carregar() {
     sw.checked = !!D.ligado; sw.disabled = !D.roda_aqui;
     document.getElementById('flexEstado').innerHTML = !D.roda_aqui ? '<span style="color:#ff9f0a">O Flex automático roda no Dashboard da Flavia (o Olist é da conta Flavia). Aqui só dá para ver.</span>'
         : e.rodando ? `Verificando: ${esc(e.etapa || '…')}` : e.erro ? `<span style="color:#ff453a">Erro na última verificação: ${esc(e.erro)}</span>`
-        : D.ligado ? `Verifica a cada ${D.intervalo_min} min${r.tirar != null && !r.simulado ? ` · última: ${r.tirar} tirados, ${r.devolver} devolvidos` : ''}` : 'Desligado: nada é alterado no Flex.';
+        : D.ligado ? `Verifica a cada ${D.intervalo_min} min${r.tirar != null && !r.simulado ? ` · última: ${r.tirar} tirados, ${r.devolver} devolvidos, ${r.divergencias || 0} divergências` : ''}` : 'Desligado: nada é alterado no Flex.';
     document.getElementById('btSimular').disabled = e.rodando || !D.roda_aqui;
     document.getElementById('btVerificar').disabled = e.rodando || !D.roda_aqui || !D.ligado;
     const R = D.removidos || [];
     document.getElementById('removidos').innerHTML = R.length ? `<table><tr><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist ao tirar</th><th>Desde</th></tr>
         ${R.map(x => `<tr><td>${esc(x.item_id)}</td><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.titulo || '').slice(0, 70))}</td><td class="num">${n(x.saldo)}</td><td>${quando(x.em)}</td></tr>`).join('')}</table>`
         : '<div class="f">Nenhum anúncio fora do Flex por estoque zerado.</div>';
+    const V = e.divergencias || [];
+    document.getElementById('divergencias').innerHTML = V.length ? `<table><tr><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist · Geral</th><th class="num">Depósito no ML</th></tr>
+        ${V.map(x => `<tr><td>${esc(x.item_id)}</td><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.titulo || '').slice(0, 70))}</td><td class="num">${n(x.olist)}</td><td class="num"><b style="color:#ff9f0a">${x.ml_deposito == null ? '?' : n(x.ml_deposito)}</b></td></tr>`).join('')}</table>`
+        : `<div class="f">${e.ultima ? 'Nenhuma divergência na última verificação.' : 'Aparece depois da primeira verificação ou simulação.'}</div>`;
     const H = D.historico || [];
     document.getElementById('historico').innerHTML = H.length ? `<table><tr><th>Quando</th><th>Ação</th><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist</th><th>Resultado</th></tr>
         ${H.map(h => `<tr><td>${quando(h.quando)}</td><td><span class="pill ${h.acao === 'tirar' ? 'dif' : 'ok'}">${h.acao === 'tirar' ? 'tirou do Flex' : 'voltou ao Flex'}</span></td><td>${esc(h.item_id)}</td><td><b>${esc(h.sku)}</b></td><td>${esc(String(h.titulo || '').slice(0, 60))}</td><td class="num">${n(h.saldo)}</td><td>${h.ok ? '<span style="color:#30D158">ok</span>' : `<span style="color:#ff453a">${esc(h.erro || 'erro')}</span>`}</td></tr>`).join('')}</table>`
@@ -141,7 +146,7 @@ function desenharSimulacao() {
     if (!S || !esperandoSim || D.estado.rodando) return;
     esperandoSim = false;
     const A = S.acoes || [];
-    document.getElementById('simulacao').innerHTML = `<div style="font-weight:700;margin:8px 0 6px">Simulação (${quando(S.em)}): ${A.filter(a => a.acao === 'tirar').length} sairiam do Flex · ${A.filter(a => a.acao === 'devolver').length} voltariam</div>` + (A.length ? `<table><tr><th>Ação</th><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist · Geral</th></tr>
+    document.getElementById('simulacao').innerHTML = `<div style="font-weight:700;margin:8px 0 6px">Simulação (${quando(S.em)}): ${A.filter(a => a.acao === 'tirar').length} sairiam do Flex · ${A.filter(a => a.acao === 'devolver').length} voltariam · ${(D.estado.divergencias || []).length} divergências (não mexeria)</div>` + (A.length ? `<table><tr><th>Ação</th><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist · Geral</th></tr>
         ${A.map(a => `<tr><td><span class="pill ${a.acao === 'tirar' ? 'dif' : 'ok'}">${a.acao === 'tirar' ? 'sairia do Flex' : 'voltaria ao Flex'}</span></td><td>${esc(a.item_id)}</td><td><b>${esc(a.sku)}</b></td><td>${esc(String(a.titulo || '').slice(0, 70))}</td><td class="num">${n(a.saldo)}</td></tr>`).join('')}</table>` : '<div class="f">Nenhum anúncio mudaria agora.</div>');
 }
 async function verificarAgora() { postar('/api/flex-auto/verificar', {}); setTimeout(carregar, 1500); }
