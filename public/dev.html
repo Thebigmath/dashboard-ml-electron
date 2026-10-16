@@ -107,6 +107,9 @@
                     </div>
                     <div class="dv-res" id="cxCards" style="margin-top:12px"></div>
                     <div id="cxAreas"></div>
+                    <div class="dv-grupo" style="display:flex;justify-content:space-between;align-items:center">Atividade dos agentes <button class="btn-acao" onclick="cxAtividade()"><i class="bi bi-arrow-clockwise"></i> Atualizar</button></div>
+                    <div id="cxHoje" class="dv-res" style="margin-bottom:10px"></div>
+                    <div class="dv-lista"><table class="dv-tab"><thead><tr><th>Quando</th><th>Agente</th><th>Tarefa</th><th class="num">Tempo</th><th>Resultado</th></tr></thead><tbody id="cxAtiv"><tr><td colspan="5">—</td></tr></tbody></table></div>
                     <small class="text-secondary" style="display:block;margin-top:10px">As chaves ficam em <code id="cxArq">~/.seven/complexo_ia.json</code> (o mesmo arquivo do projeto Python "Complexo de IA" da Área de Trabalho), fora do git. O arquivo exportado leva as chaves: só pen drive ou rede local, nunca e-mail, WhatsApp ou nuvem.</small>
                 </section>
 
@@ -204,7 +207,13 @@ function cxDesenhar(d) {
             </span>
         </div>`).join('')}</div>`).join('');
 }
-async function cxCarregar() { try { cxDesenhar(await api('/api/dev/complexo')); } catch (e) { $('cxQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; } }
+async function cxCarregar() { try { cxDesenhar(await api('/api/dev/complexo')); } catch (e) { $('cxQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; } cxAtividade(); }
+async function cxAtividade() {
+    let d; try { d = await api('/api/dev/complexo/atividade'); } catch (e) { $('cxAtiv').innerHTML = `<tr><td colspan="5" class="falha">${esc(e.message)}</td></tr>`; return; }
+    $('cxHoje').innerHTML = d.hoje.length ? d.hoje.map(x => `<div class="dv-card"><small>${esc(x.area_nome)} · ${esc(x.papel)} (hoje)</small><b>${num(x.tarefas)}</b><small>tarefa(s) · ${x.falhas ? `<span class="falha">${x.falhas} falha(s)</span>` : 'sem falha'} · média ${x.ms_medio != null ? (x.ms_medio / 1000).toFixed(1).replace('.', ',') + ' s' : '—'}</small></div>`).join('') : '';
+    $('cxAtiv').innerHTML = d.itens.length ? d.itens.map(e => `<tr><td>${new Date(e.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td><td>${esc(e.area_nome)} · <b>${esc(e.papel)}</b></td><td>${esc(e.tarefa || '')}</td><td class="num">${e.ms != null ? (e.ms / 1000).toFixed(1).replace('.', ',') + ' s' : '—'}</td><td class="${e.ok ? 'ok' : 'falha'}">${e.ok ? 'ok' : esc(e.erro || 'falhou')}</td></tr>`).join('')
+        : '<tr><td colspan="5">Nenhum agente trabalhou ainda neste Dashboard.</td></tr>';
+}
 async function cxSalvar(area, agente, apagar) {
     const el = $('cx_' + agente), chave = apagar ? '' : (el.value || '').trim();
     if (!apagar && !chave) return el.focus();

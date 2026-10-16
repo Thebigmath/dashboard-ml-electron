@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.98",
+    "data": "2026-10-16",
+    "titulo": "Ata da IA e o primeiro agente do Complexo de IA em ação",
+    "texto": "- Análise de vendas: nova \"Ata da IA\", um card por anúncio com o essencial para decidir: quanto vendeu, MC% real, margem antes e depois, preço sugerido, a análise da IA e os botões Aprovar e Rejeitar. A tabela completa continua no botão \"Tabela completa\".\n- Complexo de IA em ação: a análise de preço agora é feita pelo agente Precificação do ADS Health (com as chaves da área assumindo se a dele falhar). Cada card mostra quem analisou.\n- Desenvolvedor → Complexo de IA: novo quadro \"Atividade dos agentes\" com o que cada agente fez, quando, quanto tempo levou e se deu certo.\n- Painel Rankeamento/Defesa com cabeçalho mais baixo; na Ata os cards usam a altura toda.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.97",
     "data": "2026-10-16",
     "titulo": "Análise de vendas: anúncios em observação",

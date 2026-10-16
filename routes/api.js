@@ -1186,6 +1186,7 @@ router.get('/dev/complexo', soDev, (req, res) => { try { res.json(require('../li
 router.post('/dev/complexo/chave', soDev, (req, res) => { try { const b = req.body || {}; res.json(require('../lib/complexo_ia').definirChave(b.area, b.agente, b.chave, b.modelo)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); } });
 router.post('/dev/complexo/testar', soDev, (req, res) => { require('../lib/complexo_ia').testar(!!(req.body && req.body.completo)).then(d => res.json(d)).catch(erroJson(res)); });
 router.get('/dev/complexo/exportar', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').exportar()); } catch (e) { erroJson(res)(e); } });
+router.get('/dev/complexo/atividade', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').atividade(200)); } catch (e) { erroJson(res)(e); } });
 router.post('/dev/complexo/importar', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').importar(req.body)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); } });
 router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').verificar({ testarGemini: req.query.gemini === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Regras de preco (motor_preco): avaliar e so leitura; aplicar so com confirmacao e preco conferido

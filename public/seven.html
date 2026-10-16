@@ -199,8 +199,9 @@
         html.sh #rdPainel.rd-painel { left:84px; } html.sh.sh-fixo #rdPainel.rd-painel { left:340px; }
         #rdPainel.rd-painel { position:fixed; inset:12px; z-index:8001; margin:0; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.35); animation:rdExp .22s ease; }
         @keyframes rdExp { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:none; } }
-        .rd-topo { display:flex; align-items:center; gap:14px; padding:18px 22px; border-bottom:1px solid var(--sep); }
-        .rd-topo .rd-tit { font-size:22px; } .rd-fechar { margin-left:auto; background:transparent; border:1px solid var(--sep); color:var(--l2); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; }
+        .rd-topo { display:flex; align-items:center; gap:12px; padding:10px 18px; border-bottom:1px solid var(--sep); }
+        .rd-topo .rd-ico { width:38px; height:38px; font-size:18px; border-radius:11px; }
+        .rd-topo .rd-tit { font-size:18px; } .rd-fechar { margin-left:auto; background:transparent; border:1px solid var(--sep); color:var(--l2); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; }
         #rdCorpo { flex:1; overflow:auto; display:grid; grid-template-columns:250px 1fr; gap:0 24px; padding:20px 22px; align-content:start; }
         #rdCorpo > .rd-abas { grid-column:1; grid-row:1 / span 30; flex-direction:column; flex-wrap:nowrap; position:sticky; top:0; align-self:start; margin:0; }
         #rdCorpo > .rd-abas button { text-align:left; border-radius:12px; padding:12px 14px; font-size:14px; }
@@ -314,6 +315,30 @@
         .vm-tab td.t { white-space:normal; min-width:220px; max-width:320px; }
         .vm-mc { font-weight:800; } .vm-mc.ruim { color:#ff453a; } .vm-mc.baixo { color:#ff9f0a; } .vm-mc.bom { color:#30D158; }
         .vm-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+        /* Ata da IA: um card por anuncio, so o necessario para decidir */
+        .ata { padding:14px; display:grid; gap:18px; }
+        .ata-sec { display:grid; gap:10px; }
+        .ata-sec > h4 { margin:0; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--l3); }
+        .ata-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(330px, 1fr)); gap:12px; }
+        .ata-card { background:var(--s2); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; display:grid; gap:10px; align-content:start; }
+        .ata-card.decidir { border-color:color-mix(in srgb, #0a84ff 45%, var(--sep)); }
+        .ata-card .tit { font-weight:700; line-height:1.3; }
+        .ata-card .sub { font-size:12px; color:var(--l3); }
+        .ata-nums { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+        .ata-nums div { background:var(--s1); border-radius:9px; padding:7px 9px; }
+        .ata-nums small { display:block; font-size:10.5px; color:var(--l3); text-transform:uppercase; letter-spacing:.04em; }
+        .ata-nums b { font-size:15px; font-variant-numeric:tabular-nums; }
+        .ata-preco { font-size:15px; font-variant-numeric:tabular-nums; }
+        .ata-preco b { color:#0a84ff; }
+        .ata-txt { font-size:13px; line-height:1.5; color:var(--l2); }
+        .ata-botoes { display:flex; gap:8px; }
+        .ata-botoes button { flex:1; justify-content:center; }
+        .ata-mini { display:grid; grid-template-columns:repeat(auto-fill, minmax(330px, 1fr)); gap:8px; }
+        .ata-mini > div { background:var(--s2); border:1px solid var(--sep); border-radius:10px; padding:9px 12px; font-size:12.5px; }
+        .ata-mini b { font-weight:600; }
+        .ata-modo { display:inline-flex; border:1px solid var(--sep); border-radius:9px; overflow:hidden; }
+        .ata-modo button { background:none; border:0; color:var(--l2); padding:6px 12px; font-size:12.5px; cursor:pointer; }
+        .ata-modo button.on { background:#0a84ff; color:#fff; }
         .rg-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap:12px; }
         .rg-card { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
         .rg-tit { font-size:15px; font-weight:700; color:var(--l1); line-height:1.3; }
@@ -536,6 +561,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                         <label class="pia-fraco" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="vmSoAbaixo" onchange="vmDesenhar()"> só abaixo de 15%</label>
                         <label class="pia-fraco" style="display:flex;gap:6px;align-items:center" title="Anúncios com o preço mudado nos últimos 3 dias saem da lista"><input type="checkbox" id="vmMostrarAlt" onchange="vmDesenhar()"> mostrar os já atualizados <span id="vmQtdAlt"></span></label>
                         <label class="pia-fraco" style="display:flex;gap:6px;align-items:center" title="Só os anúncios em que a IA sugeriu mudar o preço e ainda esperam sua decisão"><input type="checkbox" id="vmSoIA" onchange="vmDesenhar()"> só sugestões da IA para decidir</label>
+                        <span class="ata-modo" id="vmModo"><button id="vmModoAta" onclick="vmTrocarModo('ata')" title="Um card por anúncio com a análise da IA"><i class="bi bi-card-checklist"></i> Ata da IA</button><button id="vmModoTab" onclick="vmTrocarModo('tabela')" title="Todas as colunas, como no Mercado Turbo"><i class="bi bi-table"></i> Tabela completa</button></span>
                     </div>
                     <div id="vmSim" style="margin:0 0 10px"></div>
                     <div class="dashboard-card" style="padding:0;overflow:auto;height:calc(100vh - 270px);min-height:360px"><div id="vmTabela"><div class="sv-vazio">Carregando…</div></div></div>
@@ -1400,6 +1426,7 @@ async function vmCarregarSim() {
     if (vmSimDados.estado && vmSimDados.estado.rodando) vmSimTimer = setTimeout(vmCarregarSim, 4000);
 }
 function vmDesenharSim() {
+    const md = $('vmModo'); if (md) { md.style.display = vmTemSim() ? '' : 'none'; $('vmModoAta').classList.toggle('on', vmModoVisao() === 'ata'); $('vmModoTab').classList.toggle('on', vmModoVisao() === 'tabela'); }
     const el = $('vmSim'); if (!el || !vmSimDados) return;
     const e = vmSimDados.estado || {}, L = vmSimDados.itens || [], per = $('vmPeriodo').value;
     const btn = $('vmBtnSim'); if (btn) btn.disabled = !!e.rodando;
@@ -1425,6 +1452,42 @@ async function vmDecidir(item, aprovar, btn) {
     if (!r.ok) alert(r.erro || 'não deu');
     if (r.ok && aprovar && r.antes != null) vmMarcarAlterado(item, r.antes, r.depois);
     vmCarregarSim();
+}
+// ---- Ata da IA (16/10/2026): em vez da tabela cheia de colunas, um card por anuncio com o que importa para decidir ----
+let vmModo = (() => { try { return localStorage.getItem('vmModo') || 'ata'; } catch { return 'ata'; } })();
+const vmTemSim = () => !!(vmSimDados && cache.vendasmc && vmSimDados.periodo === cache.vendasmc.periodo && (vmSimDados.itens || []).length);
+function vmModoVisao() { return vmTemSim() ? vmModo : 'tabela'; }
+function vmTrocarModo(m) { vmModo = m; try { localStorage.setItem('vmModo', m); } catch {} vmDesenharSim(); vmDesenhar(); }
+function vmDesenharAta(d, q, alt) {
+    const pct = (x) => x == null ? '—' : String(x).replace('.', ',') + '%';
+    const casa = (a) => !q || String(a.sku).toLowerCase().includes(q) || String(a.titulo).toLowerCase().includes(q);
+    const an = new Map(d.anuncios.map(a => [a.item_id, a]));
+    const L = (vmSimDados.itens || []).filter(casa);
+    const fat = (it) => (an.get(it.item_id) || {}).faturamento;
+    const vendeu = (it) => `${it.unidades ?? (an.get(it.item_id) || {}).unidades ?? '—'} un${fat(it) ? ` · ${pcR$(fat(it))}` : ''}`;
+    const decidir = L.filter(i => i.status === 'pendente'), manter = L.filter(i => i.status === 'manter' || i.status === 'erro'), feitos = L.filter(i => i.status === 'aprovado' || i.status === 'rejeitado');
+    const obs = d.anuncios.filter(a => alt[a.item_id] && !L.some(i => i.item_id === a.item_id) && casa(a));
+    const card = (it) => {
+        const dif = it.preco_atual ? (it.preco_sugerido / it.preco_atual - 1) * 100 : 0;
+        const extra = [...(it.travas || []), ...(it.riscos || []).map(r => 'Risco: ' + r)];
+        return `<div class="ata-card decidir">
+            <div><div class="tit">${esc(rtCurto(it.titulo, 80))}</div><div class="sub">${esc(it.sku || '—')} · ${esc(it.item_id)}${it.confianca ? ' · confiança ' + esc(it.confianca) : ''}</div></div>
+            <div class="ata-nums"><div><small>Vendeu</small><b>${vendeu(it)}</b></div><div><small>MC% real</small><b style="color:${it.mc_pct != null && it.mc_pct < d.mc_alvo ? '#ff9f0a' : '#30D158'}">${pct(it.mc_pct)}</b></div><div><small>Margem</small><b>${pct(it.margem_atual)} → <span style="color:#30D158">${pct(it.margem_nova)}</span></b></div></div>
+            <div class="ata-preco">Preço <span class="pia-fraco">${pcR$(it.preco_atual)}</span> → <b>${pcR$(it.preco_sugerido)}</b> <span class="pia-fraco">(+${dif.toFixed(1).replace('.', ',')}%)</span></div>
+            <div class="ata-txt">${esc(it.motivo || '')}${extra.length ? `<div class="pia-fraco" style="margin-top:4px">${extra.map(esc).join(' · ')}</div>` : ''}</div>
+            <div class="sub">${it.agente ? `<i class="bi bi-robot" style="color:#0a84ff"></i> Analisado por <b style="color:var(--l2)">${esc(it.agente.area_nome)} · ${esc(it.agente.papel)}</b>` : it.fonte === 'regra' ? '<i class="bi bi-calculator"></i> Só a conta das regras (a IA não respondeu)' : '<i class="bi bi-stars"></i> Analisado pela IA (chaves antigas)'}</div>
+            <div class="ata-botoes"><button class="ep-btn" style="border-color:#30D158;color:#30D158" onclick="vmDecidir('${esc(it.item_id)}', true, this)"><i class="bi bi-check-lg"></i> Aprovar</button>
+                <button class="ep-btn" style="border-color:#ff453a;color:#ff453a" onclick="vmDecidir('${esc(it.item_id)}', false, this)"><i class="bi bi-x-lg"></i> Rejeitar</button></div>
+        </div>`;
+    };
+    const mini = (titulo, texto, cor) => `<div><b>${esc(rtCurto(titulo, 70))}</b><div class="pia-fraco" style="margin-top:2px;${cor ? 'color:' + cor : ''}">${texto}</div></div>`;
+    const sec = (t, n, html) => n ? `<div class="ata-sec"><h4>${t} (${n})</h4>${html}</div>` : '';
+    $('vmTabela').innerHTML = `<div class="ata">
+        ${decidir.length ? sec('Para decidir', decidir.length, `<div class="ata-grade">${decidir.map(card).join('')}</div>`) : '<div class="sv-vazio">Nenhuma sugestão esperando decisão.</div>'}
+        ${sec('Decididos', feitos.length, `<div class="ata-mini">${feitos.map(i => mini(i.titulo, i.status === 'aprovado' ? `<i class="bi bi-check-circle"></i> aprovado: ${pcR$(i.antes ?? i.preco_atual)} → ${pcR$(i.depois ?? i.preco_sugerido)}` : '<i class="bi bi-x-circle"></i> rejeitado: preço mantido', i.status === 'aprovado' ? '#30D158' : null)).join('')}</div>`)}
+        ${sec('A IA mandou manter', manter.length, `<div class="ata-mini">${manter.map(i => mini(i.titulo, `${esc(i.sku || '')} · MC% ${pct(i.mc_pct)} · ${esc(i.erro || i.motivo || '')}`)).join('')}</div>`)}
+        ${sec('Em observação (preço mudado nos últimos 3 dias)', obs.length, `<div class="ata-mini">${obs.map(a => { const o = alt[a.item_id]; return mini(a.titulo, `${esc(a.sku || '')} · desde ${new Date(o.quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}${o.antes != null && o.depois != null ? ` · ${pcR$(o.antes)} → ${pcR$(o.depois)}` : ''}`); }).join('')}</div>`)}
+    </div>`;
 }
 function vmCelulaIA(v, d) {
     const precificar = (forte) => `<button class="ep-btn" style="border-color:${forte ? '#30D158' : 'var(--sep)'};color:${forte ? '#30D158' : 'var(--l2)'}" onclick="vmPrecificar('${esc(v.pedido)}','${esc(v.item_id)}')" title="Abre o precificador com a sugestão da IA"><i class="bi bi-stars"></i> Precificar</button>`;
@@ -1477,6 +1540,9 @@ function vmDesenhar() {
     const ord = (L) => { if (!vmOrdem.campo) return L; const k = vmOrdem.campo; return [...L].sort((a, b) => ((a[k] ?? -1e9) > (b[k] ?? -1e9) ? 1 : -1) * (vmOrdem.desc ? -1 : 1)); };
     const th = (t, k) => `<th onclick="vmOrdenar('${k}')">${t}${vmOrdem.campo === k ? (vmOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
     const mcCel = (x) => `<td class="vm-mc ${vmClasse(x.mc_pct)}">${x.mc_pct == null ? '<span class="pia-fraco">sem custo</span>' : prPct(x.mc_pct)}</td>`;
+    const caixa = $('vmTabela').parentElement;
+    if (vmModoVisao() === 'ata') { caixa.style.height = 'auto'; caixa.style.minHeight = '0'; caixa.style.overflow = 'visible'; vmDesenharAta(d, q, alt); return; }
+    caixa.style.height = 'calc(100vh - 270px)'; caixa.style.minHeight = '360px'; caixa.style.overflow = 'auto';
     {
         const L = ord(d.vendas.filter(filtra));
         $('vmTabela').innerHTML = L.length ? `<table class="vm-tab"><tr>${th('Anúncio', 'titulo')}${th('SKU', 'sku')}${th('Data', 'data')}${th('Frete', 'logistica')}${th('Valor unit.', 'valor')}${th('Qtd', 'qtd')}${th('Faturamento', 'faturamento')}${th('Custo (−)', 'custo')}${th('Imposto (−)', 'imposto')}${th('Tarifa (−)', 'tarifa')}${th('Frete comprador', 'frete_comprador')}${th('Frete vendedor (−)', 'frete_vendedor')}${th('MC', 'mc')}${th('MC %', 'mc_pct')}<th></th></tr>
@@ -1948,7 +2014,7 @@ function pcBlocoIA(d) {
   const dif = x.base && x.base.preco_atual ? (x.preco / x.base.preco_atual - 1) * 100 : 0;
   const titulo = x.acao === 'subir' ? `subir para ${pcR$(x.preco)} (+${dif.toFixed(1).replace('.', ',')}%)` : x.acao === 'baixar' ? `baixar para ${pcR$(x.preco)} (${dif.toFixed(1).replace('.', ',')}%)` : 'manter o preço';
   return `<div class="pc-sug" style="align-items:flex-start"><i class="bi bi-stars" style="color:#0A84FF;font-size:18px;margin-top:2px"></i>
-    <div style="flex:1"><b>Sugestão da ${x.fonte === 'ia' ? 'IA' : 'regra'}: ${titulo}</b>${x.revisando ? ' <span class="pia-fraco"><i class="bi bi-hourglass-split"></i> a IA está revisando…</span>' : ''}${x.confianca ? ` <span class="pia-fraco">· confiança ${esc(x.confianca)}</span>` : ''}
+    <div style="flex:1"><b>Sugestão da ${x.fonte === 'ia' ? (x.agente ? `IA (${esc(x.agente.area_nome)} · ${esc(x.agente.papel)})` : 'IA') : 'regra'}: ${titulo}</b>${x.revisando ? ' <span class="pia-fraco"><i class="bi bi-hourglass-split"></i> a IA está revisando…</span>' : ''}${x.confianca ? ` <span class="pia-fraco">· confiança ${esc(x.confianca)}</span>` : ''}
       <div style="margin-top:4px">${esc(x.motivo)}</div>
       ${(x.riscos || []).length ? `<div class="pia-fraco" style="margin-top:4px">Riscos: ${x.riscos.map(esc).join(' · ')}</div>` : ''}
       ${(x.travas || []).length ? `<div class="pia-fraco" style="margin-top:4px;color:#ff9f0a">Travas: ${x.travas.map(esc).join(' ')}</div>` : ''}
