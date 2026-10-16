@@ -196,8 +196,8 @@
         #rdFundo { position:fixed; inset:0; background:rgba(0,0,0,.45); backdrop-filter:blur(3px); z-index:8000; display:none; }
         /* menu do SEVEN: o Rankeamento e a Defesa abrem ao lado do menu, sem cobri-lo */
         html.sh #rdFundo { left:72px; } html.sh.sh-fixo #rdFundo { left:328px; }
-        html.sh #rdPainel.rd-painel { left:92px; } html.sh.sh-fixo #rdPainel.rd-painel { left:348px; }
-        #rdPainel.rd-painel { position:fixed; inset:28px; z-index:8001; margin:0; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.35); animation:rdExp .22s ease; }
+        html.sh #rdPainel.rd-painel { left:84px; } html.sh.sh-fixo #rdPainel.rd-painel { left:340px; }
+        #rdPainel.rd-painel { position:fixed; inset:12px; z-index:8001; margin:0; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.35); animation:rdExp .22s ease; }
         @keyframes rdExp { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:none; } }
         .rd-topo { display:flex; align-items:center; gap:14px; padding:18px 22px; border-bottom:1px solid var(--sep); }
         .rd-topo .rd-tit { font-size:22px; } .rd-fechar { margin-left:auto; background:transparent; border:1px solid var(--sep); color:var(--l2); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; }
@@ -522,20 +522,23 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
 
                 <div class="rd-def-view" id="view-vendasmc">
                     <div class="sv-cab" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-                        <div><h3>Análise de vendas</h3><small>MC% real de cada venda, como no Mercado Turbo · MC = venda − cupom − custo − imposto − tarifa − frete do vendedor · <span id="vmAtual">—</span><br>Precificar abre o precificador já com a sugestão da IA para aquele anúncio.</small></div>
+                        <div><h3 style="font-size:20px;margin-bottom:2px">Análise de vendas</h3><small style="font-size:12px">MC% real de cada venda · MC = venda − cupom − custo − imposto − tarifa − frete do vendedor · <span id="vmAtual">—</span></small></div>
                         <div class="vm-ctrl" style="margin:0">
                             <select class="sv-busca" id="vmPeriodo" style="margin-left:0;min-width:130px" onchange="vmCarregar(true)">
                                 <option value="ontem" selected>Ontem</option><option value="hoje">Hoje</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option>
                             </select>
                             <button class="btn-acao" onclick="vmCarregar(true)"><i class="bi bi-arrow-clockwise"></i> Atualizar</button>
+                            <button class="btn-acao" id="vmBtnSim" onclick="vmSimular()" title="A IA analisa todos os anúncios que venderam e monta a simulação: você só aprova ou rejeita" style="border-color:#0a84ff;color:#0a84ff"><i class="bi bi-stars"></i> Simular com a IA</button>
                         </div>
                     </div>
                     <div class="vm-ctrl">
                         <input class="sv-busca" id="vmBusca" placeholder="Buscar SKU ou produto…" style="margin-left:0;flex:1;min-width:200px" oninput="vmDesenhar()">
                         <label class="pia-fraco" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="vmSoAbaixo" onchange="vmDesenhar()"> só abaixo de 15%</label>
                         <label class="pia-fraco" style="display:flex;gap:6px;align-items:center" title="Anúncios com o preço mudado nos últimos 3 dias saem da lista"><input type="checkbox" id="vmMostrarAlt" onchange="vmDesenhar()"> mostrar os já atualizados <span id="vmQtdAlt"></span></label>
+                        <label class="pia-fraco" style="display:flex;gap:6px;align-items:center" title="Só os anúncios em que a IA sugeriu mudar o preço e ainda esperam sua decisão"><input type="checkbox" id="vmSoIA" onchange="vmDesenhar()"> só sugestões da IA para decidir</label>
                     </div>
-                    <div class="dashboard-card" style="padding:0;overflow:auto;max-height:70vh"><div id="vmTabela"><div class="sv-vazio">Carregando…</div></div></div>
+                    <div id="vmSim" style="margin:0 0 10px"></div>
+                    <div class="dashboard-card" style="padding:0;overflow:auto;height:calc(100vh - 270px);min-height:360px"><div id="vmTabela"><div class="sv-vazio">Carregando…</div></div></div>
                 </div>
 
                 </div><!-- /rdDefDepot -->
@@ -1287,7 +1290,7 @@ async function vmCarregar(forcar) {
     const per = $('vmPeriodo').value;
     if (!forcar && cache.vendasmc && cache.vendasmc.periodo === per) return vmDesenhar();
     $('vmTabela').innerHTML = '<div class="sv-vazio">Lendo as vendas no Mercado Livre…</div>';
-    try { cache.vendasmc = await api('/api/seven/vendas_mc?periodo=' + encodeURIComponent(per)); vmDesenhar(); }
+    try { cache.vendasmc = await api('/api/seven/vendas_mc?periodo=' + encodeURIComponent(per)); vmDesenhar(); vmCarregarSim(); }
     catch (e) { $('vmTabela').innerHTML = `<div class="sv-vazio" style="color:#ff453a">Erro: ${esc(e.message)}</div>`; }
 }
 // Preco mudado em qualquer tela: o anuncio sai da Analise de vendas na hora (sem esperar recarregar)
@@ -1386,6 +1389,62 @@ async function vmDepoisDeAplicar(feito, r) {
     vmDesenhar();
     alert('Resultado:\n\n' + res.join('\n'));
 }
+// ---- Simulacao da IA (16/10/2026): a IA analisa todos os anuncios que venderam e monta a simulacao; no lugar do
+// botao Precificar aparece o preco que ela sugeriu e os botoes Aprovar / Rejeitar. Nada muda sem a aprovacao.
+let vmSimDados = null, vmSimTimer = null;
+const vmSimDe = (item) => vmSimDados && cache.vendasmc && vmSimDados.periodo === cache.vendasmc.periodo ? (vmSimDados.itens || []).find(i => i.item_id === item) : null;
+async function vmCarregarSim() {
+    try { vmSimDados = await api('/api/seven/simulacao-precos'); } catch { return; }
+    vmDesenharSim(); if (cache.vendasmc && $('vmTabela')) vmDesenhar();
+    clearTimeout(vmSimTimer);
+    if (vmSimDados.estado && vmSimDados.estado.rodando) vmSimTimer = setTimeout(vmCarregarSim, 4000);
+}
+function vmDesenharSim() {
+    const el = $('vmSim'); if (!el || !vmSimDados) return;
+    const e = vmSimDados.estado || {}, L = vmSimDados.itens || [], per = $('vmPeriodo').value;
+    const btn = $('vmBtnSim'); if (btn) btn.disabled = !!e.rodando;
+    const nomePer = (p) => ({ ontem: 'ontem', hoje: 'hoje', 7: '7 dias', 15: '15 dias', 30: '30 dias' })[p] || p;
+    if (e.rodando) { el.innerHTML = `<div class="pia-fraco"><i class="bi bi-stars" style="color:#0a84ff"></i> A IA está analisando os anúncios (${nomePer(e.periodo)}): ${e.feitos} de ${e.total || '…'}. A simulação aparece aqui quando terminar.</div>`; return; }
+    if (e.erro) { el.innerHTML = `<div class="pia-fraco" style="color:#ff453a">Erro na simulação: ${esc(e.erro)}</div>`; return; }
+    if (!L.length || !vmSimDados.em) { el.innerHTML = ''; return; }
+    const c = (st) => L.filter(i => i.status === st).length;
+    el.innerHTML = `<div class="pia-fraco" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 12px;border:1px solid var(--sep);border-radius:10px">
+        <span><i class="bi bi-stars" style="color:#0a84ff"></i> <b>Simulação da IA</b> (${nomePer(vmSimDados.periodo)}, ${new Date(vmSimDados.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})</span>
+        <span style="color:#0a84ff"><b>${c('pendente')}</b> para decidir</span><span style="color:#30D158">${c('aprovado')} aprovado(s)</span><span style="color:#ff453a">${c('rejeitado')} rejeitado(s)</span><span>${c('manter')} manter</span>${c('erro') ? `<span>${c('erro')} sem análise</span>` : ''}
+        ${vmSimDados.periodo !== per ? `<button class="ep-btn" onclick="$('vmPeriodo').value='${esc(vmSimDados.periodo)}';vmCarregar(true)">Ver o período da simulação</button>` : ''}</div>`;
+}
+async function vmSimular() {
+    const per = $('vmPeriodo').value;
+    const r = await api('/api/seven/simulacao-precos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ periodo: per }) }).catch(e => ({ ok: false, erro: e.message }));
+    if (!r.ok) return alert(r.erro || 'não iniciou');
+    vmCarregarSim();
+}
+async function vmDecidir(item, aprovar, btn) {
+    const td = btn && btn.closest('td'); if (td) td.innerHTML = '<span class="pia-fraco">' + (aprovar ? 'Aplicando…' : 'Rejeitando…') + '</span>';
+    let r; try { r = await api(`/api/seven/simulacao-precos/${item}/${aprovar ? 'aprovar' : 'rejeitar'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (e) { r = { ok: false, erro: e.message }; }
+    if (!r.ok) alert(r.erro || 'não deu');
+    if (r.ok && aprovar && r.antes != null) vmMarcarAlterado(item, r.antes, r.depois);
+    vmCarregarSim();
+}
+function vmCelulaIA(v, d) {
+    const precificar = (forte) => `<button class="ep-btn" style="border-color:${forte ? '#30D158' : 'var(--sep)'};color:${forte ? '#30D158' : 'var(--l2)'}" onclick="vmPrecificar('${esc(v.pedido)}','${esc(v.item_id)}')" title="Abre o precificador com a sugestão da IA"><i class="bi bi-stars"></i> Precificar</button>`;
+    const s = vmSimDe(v.item_id);
+    if (!s) return precificar(v.mc_pct != null && v.mc_pct < d.mc_alvo);
+    const pct = (x) => x == null ? '—' : String(x).replace('.', ',') + '%';
+    const motivo = esc([s.motivo, ...(s.travas || []), ...(s.riscos || []).map(r => 'Risco: ' + r)].filter(Boolean).join(' · '));
+    if (s.status === 'pendente') {
+        const dif = s.preco_atual ? (s.preco_sugerido / s.preco_atual - 1) * 100 : 0;
+        return `<div style="min-width:200px" title="${motivo}"><div style="font-size:12px"><b style="color:#0a84ff">${pcR$(s.preco_atual)} → ${pcR$(s.preco_sugerido)}</b> <span class="pia-fraco">(+${dif.toFixed(1).replace('.', ',')}%)</span></div>
+            <div class="pia-fraco">margem ${pct(s.margem_atual)} → <b style="color:#30D158">${pct(s.margem_nova)}</b>${s.confianca ? ' · confiança ' + esc(s.confianca) : ''}</div>
+            <div style="display:flex;gap:6px;margin-top:5px"><button class="ep-btn" style="border-color:#30D158;color:#30D158" onclick="vmDecidir('${esc(v.item_id)}', true, this)"><i class="bi bi-check-lg"></i> Aprovar</button>
+            <button class="ep-btn" style="border-color:#ff453a;color:#ff453a" onclick="vmDecidir('${esc(v.item_id)}', false, this)"><i class="bi bi-x-lg"></i> Rejeitar</button></div></div>`;
+    }
+    if (s.status === 'aprovado') return `<span style="color:#30D158;font-size:12px"><i class="bi bi-check-circle"></i> aprovado: ${pcR$(s.antes)} → ${pcR$(s.depois)}</span>`;
+    if (s.status === 'rejeitado') return `<div><span class="pia-fraco"><i class="bi bi-x-circle"></i> rejeitado</span><div style="margin-top:4px">${precificar(false)}</div></div>`;
+    if (s.status === 'manter') return `<div title="${motivo}"><span class="pia-fraco"><i class="bi bi-pause-circle"></i> IA: manter o preço</span><div style="margin-top:4px">${precificar(false)}</div></div>`;
+    return `<div title="${esc(s.erro || '')}"><span class="pia-fraco">sem análise da IA</span><div style="margin-top:4px">${precificar(false)}</div></div>`;
+}
+
 // Precificar a partir de uma venda: manda para a IA as vendas desse anuncio no periodo
 function vmPrecificar(pedido, item) {
     const d = cache.vendasmc; if (!d) return;
@@ -1408,7 +1467,7 @@ function vmDesenhar() {
     const qAlt = d.vendas.filter(antesDaMudanca).length;
     $('vmQtdAlt').textContent = qAlt ? `(${qAlt})` : '';
     const filtra = (x) => (!q || String(x.sku).toLowerCase().includes(q) || String(x.titulo).toLowerCase().includes(q)) && (!so || (x.mc_pct != null && x.mc_pct < d.mc_alvo))
-        && (mostrarAlt || !antesDaMudanca(x));
+        && (mostrarAlt || !antesDaMudanca(x)) && (!$('vmSoIA').checked || vmSimDe(x.item_id)?.status === 'pendente');
     const ord = (L) => { if (!vmOrdem.campo) return L; const k = vmOrdem.campo; return [...L].sort((a, b) => ((a[k] ?? -1e9) > (b[k] ?? -1e9) ? 1 : -1) * (vmOrdem.desc ? -1 : 1)); };
     const th = (t, k) => `<th onclick="vmOrdenar('${k}')">${t}${vmOrdem.campo === k ? (vmOrdem.desc ? ' ↓' : ' ↑') : ''}</th>`;
     const mcCel = (x) => `<td class="vm-mc ${vmClasse(x.mc_pct)}">${x.mc_pct == null ? '<span class="pia-fraco">sem custo</span>' : prPct(x.mc_pct)}</td>`;
@@ -1420,7 +1479,7 @@ function vmDesenhar() {
             <td>${epBRL(v.valor)}</td><td>${v.qtd}</td><td>${epBRL(v.faturamento)}</td><td style="color:#ff9f0a">${v.custo == null ? '—' : epBRL(v.custo)}${v.custo_suspeito ? '<div class="pr-rec SAIR" title="Custo da planilha maior que 1,5x o preço de venda: confira a planilha de custos. Esta venda fica fora da MC% média.">custo suspeito</div>' : ''}</td>
             <td style="color:#ff453a">${epBRL(v.imposto)}</td><td style="color:#c9a227">${epBRL(v.tarifa)}</td><td class="pia-fraco">${v.frete_comprador == null ? '—' : epBRL(v.frete_comprador)}</td>
             <td style="color:#0a84ff">${v.frete_vendedor == null ? '—' : epBRL(v.frete_vendedor)}${v.frete_alto ? '<div class="pr-rec SAIR" title="Frete pago pelo vendedor acima de 30% do valor da venda: confira peso/medidas do anúncio.">frete alto</div>' : ''}</td><td><b>${v.mc == null ? '—' : epBRL(v.mc)}</b></td>${mcCel(v)}
-            <td><button class="ep-btn" style="border-color:${v.mc_pct != null && v.mc_pct < d.mc_alvo ? '#30D158' : 'var(--sep)'};color:${v.mc_pct != null && v.mc_pct < d.mc_alvo ? '#30D158' : 'var(--l2)'}" onclick="vmPrecificar('${esc(v.pedido)}','${esc(v.item_id)}')" title="Abre o precificador com a sugestão da IA"><i class="bi bi-stars"></i> Precificar</button></td></tr>`).join('')}</table>`
+            <td>${vmCelulaIA(v, d)}</td></tr>`).join('')}</table>`
           : '<div class="sv-vazio">Nenhuma venda com esse filtro.</div>';
     }
 }

@@ -1181,6 +1181,12 @@ const soDev = (req, res, next) => senhaDev.valido(req.get('x-dev-token')) ? next
 router.post('/dev/entrar', (req, res) => { const r = senhaDev.entrar((req.body || {}).senha); res.status(r.ok ? 200 : 401).json(r); });
 router.post('/dev/sair', (req, res) => { senhaDev.sair(req.get('x-dev-token')); res.json({ ok: true }); });
 router.get('/dev/cotas', soDev, (req, res) => res.json(require('../lib/cotas').resumo()));
+// Complexo de IA: chaves do Gemini por area/agente (as chaves nunca voltam inteiras para a tela, so no exportar)
+router.get('/dev/complexo', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').status()); } catch (e) { erroJson(res)(e); } });
+router.post('/dev/complexo/chave', soDev, (req, res) => { try { const b = req.body || {}; res.json(require('../lib/complexo_ia').definirChave(b.area, b.agente, b.chave, b.modelo)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); } });
+router.post('/dev/complexo/testar', soDev, (req, res) => { require('../lib/complexo_ia').testar(!!(req.body && req.body.completo)).then(d => res.json(d)).catch(erroJson(res)); });
+router.get('/dev/complexo/exportar', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').exportar()); } catch (e) { erroJson(res)(e); } });
+router.post('/dev/complexo/importar', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').importar(req.body)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); } });
 router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').verificar({ testarGemini: req.query.gemini === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Regras de preco (motor_preco): avaliar e so leitura; aplicar so com confirmacao e preco conferido
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
@@ -1210,6 +1216,13 @@ router.get('/finance/notas/estado', auth, (req, res) => res.json(notas().estado(
 router.get('/finance/notas/historico', auth, (req, res) => res.json(notas().historico()));
 router.post('/finance/custos', auth, (req, res) => { try { res.json(finance().salvarCustos(String(req.body.mes || ''), req.body.lista || [])); } catch (e) { erroJson(res)(e); } });
 // Sugestao de preco da IA para um anuncio que vendeu (Analise de vendas -> Precificar)
+// Simulacao de precos da IA na Analise de vendas: aprovar / rejeitar cada sugestao
+router.get('/seven/simulacao-precos', auth, (req, res) => { try { res.json(require('../lib/simulacao_precos').resultado()); } catch (e) { erroJson(res)(e); } });
+router.post('/seven/simulacao-precos', auth, (req, res) => { try { res.json(require('../lib/simulacao_precos').simular(String((req.body && req.body.periodo) || 'ontem'))); } catch (e) { erroJson(res)(e); } });
+router.post('/seven/simulacao-precos/:item/:decisao', auth, (req, res) => {
+    if (!['aprovar', 'rejeitar'].includes(req.params.decisao)) return res.status(400).json({ ok: false, erro: 'Decisão inválida.' });
+    require('../lib/simulacao_precos').decidir(req.params.item, req.params.decisao === 'aprovar').then(d => res.json(d)).catch(erroJson(res));
+});
 router.post('/seven/preco/:item/ia', auth, (req, res) => { require('../lib/preco_ia').sugerir(req.params.item, req.body || {}).then(d => res.json(d)).catch(erroJson(res)); });
 // Clonagem (AD HEALTH): fila de anuncios para clonar na outra conta
 const clonagem = () => require('../lib/clonagem');

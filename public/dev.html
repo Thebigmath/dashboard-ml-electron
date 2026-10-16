@@ -28,6 +28,7 @@
         .dv-lista { background:var(--s1); border:1px solid var(--sep); border-radius:14px; overflow:hidden; }
         .dv-lin { display:grid; grid-template-columns:22px 260px 1fr 80px; gap:12px; align-items:center; padding:11px 16px; border-top:1px solid var(--sep); font-size:13px; }
         .dv-lin:first-child { border-top:0; }
+        .dv-lin.cx { grid-template-columns:22px 210px 1fr 330px; }
         .dv-lin .n { font-weight:600; color:var(--l1); } .dv-lin .d { color:var(--l2); } .dv-lin .ms { color:var(--l3); text-align:right; font-variant-numeric:tabular-nums; }
         @media (max-width:800px) { .dv-lin { grid-template-columns:22px 1fr; } .dv-lin .d, .dv-lin .ms { grid-column:2; text-align:left; } }
         .ok { color:#30D158; } .atencao { color:#ff9f0a; } .falha { color:#ff453a; }
@@ -75,6 +76,7 @@
                 <div class="dv-abas">
                     <button class="dv-aba ativa" data-aba="saude" onclick="aba('saude')"><i class="bi bi-heart-pulse"></i> Saúde do projeto</button>
                     <button class="dv-aba" data-aba="cotas" onclick="aba('cotas')"><i class="bi bi-speedometer2"></i> Cotas das APIs</button>
+                    <button class="dv-aba" data-aba="complexo" onclick="aba('complexo')"><i class="bi bi-diagram-3"></i> Complexo de IA</button>
                 </div>
 
                 <section id="abaSaude" style="margin-top:16px">
@@ -91,6 +93,21 @@
                         <div class="dv-card"><small>Com falha</small><b class="falha" id="svFa">—</b></div>
                     </div>
                     <div id="svLista" style="margin-top:6px"></div>
+                </section>
+
+                <section id="abaComplexo" style="margin-top:16px" hidden>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+                        <div><b>Complexo de IA</b><br><small class="text-secondary">Cada área do SEVEN tem os seus agentes de IA, cada um com uma chave da API do Gemini. O agente 1 de cada área é o orquestrador; abaixo deles ficam os bots que executam. <span id="cxQuando">—</span></small></div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn-acao" onclick="cxTestar(false)"><i class="bi bi-plug"></i> Testar as chaves</button>
+                            <button class="btn-acao" onclick="cxTestar(true)" title="Pede uma resposta curta a cada modelo (gasta um pouco de cota)"><i class="bi bi-lightning"></i> Teste completo</button>
+                            <button class="btn-acao" onclick="cxExportar()" title="Baixa o arquivo com as chaves para levar a outro PC (pen drive)"><i class="bi bi-download"></i> Exportar chaves</button>
+                            <label class="btn-acao" style="cursor:pointer;margin:0" title="Instala o arquivo de chaves trazido de outro PC"><i class="bi bi-upload"></i> Importar chaves<input type="file" accept=".json" hidden onchange="cxImportar(this)"></label>
+                        </div>
+                    </div>
+                    <div class="dv-res" id="cxCards" style="margin-top:12px"></div>
+                    <div id="cxAreas"></div>
+                    <small class="text-secondary" style="display:block;margin-top:10px">As chaves ficam em <code id="cxArq">~/.seven/complexo_ia.json</code> (o mesmo arquivo do projeto Python "Complexo de IA" da Área de Trabalho), fora do git. O arquivo exportado leva as chaves: só pen drive ou rede local, nunca e-mail, WhatsApp ou nuvem.</small>
                 </section>
 
                 <section id="abaCotas" style="margin-top:16px" hidden>
@@ -150,8 +167,9 @@ async function sair() { try { await api('/api/dev/sair', { method: 'POST' }); } 
 
 function aba(a) {
     document.querySelectorAll('.dv-aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === a));
-    $('abaSaude').hidden = a !== 'saude'; $('abaCotas').hidden = a !== 'cotas';
+    $('abaSaude').hidden = a !== 'saude'; $('abaCotas').hidden = a !== 'cotas'; $('abaComplexo').hidden = a !== 'complexo';
     if (a === 'cotas') cotas();
+    if (a === 'complexo') cxCarregar();
 }
 
 const ICONE = { ok: 'bi-check-circle-fill ok', atencao: 'bi-exclamation-triangle-fill atencao', falha: 'bi-x-circle-fill falha' };
@@ -165,6 +183,50 @@ async function saude(gemini) {
         $('svLista').innerHTML = grupos.map(g => `<div class="dv-grupo">${esc(g)}</div><div class="dv-lista">${
             d.itens.filter(i => i.grupo === g).map(i => `<div class="dv-lin"><i class="bi ${ICONE[i.status]}"></i><span class="n">${esc(i.nome)}</span><span class="d">${esc(i.detalhe)}</span><span class="ms">${i.ms != null ? i.ms + ' ms' : ''}</span></div>`).join('')}</div>`).join('');
     } catch (e) { $('svQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
+}
+
+// ---- Complexo de IA ----
+const CX_COR = { 'conectada': 'ok', 'sem chave': '', 'não testada': '', 'cota esgotada': 'atencao', 'modelo indisponivel': 'atencao' };
+const CX_ICO = { 'conectada': 'bi-check-circle-fill ok', 'sem chave': 'bi-dash-circle', 'não testada': 'bi-question-circle', 'cota esgotada': 'bi-exclamation-triangle-fill atencao', 'modelo indisponivel': 'bi-exclamation-triangle-fill atencao' };
+function cxDesenhar(d) {
+    $('cxArq').textContent = d.arquivo;
+    $('cxQuando').textContent = d.testado_em ? `Último teste: ${new Date(d.testado_em).toLocaleString('pt-BR')}${d.completo ? ' (completo)' : ''}.` : 'Ainda não testado.';
+    $('cxCards').innerHTML = d.areas.map(a => `<div class="dv-card"><small>${esc(a.nome)}</small><b class="${a.conectadas === a.total ? 'ok' : a.conectadas ? 'atencao' : 'falha'}">${a.conectadas} / ${a.total}</b><small>agentes conectados</small></div>`).join('');
+    $('cxAreas').innerHTML = d.areas.map(a => `<div class="dv-grupo">${esc(a.nome)} · ${a.total} agentes</div><div class="dv-lista">${a.agentes.map(g => `
+        <div class="dv-lin cx">
+            <i class="bi ${CX_ICO[g.status] || 'bi-x-circle-fill falha'}"></i>
+            <span class="n">${g.n}. ${esc(g.papel)}</span>
+            <span class="d">${esc(g.descricao)}<br><b class="${CX_COR[g.status] ?? 'falha'}">${esc(g.status)}</b> · ${esc(g.chave)} · ${esc(g.modelo)}${g.detalhe ? ' · ' + esc(g.detalhe) : ''}</span>
+            <span style="display:flex;gap:6px;align-items:center">
+                <input type="password" class="dv-input" id="cx_${g.id}" placeholder="${g.tem_chave ? 'trocar a chave' : 'colar a chave'}" style="width:190px;padding:5px 8px;font-size:12px" autocomplete="off">
+                <button class="btn-acao" onclick="cxSalvar('${a.id}','${g.id}')">Salvar</button>
+                ${g.tem_chave ? `<button class="btn-acao" onclick="cxApagar('${a.id}','${g.id}')" title="Apagar a chave deste agente"><i class="bi bi-trash"></i></button>` : ''}
+            </span>
+        </div>`).join('')}</div>`).join('');
+}
+async function cxCarregar() { try { cxDesenhar(await api('/api/dev/complexo')); } catch (e) { $('cxQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; } }
+async function cxSalvar(area, agente, apagar) {
+    const el = $('cx_' + agente), chave = apagar ? '' : (el.value || '').trim();
+    if (!apagar && !chave) return el.focus();
+    try { await api('/api/dev/complexo/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area, agente, chave }) }); cxCarregar(); }
+    catch (e) { alert(e.message); }
+}
+function cxApagar(area, agente) { if (confirm('Apagar a chave deste agente?')) cxSalvar(area, agente, true); }
+async function cxTestar(completo) {
+    $('cxQuando').textContent = completo ? 'Testando cada modelo…' : 'Testando as chaves…';
+    try { cxDesenhar(await api('/api/dev/complexo/testar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completo }) })); }
+    catch (e) { $('cxQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
+}
+async function cxExportar() {
+    if (!confirm('O arquivo exportado leva TODAS as chaves do Complexo de IA.\nLeve só por pen drive ou rede local (nunca e-mail, WhatsApp ou nuvem). Continuar?')) return;
+    const d = await api('/api/dev/complexo/exportar');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' })); a.download = 'complexo_ia.json'; a.click();
+}
+async function cxImportar(inp) {
+    const f = inp.files[0]; inp.value = ''; if (!f) return;
+    if (!confirm(`Instalar as chaves do arquivo "${f.name}" neste PC? As chaves atuais ficam guardadas numa cópia.`)) return;
+    try { const d = JSON.parse(await f.text()); cxDesenhar(await api('/api/dev/complexo/importar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) })); alert('Chaves instaladas. Clique em "Testar as chaves".'); }
+    catch (e) { alert('Não deu: ' + e.message); }
 }
 
 function barras(alvoB, alvoE, horas) {

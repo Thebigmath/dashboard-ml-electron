@@ -101,7 +101,8 @@ module.exports = {
         // ranking ML (Issacar direto na busca do ML): todo dia a partir das 7h, para as duas contas
         require('./lib/ranking_mt').iniciarAgendador();
         require('./lib/motor_preco').iniciarAgendador();
-        require('./lib/flex_auto').iniciarAgendador();    // Flex automatico pelo estoque do Olist (so no Dashboard da Flavia, so se ligado)
+        require('./lib/flex_auto').iniciarAgendador();
+        require('./lib/simulacao_precos').iniciarAgendador();   // simulacao de precos da IA (vendas de ontem), todo dia a partir das 8h    // Flex automatico pelo estoque do Olist (so no Dashboard da Flavia, so se ligado)
         require('./lib/central_ml').iniciarAgendador();   // vigias da Agenda do Full (so se houver vigia ativa)   // modo automatico das regras de preco (so se ligado)
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
         // janela já existir quando o clique na notificação quiser abri-la.
@@ -114,6 +115,7 @@ module.exports = {
         require('./lib/ranking_mt').pararAgendador();
         require('./lib/motor_preco').pararAgendador();
         require('./lib/flex_auto').pararAgendador();
+        require('./lib/simulacao_precos').pararAgendador();
         if (httpServer) httpServer.close();
     }
 };

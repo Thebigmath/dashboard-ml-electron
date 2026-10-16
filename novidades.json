@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.96",
+    "data": "2026-10-16",
+    "titulo": "Simulação de preços da IA com Aprovar/Rejeitar e o Complexo de IA",
+    "texto": "- Análise de vendas: botão \"Simular com a IA\". A IA analisa todos os anúncios que venderam e monta a simulação; no lugar do Precificar aparece o preço sugerido com a margem nova e os botões Aprovar e Rejeitar. Nada muda sem aprovar.\n- A simulação roda sozinha todo dia a partir das 8h (vendas de ontem) e avisa no Windows quando fica pronta.\n- Análise de vendas: a tela ficou maior (painel quase em tela cheia e a tabela usa a altura da janela).\n- Desenvolvedor: nova aba Complexo de IA, com as chaves do Gemini de cada agente por área (STOCK Ops 4, ADS Health 6, Finance 10), teste, exportar e importar para levar a outro PC.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.95",
     "data": "2026-10-16",
     "titulo": "Flex automático com trava de segurança",
