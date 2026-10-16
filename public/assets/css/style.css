@@ -1236,11 +1236,9 @@ body {
 }
 
 /* Famílias na tabela de reposição (Direito, Esquerdo e Par numa linha só) */
-.dashboard-table tbody tr.linha-familia { cursor:pointer; }
 .dashboard-table tbody tr.linha-familia td { background: color-mix(in srgb, var(--l1, #fff) 3%, transparent); }
-.dashboard-table tbody tr.linha-familia:hover td { background: color-mix(in srgb, var(--l1, #fff) 6%, transparent); }
 .dashboard-table tbody tr.linha-familia.aberta td { border-bottom-color: transparent; }
-.dashboard-table tbody tr.linha-membro td { background: color-mix(in srgb, var(--blue, #0a84ff) 4%, transparent); }
+.dashboard-table tbody tr.linha-membro td { background: color-mix(in srgb, var(--l1, #fff) 9%, transparent); }
 .dashboard-table tbody tr.linha-membro td:nth-child(4) { padding-left: 28px; border-left: 3px solid color-mix(in srgb, var(--blue, #0a84ff) 45%, transparent); }
 .fam-seta { color: var(--l3, #8ca0b3); font-size: 14px; }
 .fam-sub { font-size: 11px; color: var(--l3, #8ca0b3); margin-top: 2px; }

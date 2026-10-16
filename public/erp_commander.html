@@ -46,27 +46,27 @@
 <div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
 <div class="d-flex"><main class="content"><div class="fe">
     <h1><i class="bi bi-hdd-network"></i> ERP Commander</h1>
-    <div class="sub">Central do estoque no Olist: compara o "Seu depósito" do Mercado Livre com o ERP, sincroniza com um botão e sobe estoque por planilha.</div>
+    <div class="sub">Central do estoque no Olist: tira e devolve anúncios do Flex pelo estoque do ERP e sobe estoque por planilha.</div>
     <div class="linha" style="margin-bottom:16px">
-        <span class="chip aba on" id="abaFull" onclick="aba('full')"><i class="bi bi-arrow-left-right"></i> Depósito × ERP</span>
+        <span class="chip aba on" id="abaFull" onclick="aba('full')"><i class="bi bi-truck"></i> Flex automático</span>
         <span class="chip aba" id="abaSubir" onclick="aba('subir')"><i class="bi bi-upload"></i> Subir estoque</span>
     </div>
 
 <div id="secFull">
-    <div class="f" style="margin:-6px 0 12px">"Estoque no depósito" dos anúncios da conta Flavia no Mercado Livre (o Full fica de fora; a Cordeiro está em standby) contra o depósito Geral do Olist, SKU por SKU. Só altera o Olist quando você aperta Sincronizar e confirma.</div>
+    <div class="f" style="margin:-6px 0 12px">Quando o estoque do produto <b>zera no Olist</b> (depósito Geral), os anúncios da conta Flavia que estão com Flex <b>saem do Flex</b>. Quando o estoque volta, eles <b>voltam ao Flex</b>. Anúncio que não está no Olist não é tocado.</div>
     <div class="cards" id="cards"></div>
-    <div class="bl">
+    <div class="bl" style="margin-bottom:14px">
         <div class="linha">
-            <button class="bt pri" id="btColetar" onclick="coletar()"><i class="bi bi-arrow-repeat"></i> Atualizar (ML + Olist)</button>
-            <span class="f" id="estado"></span>
+            <label style="display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer"><input type="checkbox" id="swFlex" onchange="ligarFlex(this.checked)" style="width:18px;height:18px"> Flex automático</label>
+            <span class="f" id="flexEstado"></span>
             <span style="margin-left:auto"></span>
-            <input class="busca" id="busca" placeholder="Buscar SKU ou produto…" oninput="desenhar()">
-            <button class="bt" onclick="exportar()"><i class="bi bi-download"></i> Excel (CSV)</button>
+            <button class="bt" id="btSimular" onclick="simular()"><i class="bi bi-eye"></i> Simular (não muda nada)</button>
+            <button class="bt pri" id="btVerificar" onclick="verificarAgora()"><i class="bi bi-arrow-repeat"></i> Verificar agora</button>
         </div>
-        <div class="linha" id="sincLinha"></div>
-        <div class="linha" id="filtros"></div>
-        <div id="tabela"><div class="f">Carregando…</div></div>
+        <div id="simulacao"></div>
     </div>
+    <div class="bl" style="margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">Fora do Flex por estoque zerado</div><div id="removidos" class="f">—</div></div>
+    <div class="bl"><div style="font-weight:700;margin-bottom:8px">Histórico do Flex</div><div id="historico" class="f">—</div></div>
 </div>
 
 <div id="secSubir" style="display:none">
@@ -91,92 +91,60 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '
 const n = (v) => v == null ? '—' : Number(v).toLocaleString('pt-BR');
 const postar = (url, corpo) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) }).then(x => x.json());
 
-// ======== Depósito × ERP ========
-let D = null, filtro = 'diferentes', ordem = { k: 'difabs', desc: true };
-let sel = new Set(), escolha = {}, iniciou = false;   // marcadas para sincronizar; valor escolhido nos conflitos
+// ======== Flex automático ========
+let D = null, sim = null;
 const quando = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
-const ehConf = (l) => l.situacao === 'conflito entre contas';
-const valorFinal = (l) => ehConf(l) ? (escolha[l.olist_id] ?? null) : l.ml_valor;
-// so a Flavia vai para o Olist; a Cordeiro esta em standby (volta quando entrar em contas no servidor)
-const comCordeiro = () => (D.contas || []).includes('cordeiro');
 async function carregar() {
-    try { D = await fetch('/api/olist-estoque').then(r => r.json()); } catch (e) { document.getElementById('tabela').innerHTML = `<div class="f" style="color:#ff453a">${esc(e.message)}</div>`; return; }
-    const r = D.resumo, c = D.coleta;
+    try { D = await fetch('/api/flex-auto').then(r => r.json()); } catch (e) { document.getElementById('flexEstado').textContent = e.message; return; }
+    const e = D.estado || {}, r = e.resumo || {};
     document.getElementById('cards').innerHTML = [
-        ['SKUs com depósito no ML', n(r.skus)], ['Iguais', n(r.iguais)], ['Diferentes', n(r.diferentes)], ...(comCordeiro() ? [['Conflito entre contas', n(r.conflitos)]] : []), ['Não achados no Olist', n(r.nao_encontrados)],
-        ['Unidades no depósito (ML)', n(r.ml_total)], ['Unidades no Geral (Olist)', n(r.erp_geral)],
+        ['Situação', D.ligado ? '<span style="color:#30D158">Ligado</span>' : '<span style="color:var(--l3)">Desligado</span>'],
+        ['Anúncios com Flex', r.com_flex != null ? n(r.com_flex) : '—'],
+        ['Fora do Flex por estoque zerado', n((D.removidos || []).length)],
+        ['Última verificação', quando(e.ultima)],
     ].map(([t, v]) => `<div class="card2"><small>${t}</small><b>${v}</b></div>`).join('');
-    const est = document.getElementById('estado');
-    if (!D.tem_token) est.innerHTML = '<span style="color:#ff453a">Token do Olist não cadastrado.</span>';
-    else if (c.rodando) est.innerHTML = `${esc(c.etapa || 'Consultando')}${c.total ? `: ${c.feitos} de ${c.total} SKUs` : '…'}${c.aviso ? ' · ' + esc(c.aviso) : ''}<div class="barra" style="width:220px"><div style="width:${c.total ? (c.feitos / c.total * 100).toFixed(0) : 3}%"></div></div>`;
-    else est.textContent = D.em ? `Última consulta: ${quando(D.em)}${D.parcial ? ' (incompleta)' : ''}${c.erro ? ' · erro: ' + c.erro : ''}` : 'Ainda não consultado: clique em Atualizar.';
-    document.getElementById('btColetar').disabled = c.rodando || !D.tem_token || D.sinc.rodando;
-    // terminada a consulta, ja deixa marcadas as linhas diferentes (conflito so depois de escolher o valor)
-    if (!c.rodando && D.em && !D.parcial && !iniciou) { iniciou = true; (D.linhas || []).filter(l => l.situacao === 'diferente').forEach(l => sel.add(String(l.olist_id))); }
-    desenhar();
-    if (c.rodando || D.sinc.rodando) setTimeout(carregar, 4000);
+    const sw = document.getElementById('swFlex');
+    sw.checked = !!D.ligado; sw.disabled = !D.roda_aqui;
+    document.getElementById('flexEstado').innerHTML = !D.roda_aqui ? '<span style="color:#ff9f0a">O Flex automático roda no Dashboard da Flavia (o Olist é da conta Flavia). Aqui só dá para ver.</span>'
+        : e.rodando ? `Verificando: ${esc(e.etapa || '…')}` : e.erro ? `<span style="color:#ff453a">Erro na última verificação: ${esc(e.erro)}</span>`
+        : D.ligado ? `Verifica a cada ${D.intervalo_min} min${r.tirar != null && !r.simulado ? ` · última: ${r.tirar} tirados, ${r.devolver} devolvidos` : ''}` : 'Desligado: nada é alterado no Flex.';
+    document.getElementById('btSimular').disabled = e.rodando || !D.roda_aqui;
+    document.getElementById('btVerificar').disabled = e.rodando || !D.roda_aqui || !D.ligado;
+    const R = D.removidos || [];
+    document.getElementById('removidos').innerHTML = R.length ? `<table><tr><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist ao tirar</th><th>Desde</th></tr>
+        ${R.map(x => `<tr><td>${esc(x.item_id)}</td><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.titulo || '').slice(0, 70))}</td><td class="num">${n(x.saldo)}</td><td>${quando(x.em)}</td></tr>`).join('')}</table>`
+        : '<div class="f">Nenhum anúncio fora do Flex por estoque zerado.</div>';
+    const H = D.historico || [];
+    document.getElementById('historico').innerHTML = H.length ? `<table><tr><th>Quando</th><th>Ação</th><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist</th><th>Resultado</th></tr>
+        ${H.map(h => `<tr><td>${quando(h.quando)}</td><td><span class="pill ${h.acao === 'tirar' ? 'dif' : 'ok'}">${h.acao === 'tirar' ? 'tirou do Flex' : 'voltou ao Flex'}</span></td><td>${esc(h.item_id)}</td><td><b>${esc(h.sku)}</b></td><td>${esc(String(h.titulo || '').slice(0, 60))}</td><td class="num">${n(h.saldo)}</td><td>${h.ok ? '<span style="color:#30D158">ok</span>' : `<span style="color:#ff453a">${esc(h.erro || 'erro')}</span>`}</td></tr>`).join('')}</table>`
+        : '<div class="f">Nada feito ainda.</div>';
+    desenharSimulacao();
+    if (e.rodando) setTimeout(carregar, 4000);
 }
-function lista() {
-    const q = (document.getElementById('busca').value || '').trim().toLowerCase();
-    const F = { diferentes: l => l.situacao === 'diferente', conflitos: ehConf, todos: () => true, iguais: l => l.situacao === 'igual' || l.situacao === 'sincronizado', nao: l => /não encontrado|sem depósito|erro/.test(l.situacao || '') };
-    let L = (D.linhas || []).filter(F[filtro]).filter(l => !q || String(l.sku).toLowerCase().includes(q) || String(l.titulo).toLowerCase().includes(q) || String(l.erp_nome || '').toLowerCase().includes(q) || (l.rotulos || []).some(x => String(x).toLowerCase().includes(q)));
-    const val = (l) => ordem.k === 'difabs' ? Math.abs(l.diferenca || 0) : l[ordem.k] ?? -1e9;
-    return L.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * (ordem.desc ? -1 : 1));
-}
-function ordenar(k) { ordem = { k, desc: ordem.k === k ? !ordem.desc : true }; desenhar(); }
-const podeSinc = (l) => (l.situacao === 'diferente' || ehConf(l)) && l.erp_geral != null;
-const prontas = () => (D.linhas || []).filter(l => podeSinc(l) && sel.has(String(l.olist_id)) && valorFinal(l) != null && valorFinal(l) !== l.erp_geral);
-function desenharSinc() {
-    const s = D.sinc || {}, li = D.lidas || {};
-    const P = prontas();
-    const fazendo = s.rodando && s.fase === 'sincronizando';
-    document.getElementById('sincLinha').innerHTML = `
-        <button class="bt pri" style="background:#30D158" onclick="sincronizar()" ${P.length && !s.rodando && !D.coleta.rodando && !D.parcial ? '' : 'disabled'}><i class="bi bi-arrow-repeat"></i> Sincronizar ${P.length} com o Olist</button>
-        <span class="f">Grava no depósito <b>Geral</b> do Olist o "Estoque no depósito" do Mercado Livre. Depósito do ML lido em: Flavia ${quando(li.flavia && li.flavia.em)}${comCordeiro() ? ' · Cordeiro ' + quando(li.cordeiro && li.cordeiro.em) : ' · Cordeiro em standby'}${li.flavia && li.flavia.erro ? ' · Flavia: ' + esc(li.flavia.erro) : ''}${li.cordeiro && li.cordeiro.erro ? ' · Cordeiro: ' + esc(li.cordeiro.erro) : ''}</span>
-        ${fazendo ? `<span class="f">Sincronizando: ${s.feitos} de ${s.total}${s.aviso ? ' · ' + esc(s.aviso) : ''}<div class="barra" style="width:220px"><div style="width:${s.total ? (s.feitos / s.total * 100).toFixed(0) : 0}%"></div></div></span>` : ''}
-        ${!s.rodando && s.fase === 'sincronizado' && s.resultado ? `<span class="f" style="color:${s.resultado.falhas ? '#ff9f0a' : '#30D158'}"><b>Sincronizados ${s.resultado.ok}${s.resultado.falhas ? ' · ' + s.resultado.falhas + ' com erro (' + esc(s.erro || '') + ')' : ''}</b></span>` : ''}`;
-}
-function celulaMl(l) {
-    if (!ehConf(l)) return `<b>${n(l.ml_valor)}</b>`;
-    const id = esc(l.olist_id), v = escolha[l.olist_id];
-    const op = (t, x) => `<label style="white-space:nowrap;margin-right:6px;cursor:pointer"><input type="radio" name="e${id}" ${v === x ? 'checked' : ''} onchange="escolher('${id}', ${x})"> ${t} ${n(x)}</label>`;
-    return `<div style="font-size:12px">${op('Flavia', l.dep_flavia)}${op('Cordeiro', l.dep_cordeiro)}<input type="number" min="0" placeholder="outro" value="${v != null && v !== l.dep_flavia && v !== l.dep_cordeiro ? v : ''}" style="width:64px;background:var(--s2);border:1px solid var(--sep);color:var(--l1);border-radius:6px;padding:1px 4px" onchange="escolher('${id}', this.value === '' ? null : Number(this.value))"></div>`;
-}
-function escolher(id, v) { if (v == null || !(v >= 0)) delete escolha[id]; else { escolha[id] = v; sel.add(String(id)); } desenhar(); }
-function marcarL(id, v) { v ? sel.add(String(id)) : sel.delete(String(id)); desenhar(); }
-function marcarTodasL(v) { lista().filter(l => l.situacao === 'diferente').forEach(l => v ? sel.add(String(l.olist_id)) : sel.delete(String(l.olist_id))); desenhar(); }
-function desenhar() {
-    if (!D) return;
-    desenharSinc();
-    const r = D.resumo;
-    const cont = { diferentes: `Com diferença (${r.diferentes})`, ...(comCordeiro() ? { conflitos: `Conflito entre contas (${r.conflitos})` } : {}), iguais: 'Iguais', nao: 'Não achados / sem depósito', todos: 'Todos' };
-    document.getElementById('filtros').innerHTML = Object.entries(cont).map(([k, t]) => `<span class="chip ${filtro === k ? 'on' : ''}" onclick="filtro='${k}';desenhar()">${t}</span>`).join('');
-    const L = lista(), difs = L.filter(l => l.situacao === 'diferente');
-    const th = (t, k, cls) => `<th class="${cls || ''}" onclick="ordenar('${k}')">${t}${ordem.k === k ? (ordem.desc ? ' ↓' : ' ↑') : ''}</th>`;
-    document.getElementById('tabela').innerHTML = L.length ? `<table><tr><th style="width:28px">${difs.length ? `<input type="checkbox" ${difs.every(l => sel.has(String(l.olist_id))) ? 'checked' : ''} onchange="marcarTodasL(this.checked)">` : ''}</th>${th('SKU', 'sku')}${th('Produto', 'titulo')}${th('Depósito Flavia', 'dep_flavia', 'num')}${comCordeiro() ? th('Depósito Cordeiro', 'dep_cordeiro', 'num') : ''}${th('Valor do ML', 'ml_valor', 'num')}${th('Olist · Geral', 'erp_geral', 'num')}${th('Diferença', 'difabs', 'num')}<th>Situação</th></tr>
-        ${L.map(l => { const vf = valorFinal(l), dif = vf == null || l.erp_geral == null ? null : vf - l.erp_geral; return `<tr>
-            <td>${podeSinc(l) ? `<input type="checkbox" ${sel.has(String(l.olist_id)) ? 'checked' : ''} ${ehConf(l) && escolha[l.olist_id] == null ? 'disabled title="Escolha o valor primeiro"' : ''} onchange="marcarL('${esc(l.olist_id)}', this.checked)">` : ''}</td>
-            <td><b>${esc(l.sku)}</b>${(l.rotulos || []).length > 1 ? `<div class="f">${esc(l.rotulos.join(', '))}</div>` : ''}</td><td>${esc(String(l.titulo || l.erp_nome || '').slice(0, 70))}</td>
-            <td class="num">${n(l.dep_flavia)}</td>${comCordeiro() ? `<td class="num">${n(l.dep_cordeiro)}</td>` : ''}<td class="num">${celulaMl(l)}</td><td class="num"><b>${n(l.erp_geral)}</b></td>
-            <td class="num ${dif == null ? '' : dif === 0 ? 'dif-zero' : dif > 0 ? 'dif-pos' : 'dif-neg'}">${dif == null ? '—' : (dif > 0 ? '+' : '') + n(dif)}</td>
-            <td><span class="pill ${l.situacao === 'igual' || l.situacao === 'sincronizado' ? 'ok' : l.situacao === 'diferente' || ehConf(l) ? 'dif' : 'nao'}">${esc(l.situacao || '')}</span></td></tr>`; }).join('')}</table>
-        <div class="f" style="margin-top:8px">Valor do ML = "Estoque no depósito" do anúncio (não o Full)${comCordeiro() ? '. Nas duas contas com o mesmo número, vale esse número; com números diferentes é conflito e você escolhe' : ' da conta Flavia (a Cordeiro está em standby)'}. Diferença = valor do ML − depósito Geral do Olist.</div>`
-        : '<div class="f">Nada neste filtro.</div>';
-}
-async function coletar() { const r = await postar('/api/olist-estoque/coletar'); if (!r.ok) alert(r.erro || 'não iniciou'); iniciou = false; sel = new Set(); escolha = {}; carregar(); }
-async function sincronizar() {
-    const L = prontas();
-    const ex = L.slice(0, 8).map(l => `${l.sku}: Olist ${n(l.erp_geral)} → ${n(valorFinal(l))}${ehConf(l) ? ' (escolhido)' : ''}`).join('\n');
-    if (!confirm(`Sincronizar ${L.length} produtos com o Olist?\n\nO saldo do depósito Geral do Olist vai passar a ser o "Estoque no depósito" do Mercado Livre:\n\n${ex}${L.length > 8 ? '\n…' : ''}\n\nFica registrado no histórico com o valor anterior.`)) return;
-    const r = await postar('/api/olist-estoque/sincronizar', { itens: L.map(l => ({ id: l.olist_id, valor: valorFinal(l) })) });
-    if (!r.ok) return alert(r.erro || 'não deu');
+async function ligarFlex(v) {
+    if (v && !confirm('Ligar o Flex automático?\n\nA cada 30 min:\n• produto com estoque ZERADO no Olist (depósito Geral) → os anúncios da conta Flavia com Flex saem do Flex;\n• quando o estoque voltar → esses anúncios voltam ao Flex.\n\nAnúncio que não está no Olist não é tocado. Tudo fica no histórico.')) { document.getElementById('swFlex').checked = false; return; }
+    const r = await postar('/api/flex-auto/ligar', { ligado: v });
+    if (!r.ok) alert(r.erro || 'não deu');
     carregar();
 }
-function exportar() {
-    const L = lista(), cab = ['SKU', 'Produto', 'Deposito Flavia', 'Deposito Cordeiro', 'Valor do ML', 'Olist Geral', 'Diferenca', 'Situacao'];
-    const csv = [cab.join(';')].concat(L.map(l => [l.sku, (l.titulo || l.erp_nome || '').replace(/;/g, ','), l.dep_flavia ?? '', l.dep_cordeiro ?? '', l.ml_valor ?? '', l.erp_geral ?? '', l.diferenca ?? '', l.situacao].join(';'))).join('\n');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = 'deposito_ml_x_olist.csv'; a.click();
+// a simulacao roda no servidor em segundo plano; a tela espera terminar e mostra o resultado
+let esperandoSim = false;
+async function simular() {
+    const r = await postar('/api/flex-auto/verificar', { simular: true });
+    if (!r.ok) { document.getElementById('simulacao').innerHTML = `<div class="f" style="color:#ff453a">${esc(r.erro || 'erro')}</div>`; return; }
+    esperandoSim = true;
+    document.getElementById('simulacao').innerHTML = '<div class="f">Simulando (só lê o Olist e os anúncios; não muda nada)… na primeira vez pode levar alguns minutos.</div>';
+    setTimeout(carregar, 1500);
 }
+function desenharSimulacao() {
+    const S = D && D.estado && D.estado.simulacao;
+    if (!S || !esperandoSim || D.estado.rodando) return;
+    esperandoSim = false;
+    const A = S.acoes || [];
+    document.getElementById('simulacao').innerHTML = `<div style="font-weight:700;margin:8px 0 6px">Simulação (${quando(S.em)}): ${A.filter(a => a.acao === 'tirar').length} sairiam do Flex · ${A.filter(a => a.acao === 'devolver').length} voltariam</div>` + (A.length ? `<table><tr><th>Ação</th><th>Anúncio</th><th>SKU</th><th>Produto</th><th class="num">Olist · Geral</th></tr>
+        ${A.map(a => `<tr><td><span class="pill ${a.acao === 'tirar' ? 'dif' : 'ok'}">${a.acao === 'tirar' ? 'sairia do Flex' : 'voltaria ao Flex'}</span></td><td>${esc(a.item_id)}</td><td><b>${esc(a.sku)}</b></td><td>${esc(String(a.titulo || '').slice(0, 70))}</td><td class="num">${n(a.saldo)}</td></tr>`).join('')}</table>` : '<div class="f">Nenhum anúncio mudaria agora.</div>');
+}
+async function verificarAgora() { postar('/api/flex-auto/verificar', {}); setTimeout(carregar, 1500); }
 
 // ======== abas ========
 function aba(q) {

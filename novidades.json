@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.94",
+    "data": "2026-10-16",
+    "titulo": "Lista ERP, Flex automático pelo Olist e alerta de estoque em atenção",
+    "texto": "- Painel: saiu o filtro \"Peças Auto\"; os filtros agora são só OK, Atenção e Crítico (Crítico junta sem estoque, crítico e urgente).\n- Painel: botão \"Lista ERP\" mostra a mesma lista com o estoque do Olist (depósito Geral) no lugar do estoque do Full, sem a coluna Em Trânsito.\n- Painel: as famílias (Par, Direito e Esquerdo) já aparecem abertas, sem gaveta, e o Direito e o Esquerdo têm fundo mais claro.\n- ERP Commander: nova aba Flex automático. Quando o estoque do produto zera no Olist, os anúncios da conta Flavia saem do Flex e voltam quando o estoque volta. Vem desligado; tem simulação que não muda nada.\n- Novo pop-up no canto da tela (igual ao do Harvey) quando um produto do Full entra em Atenção (15 a 30 dias de cobertura). Também abre pelo menu da bandeja.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.93",
     "data": "2026-10-15",
     "titulo": "ERP Commander: só a conta Flavia vai para o Olist",

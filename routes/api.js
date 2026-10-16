@@ -1301,6 +1301,16 @@ router.post('/olist-estoque/upload/previa', auth, (req, res) => { try { res.json
 router.post('/olist-estoque/upload/aplicar', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').aplicar(req.body.skus)); } catch (e) { erroJson(res)(e); } });
 router.post('/olist-estoque/upload/limpar', auth, (req, res) => res.json(require('../lib/olist_estoque').limparUpload()));
 router.post('/olist-estoque/sincronizar', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').sincronizar(req.body.itens)); } catch (e) { erroJson(res)(e); } });
+// Pop-up lateral de estoque em atencao (lista do Full)
+router.get('/alerta-estoque', auth, (req, res) => { try { res.json(require('../lib/alerta_estoque').lista()); } catch (e) { erroJson(res)(e); } });
+// Lista ERP do Painel: saldo do deposito Geral do Olist por produto da reposicao
+router.get('/olist-estoque/erp-reposicao', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').erpReposicao()); } catch (e) { erroJson(res)(e); } });
+router.post('/olist-estoque/erp-reposicao/atualizar', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').atualizarErpReposicao()); } catch (e) { erroJson(res)(e); } });
+// Flex automatico pelo estoque do Olist (ERP Commander)
+router.get('/flex-auto', auth, (req, res) => { try { res.json(require('../lib/flex_auto').status()); } catch (e) { erroJson(res)(e); } });
+router.post('/flex-auto/ligar', auth, (req, res) => { try { res.json(require('../lib/flex_auto').ligar(!!(req.body && req.body.ligado))); } catch (e) { erroJson(res)(e); } });
+// roda em segundo plano (a primeira passada pode levar minutos); a tela acompanha por GET /flex-auto
+router.post('/flex-auto/verificar', auth, (req, res) => { const F = require('../lib/flex_auto'); if (F.status().estado.rodando) return res.json({ ok: false, erro: 'Já está verificando.' }); F.verificar({ simular: !!(req.body && req.body.simular) }).catch(() => {}); res.json({ ok: true }); });
 router.get('/olist-estoque/ajustes', auth, (req, res) => res.json(require('../lib/olist_estoque').ajustes(200)));
 router.post('/olist-estoque/coletar', auth, (req, res) => require('../lib/olist_estoque').coletar().then(d => res.json(d)).catch(erroJson(res)));
 // Hub da IA (clique no 7 do Inicio): conversa sobre os anuncios, com chave propria opcional

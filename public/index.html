@@ -30,6 +30,9 @@
         .cat-contador { background:color-mix(in srgb, var(--l1) 12%, transparent); border-radius:10px; padding:0 6px; font-size:10px; font-weight:700; }
         .cat-filter-ativo .cat-contador { background:rgba(255,255,255,.22); }
         .cat-filter-btn.cat-filter-ativo { background:#0a84ff; border-color:#0a84ff; color:#fff; }
+        /* Lista ERP: estoque do Olist no lugar do Full, sem a coluna de transito */
+        table.modo-erp .col-transito { display:none; }
+        #btnListaErp.ativo { background:#0a84ff; border-color:#0a84ff; color:#fff; }
         /* ── Filter sidebar ── */
         .content-with-filter { display:flex; gap:0; align-items:flex-start; }
         .main-col { flex:1; min-width:0; padding:24px; }
@@ -182,13 +185,13 @@
                         </button>
                         <div class="cat-fila" id="catFila">
                             <button class="cat-filter-btn cat-filter-ativo" data-cat="todos"        onclick="setFiltroCategoria('todos')">Todos</button>
-                            <button class="cat-filter-btn"                  data-cat="outros"       onclick="setFiltroCategoria('outros')">Peças Auto</button>
                             <button class="cat-filter-btn"                  data-cat="retrovisor"   onclick="setFiltroCategoria('retrovisor')">Retrovex</button>
                             <button class="cat-filter-btn"                  data-cat="farol"        onclick="setFiltroCategoria('farol')">Fitam</button>
                             <button class="cat-filter-btn"                  data-cat="forafull"     onclick="setFiltroCategoria('forafull')">Fora do Full</button>
                             <button class="cat-filter-btn cat-btn-estrela"  data-cat="estrela"      onclick="setFiltroCategoria('estrela')"><i class="bi bi-star-fill"></i> Estrela <span class="cat-contador"></span></button>
                             <button id="btnToggleFiltros" class="btn-filtro-toggle" onclick="toggleFiltros()"><i class="bi bi-sliders"></i> Filtros <span id="badgeFiltros" class="badge-filtros" style="display:none">0</span></button>
                             <button id="btnFamilias" class="btn-filtro-toggle" onclick="toggleFamilias()" title="Juntar Direito, Esquerdo e Par do mesmo produto numa linha só"><i class="bi bi-diagram-3"></i> Famílias</button>
+                            <button id="btnListaErp" class="btn-filtro-toggle" onclick="toggleListaErp()" title="A mesma lista com o estoque do ERP (Olist, depósito Geral) no lugar do estoque do Full"><i class="bi bi-hdd-network"></i> Lista ERP</button>
                         </div>
                     </div>
                 </div>
@@ -205,6 +208,7 @@
                         </select>
                     </label>
                 </div>
+                <div id="erpStatus" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 14px 0;padding:10px 14px;border:1px solid var(--sep);border-radius:10px;background:var(--s1);font-size:12px;color:var(--l2)"></div>
                 <div id="paginacaoReposicaoTopo" class="px-2 pt-2"></div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0 dashboard-table">
@@ -215,12 +219,12 @@
                                 <th>Urgência <i class="bi bi-info-circle th-info-icon" data-tip="Nível de risco de ruptura, baseado na cobertura em dias"></i></th>
                                 <th>Produto</th>
                                 <th>SKU</th>
-                                <th>Estoque <i class="bi bi-info-circle th-info-icon" data-tip="Estoque físico total no FULL (inclui unidades em transferência)"></i></th>
+                                <th id="thEstoque"><span>Estoque</span> <i class="bi bi-info-circle th-info-icon" data-tip="Estoque físico total no FULL (inclui unidades em transferência)"></i></th>
                                 <th id="thVendasPeriodo">Vendas 30d <i class="bi bi-info-circle th-info-icon" data-tip="Unidades vendidas nos últimos 30 dias, excluindo pedidos cancelados"></i></th>
                                 <th id="thMediaDia">Média Dia <i class="bi bi-info-circle th-info-icon" data-tip="Vendas 30d ÷ 30 = média de vendas por dia"></i></th>
                                 <th>Cobertura <i class="bi bi-info-circle th-info-icon" data-tip="Estoque ÷ Média Dia = quantos dias o estoque atual dura no ritmo de vendas"></i></th>
                                 <th>Reposição <i class="bi bi-info-circle th-info-icon" data-tip="Necessidade total para atingir o Estoque Alvo, ANTES de descontar o que está em trânsito. Anúncios ativos somam o buffer de dias até coleta; pausados usam só o Estoque Alvo"></i></th>
-                                <th>Em Trânsito <i class="bi bi-info-circle th-info-icon" data-tip="Unidades já enviadas para o FULL mas ainda não recebidas"></i></th>
+                                <th class="col-transito">Em Trânsito <i class="bi bi-info-circle th-info-icon" data-tip="Unidades já enviadas para o FULL mas ainda não recebidas"></i></th>
                                 <th>Qtd Full <i class="bi bi-info-circle th-info-icon" data-tip="Reposição − Em Trânsito = quanto enviar hoje ao FULL (editável)"></i> <i id="ordQtdFull" class="bi bi-arrow-down-up th-sort" title="Ordenar do maior para o menor" onclick="window.toggleOrdemQtdFull()"></i></th>
                             </tr>
                         </thead>
@@ -239,28 +243,16 @@
             <div class="filter-section-title">Mostrar apenas: <span class="filter-clear" onclick="limparFiltros()">Limpar</span></div>
 
             <div class="filter-toggle-row">
-                <label class="filter-toggle-label" for="f-ruptura">com Ruptura <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Sem estoque e com vendas"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-ruptura" onchange=""><span class="toggle-knob"></span></label>
+                <label class="filter-toggle-label" for="f-ok">OK <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Cobertura de 30 dias ou mais"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-ok" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
-                <label class="filter-toggle-label" for="f-reposicao">em Ponto de Reposição <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Reposição > 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-reposicao" onchange=""><span class="toggle-knob"></span></label>
+                <label class="filter-toggle-label" for="f-atencao">Atenção <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Cobertura de 15 a 30 dias"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-atencao" onchange=""><span class="toggle-knob"></span></label>
             </div>
             <div class="filter-toggle-row">
-                <label class="filter-toggle-label" for="f-semvenda">sem venda / estoque <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Média Dia = 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-semvenda" onchange=""><span class="toggle-knob"></span></label>
-            </div>
-            <div class="filter-toggle-row">
-                <label class="filter-toggle-label" for="f-comtransito">com itens em trânsito <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Tem qtd em trânsito"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-comtransito" onchange=""><span class="toggle-knob"></span></label>
-            </div>
-            <div class="filter-toggle-row">
-                <label class="filter-toggle-label" for="f-semtransito">sem itens em trânsito <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Trânsito = 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-semtransito" onchange=""><span class="toggle-knob"></span></label>
-            </div>
-            <div class="filter-toggle-row">
-                <label class="filter-toggle-label" for="f-comestoque">com Estoque <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Estoque > 0"></i></label>
-                <label class="toggle-switch"><input type="checkbox" id="f-comestoque" onchange=""><span class="toggle-knob"></span></label>
+                <label class="filter-toggle-label" for="f-critico">Crítico <i class="bi bi-info-circle" style="font-size:10px;color:var(--l3)" title="Sem estoque, crítico (menos de 7 dias) ou urgente (7 a 15 dias)"></i></label>
+                <label class="toggle-switch"><input type="checkbox" id="f-critico" onchange=""><span class="toggle-knob"></span></label>
             </div>
 
             <div class="filter-divider"></div>

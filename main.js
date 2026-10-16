@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage, screen } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -89,6 +89,37 @@ require('./lib/notificar').usarNotificador((titulo, corpo, rota, opcoes = {}) =>
 });
 
 // Auto-updater
+// ---- painel lateral: estoque em ATENCAO (igual ao do Harvey) ----
+// Quando um produto do Full entra em Atencao (cobertura de 15 a 30 dias), abre no canto direito da tela sem roubar
+// o foco. O X esconde; volta quando outro produto entrar em Atencao ou pela bandeja.
+let alerta = null;
+function criarAlerta() {
+    const area = screen.getPrimaryDisplay().workArea;
+    const largura = 360, altura = Math.min(620, Math.round(area.height * 0.7));
+    alerta = new BrowserWindow({
+        width: largura, height: altura, x: area.x + area.width - largura - 12, y: area.y + area.height - altura - 12,
+        frame: false, resizable: true, minimizable: false, maximizable: false, alwaysOnTop: true, skipTaskbar: true, show: false,
+        title: 'Estoque em atenção', backgroundColor: '#111318',
+        webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') },
+    });
+    alerta.loadURL('http://localhost:3001/alerta_estoque.html');
+    alerta.on('close', (e) => { if (!encerrando) { e.preventDefault(); alerta.hide(); } });
+}
+function mostrarAlerta() {
+    if (!alerta || alerta.isDestroyed()) criarAlerta();
+    else alerta.webContents.send('recarregar');
+    alerta.showInactive();
+}
+function verificarAlerta() {
+    try { if (require('./lib/alerta_estoque').verificar().abrir) mostrarAlerta(); } catch {}
+}
+ipcMain.on('fechar-alerta', () => alerta?.hide());
+ipcMain.on('abrir-produto', (_, chave) => {
+    if (!mainWindow) return;
+    mostrarJanela();
+    mainWindow.loadURL('http://localhost:3001/painel?chave=' + encodeURIComponent(String(chave || '')));
+});
+
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.logger = require('electron').app && (() => {
@@ -183,6 +214,9 @@ app.whenReady().then(() => {
         });
 
         criarBandeja();
+        // estoque em atencao: olha a lista de reposicao 1 min depois de abrir e a cada 2 min
+        setTimeout(verificarAlerta, 60 * 1000);
+        setInterval(verificarAlerta, 2 * 60 * 1000);
         // Registra o app para abrir junto com o Windows, escondido. Só no
         // instalado: no npm start isso registraria o electron de desenvolvimento.
         if (app.isPackaged) {
@@ -200,6 +234,7 @@ function criarBandeja() {
     tray.setToolTip('Flavia Stock — rodando na bandeja');
     tray.setContextMenu(Menu.buildFromTemplate([
         { label: 'Abrir Flavia Stock', click: () => mostrarJanela() },
+        { label: 'Mostrar estoque em atenção', click: () => mostrarAlerta() },
         { type: 'separator' },
         { label: 'Verificar atualização', click: () => { verificarUpdate(); mostrarJanela(); } },
         { label: 'Sair', click: () => { encerrando = true; server.stop(); app.quit(); } },

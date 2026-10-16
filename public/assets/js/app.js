@@ -274,7 +274,7 @@ async function renderizarGraficoFaturamento() {
 
 function contarFiltrosAtivos() {
     let n = 0;
-    ['f-ruptura','f-reposicao','f-semvenda','f-comtransito','f-semtransito','f-comestoque'].forEach(id => {
+    ['f-ok','f-atencao','f-critico'].forEach(id => {
         if (document.getElementById(id)?.checked) n++;
     });
     if ((parseInt(document.getElementById('f-periodo')?.value) || 30) !== 30) n++;
@@ -318,12 +318,8 @@ window.toggleOrdemQtdFull = function () {
 function aplicarFiltros() {
     const periodo      = parseInt(document.getElementById('f-periodo')?.value) || 30;
     try { localStorage.setItem('periodoObservado', String(periodo)); } catch {}
-    const fRuptura     = document.getElementById('f-ruptura')?.checked;
-    const fReposicao   = document.getElementById('f-reposicao')?.checked;
-    const fSemVenda    = document.getElementById('f-semvenda')?.checked;
-    const fComTransito = document.getElementById('f-comtransito')?.checked;
-    const fSemTransito = document.getElementById('f-semtransito')?.checked;
-    const fComEstoque  = document.getElementById('f-comestoque')?.checked;
+    // niveis de urgencia escolhidos (OK / Atencao / Critico); nenhum marcado = todos
+    const niveisSel = new Set(['ok', 'atencao', 'critico'].filter(n => document.getElementById('f-' + n)?.checked));
     const statusSel    = new Set([...(document.getElementById('f-status')?.selectedOptions || [])].map(o => o.value));
     const fornecedoresSel = getFiltrosFornecedores();
 
@@ -357,12 +353,7 @@ function aplicarFiltros() {
     if (fornecedoresSel)
         lista = lista.filter(p => { const f = detectarFornecedor(p); return f ? fornecedoresSel.has(f) : false; });
 
-    if (fRuptura)     lista = lista.filter(p => Number(p.estoque) === 0 && Number(p.mediaDia) > 0);
-    if (fReposicao)   lista = lista.filter(p => Number(p.reposicao) > 0);
-    if (fSemVenda)    lista = lista.filter(p => Number(p.mediaDia) === 0);
-    if (fComTransito) lista = lista.filter(p => transitoDe(p) > 0);
-    if (fSemTransito) lista = lista.filter(p => transitoDe(p) === 0);
-    if (fComEstoque)  lista = lista.filter(p => Number(p.estoque) > 0);
+    if (niveisSel.size) lista = lista.filter(p => niveisSel.has(nivelUrgencia(p)));
     if (apenasSelecionados) lista = lista.filter(p => window.selecionados.has(chaveDe(p)));
 
     const PRIORIDADE = ['tapete','lanterna','calota'];
@@ -399,7 +390,7 @@ window.toggleFiltros = function() {
 };
 
 window.limparFiltros = function() {
-    ['f-ruptura','f-reposicao','f-semvenda','f-comtransito','f-semtransito','f-comestoque'].forEach(id => {
+    ['f-ok','f-atencao','f-critico'].forEach(id => {
         const el = document.getElementById(id); if (el) el.checked = false;
     });
     const periodo = document.getElementById('f-periodo'); if (periodo) periodo.value = 30;
@@ -448,7 +439,19 @@ if (slider && diasAlvo && estrategia) {
 }
 
 /* ── Badge urgência ─────────────────────────────────────────────────────── */
+// Nivel para os filtros OK / Atencao / Critico (pedido em 16/10/2026): Critico junta sem estoque, critico (<7 dias)
+// e urgente (7 a 15 dias); Atencao = 15 a 30 dias; OK = 30 dias ou mais. Parado e sem venda nao entram em nenhum.
+function nivelUrgencia(p) {
+    if (p.semErp) return null;
+    const c = Number(p.cobertura), vendeu = Number(p.vendas30) > 0;
+    if (c === 0) return vendeu ? 'critico' : null;
+    if (c >= 999) return null;
+    if (c < 15) return 'critico';
+    if (c < 30) return 'atencao';
+    return 'ok';
+}
 function badgeUrgencia(p) {
+    if (typeof p === 'object' && p !== null && p.semErp) return '<span class="urgencia-badge sem-venda" title="Este SKU não foi achado no Olist">FORA DO ERP</span>';
     const c = Number(typeof p === 'object' && p !== null ? p.cobertura : p);
     const vendeu = typeof p === 'object' && p !== null ? Number(p.vendas30) > 0 : true;
     // Estoque zerado sem nenhuma venda não é ruptura, é produto parado. Os dois casos
@@ -563,30 +566,30 @@ function renderPagina(lista, pagina) {
     const cabeca = (cab) => {
         if (!cab) return '';
         const lados = cab.filhos.map(m => `<span class="fam-lado fam-${ladoDe(m)}">${ROTULO_LADO[ladoDe(m)]}</span>`).join('');
-        return `<div class="fam-sub"><span class="fam-lados" style="margin-left:0">${lados}</span> ${cab.aberta ? 'clique para fechar' : 'clique para ver o Direito e o Esquerdo'}</div>`;
+        return `<div class="fam-sub"><span class="fam-lados" style="margin-left:0">${lados}</span></div>`;
     };
     const linha = (p, fam, cab) => `
         <tr data-sku="${p.sku}" data-chave="${chaveDe(p)}"${fam ? ` data-familia="${fam}"` : ''}${cab ? ` data-familia="${cab.familia}"` : ''} class="${fam ? 'linha-membro' : ''}${cab ? 'linha-familia' + (cab.aberta ? ' aberta' : '') : ''}${window.selecionados.has(chaveDe(p)) ? ' linha-sel' : ''}">
             <td class="col-sel"><input type="checkbox" class="sel-check sel-linha" data-chave="${chaveDe(p)}"${window.selecionados.has(chaveDe(p)) ? ' checked' : ''}></td>
             <td class="col-estrela">${celulaEstrela(p)}</td>
             <td>${badgeUrgencia(p)}</td>
-            <td>${cab ? `<i class="bi bi-chevron-${cab.aberta ? 'down' : 'right'} fam-seta"></i> ` : ''}${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}${cabeca(cab)}</td>
+            <td>${p.titulo}${p.curvaAbc ? ` <span class="badge-abc badge-abc-${p.curvaAbc.toLowerCase()}">${p.curvaAbc}</span>` : ''}${cabeca(cab)}</td>
             <td>${p.sku}</td>
             <!-- estoque cru: o que está em trânsito tem coluna própria e ainda não chegou
                  ao FULL, então não pode ser subtraído daqui (subtrair mostrava 0 em produto
                  com estoque real, ex. 35063d com 48 un e 86 em trânsito) -->
-            <td>${Number(p.estoque)}</td>
+            <td>${window.modoErp ? (p.semErp ? '<span style="color:var(--l3)">—</span>' : Number(p.estoqueErp)) : Number(p.estoque)}</td>
             <td>${p.vendasPeriodo ?? p.vendas30}</td>
             <td>${p.mediaDia}</td>
             <td>${Number(p.cobertura) >= 999 ? '—' : p.cobertura}</td>
             <td><strong>${p.eFull === false ? '<span style="color:var(--l3,#8ca0b3);font-weight:400">n/a</span>' : (Number(p.reposicaoBruta ?? p.reposicao) > 0 ? (p.reposicaoBruta ?? p.reposicao) : '—')}</strong></td>
-            <td><span class="qtd-transito-display transito-hover" data-chave="${chaveDe(p)}" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;cursor:help;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}${(p.transferenciaMl||0)>0?`<sup style="color:#a78bfa;font-weight:800;margin-left:3px" title="">⇄${p.transferenciaMl}</sup>`:''}</span></td>
+            <td class="col-transito"><span class="qtd-transito-display transito-hover" data-chave="${chaveDe(p)}" style="display:inline-block;min-width:40px;text-align:center;font-weight:600;cursor:help;color:${transitoDe(p)>0?'#f39c12':'var(--l3,#8ca0b3)'}">${transitoDe(p)}${(p.transferenciaMl||0)>0?`<sup style="color:#a78bfa;font-weight:800;margin-left:3px" title="">⇄${p.transferenciaMl}</sup>`:''}</span></td>
             <td><input type="number" class="qtd-full" ${p.eFull === false ? 'title="Fora do Full: sem reposição calculada, mas você pode digitar a quantidade para enviar ao galpão"' : ''} data-chave="${chaveDe(p)}" data-item-id="${p.item_id || ''}" min="0" placeholder="0" value="${window.qtdsFull[chaveDe(p)] ?? (qtdFullSugerida(p) > 0 ? qtdFullSugerida(p) : '')}" style="${inputStyle}" oninput="window.qtdsFull[this.dataset.chave]=parseInt(this.value)||0"></td>
         </tr>`;
     tabela.innerHTML = fatia.map(u => {
         if (!u.familia) return linha(u.p);
-        const aberta = window.familiasAbertas.has(u.familia);
-        return linha(u.par, null, { familia: u.familia, aberta, filhos: u.filhos }) + (aberta ? u.filhos.map(p => linha(p, u.familia)).join('') : '');
+        // familias sempre abertas (pedido em 16/10/2026): o par e logo abaixo o Direito e o Esquerdo, sem gaveta
+        return linha(u.par, null, { familia: u.familia, aberta: true, filhos: u.filhos }) + u.filhos.map(p => linha(p, u.familia)).join('');
     }).join('');
 
     renderControles(unidades.length, pagina);
@@ -800,12 +803,6 @@ if (tabela) {
     tabela.addEventListener('click', e => {
         const b = e.target.closest('.btn-estrela');
         if (b) window.toggleEstrela(b.dataset.chave, b);
-        const fam = e.target.closest('tr.linha-familia');
-        if (fam && !e.target.closest('input, button')) {
-            const f = fam.dataset.familia;
-            if (window.familiasAbertas.has(f)) window.familiasAbertas.delete(f); else window.familiasAbertas.add(f);
-            renderPagina(produtosFiltrados, paginaAtual);
-        }
     });
     tabela.addEventListener('change', e => {
         const chk = e.target.closest('.sel-familia');
@@ -1264,9 +1261,12 @@ function recalcularComTransito() {
     window.periodoEfetivo = periodo;
 
     window.produtosReposicao = window.produtosReposicao.map(p => {
-        const estoque  = Number(p.estoque);
+        // Lista ERP: mesmo calculo, com o estoque do Olist (deposito Geral) e sem transito
+        const erpV     = window.modoErp ? window.erpMapa[chaveDe(p)] : undefined;
+        const semErp   = window.modoErp && (erpV === null || erpV === undefined);
+        const estoque  = window.modoErp ? (semErp ? 0 : Number(erpV)) : Number(p.estoque);
         const vendasP  = vendasNoPeriodo(p, periodo) ?? Number(p.vendas30);
-        const transito = transitoDe(p);
+        const transito = window.modoErp ? 0 : transitoDe(p);
         const vdm      = Math.round((vendasP / periodo) * 100) / 100;
         // cobertura conta o trânsito e usa a média em precisão total — igual ao backend
         const vdmReal   = vendasP / periodo;
@@ -1277,10 +1277,55 @@ function recalcularComTransito() {
         // Antes a tela exibia o valor já líquido nas duas, e a conta "29 − 6 = 23" ficava
         // invisível — parecia que o trânsito não tinha sido descontado em lugar nenhum.
         const reposicaoBruta = calcularReposicaoMagis5(vendasP, diasC, diasA, estoque, 0, 1, p.status === 'active', periodo);
-        return { ...p, vendasPeriodo: vendasP, mediaDia: vdm, cobertura, reposicao, reposicaoBruta };
+        return { ...p, vendasPeriodo: vendasP, mediaDia: vdm, cobertura, reposicao: semErp ? 0 : reposicao, reposicaoBruta: semErp ? 0 : reposicaoBruta, estoqueErp: window.modoErp && !semErp ? estoque : null, semErp };
     });
     atualizarCabecalhoPeriodo(periodo);
 }
+/* ── Lista ERP ─────────────────────────────────────────────────────────────
+   A mesma lista de reposicao, com o estoque do Olist (deposito Geral) no lugar do estoque do Full e sem a
+   coluna Em Transito. O calculo (cobertura, urgencia, reposicao) e o mesmo. */
+window.modoErp = false;
+window.erpMapa = {};
+let erpInfo = null, erpTimer = null;
+function pintarErpStatus() {
+    const el = document.getElementById('erpStatus'); if (!el) return;
+    el.style.display = window.modoErp ? 'flex' : 'none';
+    if (!window.modoErp) return;
+    const c = (erpInfo && erpInfo.coleta) || {};
+    const quando = erpInfo && erpInfo.atualizado_em ? new Date(erpInfo.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'nunca';
+    const fora = window.produtosReposicao.filter(p => p.semErp).length;
+    el.innerHTML = `<i class="bi bi-hdd-network" style="color:#0a84ff"></i> <b>Lista ERP</b> · estoque do Olist (depósito Geral), sem trânsito · atualizado: ${quando}${fora ? ` · ${fora} produtos fora do Olist (FORA DO ERP)` : ''}
+        ${c.rodando ? `<span>· atualizando${c.total ? ` ${c.feitos} de ${c.total}` : '…'}${c.aviso ? ' · ' + c.aviso : ''}</span>` : `<button class="btn-filtro-toggle" style="padding:4px 10px" onclick="atualizarListaErp()"><i class="bi bi-arrow-repeat"></i> Atualizar do Olist</button>`}
+        ${c.erro ? `<span style="color:#ff453a">${c.erro}</span>` : ''}`;
+}
+async function carregarErp() {
+    try { erpInfo = await fetch('/api/olist-estoque/erp-reposicao').then(r => r.json()); } catch { return; }
+    window.erpMapa = erpInfo.mapa || {};
+    if (window.modoErp) { recalcularComTransito(); aplicarFiltros(); }
+    pintarErpStatus();
+    clearTimeout(erpTimer);
+    if (erpInfo.coleta && erpInfo.coleta.rodando) erpTimer = setTimeout(carregarErp, 4000);
+}
+window.atualizarListaErp = async function () {
+    await fetch('/api/olist-estoque/erp-reposicao/atualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+    carregarErp();
+};
+window.toggleListaErp = async function () {
+    window.modoErp = !window.modoErp;
+    document.getElementById('btnListaErp')?.classList.toggle('ativo', window.modoErp);
+    tabela?.closest('table')?.classList.toggle('modo-erp', window.modoErp);
+    const th = document.querySelector('#thEstoque span'); if (th) th.textContent = window.modoErp ? 'Estoque ERP' : 'Estoque';
+    document.querySelector('#thEstoque i')?.setAttribute('data-tip', window.modoErp ? 'Saldo do produto no depósito Geral do Olist (ERP)' : 'Estoque físico total no FULL (inclui unidades em transferência)');
+    if (window.modoErp) {
+        await carregarErp();
+        // retrato velho (mais de 30 min) ou nunca lido: pede ao Olist o que mudou
+        if (!erpInfo || !erpInfo.atualizado_em || Date.now() - new Date(erpInfo.atualizado_em).getTime() > 30 * 60000) window.atualizarListaErp();
+    }
+    recalcularComTransito();
+    aplicarFiltros();
+    pintarErpStatus();
+};
+
 function atualizarCabecalhoPeriodo(n) {
     const th = document.getElementById('thVendasPeriodo'), tm = document.getElementById('thMediaDia');
     if (th) th.firstChild.textContent = `Vendas ${n}d `;

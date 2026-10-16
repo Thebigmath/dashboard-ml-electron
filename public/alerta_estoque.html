@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estoque em atenção</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<style>
+    :root { --bg:#111318; --s1:#1a1d24; --s2:#22262f; --sep:rgba(255,255,255,.08); --l1:#f2f2f7; --l2:#c7c7cc; --l3:#8e8e93; --am:#FFB800; --azul:#0a84ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--l1); font:13px -apple-system,'Segoe UI',system-ui,sans-serif; display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+    .topo { -webkit-app-region:drag; display:flex; align-items:center; gap:8px; padding:12px 12px 10px 14px; border-bottom:1px solid var(--sep); }
+    .topo b { font-size:14px; }
+    .topo .x { -webkit-app-region:no-drag; margin-left:auto; background:none; border:none; color:var(--l3); font-size:16px; cursor:pointer; border-radius:6px; padding:2px 6px; }
+    .topo .x:hover { background:var(--s2); color:var(--l1); }
+    .sub { padding:8px 14px; color:var(--l3); font-size:11.5px; border-bottom:1px solid var(--sep); }
+    .lista { overflow-y:auto; flex:1; padding:8px; }
+    .it { background:var(--s1); border:1px solid var(--sep); border-radius:10px; padding:10px 11px; margin-bottom:7px; cursor:pointer; }
+    .it:hover { border-color:var(--azul); }
+    .it.novo { border-color:rgba(255,184,0,.55); }
+    .nm { font-weight:600; line-height:1.3; }
+    .sku { color:var(--l3); font-size:11px; margin-top:2px; }
+    .tag { font-size:10px; font-weight:800; color:#111; background:var(--am); border-radius:999px; padding:1px 7px; margin-left:4px; vertical-align:1px; }
+    .nums { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:8px; }
+    .nums div { background:var(--s2); border-radius:7px; padding:5px 6px; text-align:center; }
+    .nums small { display:block; font-size:9.5px; color:var(--l3); text-transform:uppercase; letter-spacing:.3px; }
+    .nums b { font-size:13px; }
+    .cob { color:var(--am); }
+    .vazio { color:var(--l3); text-align:center; padding:30px 10px; }
+</style>
+</head>
+<body>
+<div class="topo"><i class="bi bi-exclamation-triangle-fill" style="color:var(--am)"></i> <b id="tit">Estoque em atenção</b><button class="x" onclick="fechar()" title="Fechar (volta quando outro produto entrar em atenção)"><i class="bi bi-x-lg"></i></button></div>
+<div class="sub">Produtos do Full com cobertura entre 15 e 30 dias. Clique para abrir no Painel.</div>
+<div class="lista" id="lista"><div class="vazio">Carregando…</div></div>
+<script>
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const n = (v, d = 0) => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: d });
+async function carregar() {
+    let L = [];
+    try { L = await fetch('/api/alerta-estoque').then(r => r.json()); } catch {}
+    const novos = L.filter(x => x.novo).length;
+    document.getElementById('tit').textContent = `Estoque em atenção · ${L.length}${novos ? ` (${novos} novo${novos > 1 ? 's' : ''})` : ''}`;
+    document.getElementById('lista').innerHTML = L.length ? L.map(x => `
+        <div class="it ${x.novo ? 'novo' : ''}" onclick="abrir('${esc(x.chave)}')">
+            <div class="nm">${esc(String(x.titulo || '').slice(0, 80))}${x.novo ? '<span class="tag">NOVO</span>' : ''}</div>
+            <div class="sku">${esc(x.sku)}</div>
+            <div class="nums"><div><small>Estoque</small><b>${n(x.estoque)}</b></div><div><small>Média/dia</small><b>${n(x.media_dia, 2)}</b></div>
+                <div><small>Cobertura</small><b class="cob">${n(x.cobertura, 1)} d</b></div><div><small>Repor</small><b>${x.reposicao > 0 ? n(x.reposicao) : '—'}</b></div></div>
+        </div>`).join('') : '<div class="vazio">Nenhum produto em atenção agora.</div>';
+}
+function fechar() { if (window.electronAPI && window.electronAPI.fecharAlerta) window.electronAPI.fecharAlerta(); else window.close(); }
+function abrir(chave) { if (window.electronAPI && window.electronAPI.abrirProduto) window.electronAPI.abrirProduto(chave); else location.href = '/painel?chave=' + encodeURIComponent(chave); }
+if (window.electronAPI && window.electronAPI.onRecarregar) window.electronAPI.onRecarregar(carregar);
+carregar();
+</script>
+</body>
+</html>

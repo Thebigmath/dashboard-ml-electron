@@ -6,4 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onUpdateStatus:     (cb) => ipcRenderer.on('update-status',     (_, m) => cb(m)),
     installUpdate:      ()   => ipcRenderer.send('install-update'),
     openExternal:       (url) => ipcRenderer.send('open-external', url),
+    // painel lateral de estoque em atencao
+    fecharAlerta:       ()   => ipcRenderer.send('fechar-alerta'),
+    abrirProduto:       (chave) => ipcRenderer.send('abrir-produto', chave),
+    onRecarregar:       (cb) => ipcRenderer.on('recarregar', () => cb()),
 });
