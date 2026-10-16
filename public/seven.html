@@ -1429,6 +1429,12 @@ async function vmDecidir(item, aprovar, btn) {
 function vmCelulaIA(v, d) {
     const precificar = (forte) => `<button class="ep-btn" style="border-color:${forte ? '#30D158' : 'var(--sep)'};color:${forte ? '#30D158' : 'var(--l2)'}" onclick="vmPrecificar('${esc(v.pedido)}','${esc(v.item_id)}')" title="Abre o precificador com a sugestão da IA"><i class="bi bi-stars"></i> Precificar</button>`;
     const s = vmSimDe(v.item_id);
+    // preco mudado nos ultimos 3 dias: esta em observacao e a simulacao pula de proposito (regra: subir e observar 3 dias)
+    const obs = (d.alterados || {})[v.item_id];
+    if (!s && obs && vmSimDados && vmSimDados.itens && vmSimDados.itens.length) {
+        const fim = new Date(new Date(obs.quando).getTime() + 3 * 86400000);
+        return `<div style="min-width:190px"><span class="pia-fraco" title="A IA volta a analisar este anúncio depois de ${fim.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}"><i class="bi bi-hourglass-split"></i> em observação desde ${new Date(obs.quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}${obs.antes != null && obs.depois != null ? ` (${pcR$(obs.antes)} → ${pcR$(obs.depois)})` : ''}${obs.fora ? ' · mudado fora do SEVEN' : ''}</span><div style="margin-top:4px">${precificar(false)}</div></div>`;
+    }
     if (!s) return precificar(v.mc_pct != null && v.mc_pct < d.mc_alvo);
     const pct = (x) => x == null ? '—' : String(x).replace('.', ',') + '%';
     const motivo = esc([s.motivo, ...(s.travas || []), ...(s.riscos || []).map(r => 'Risco: ' + r)].filter(Boolean).join(' · '));

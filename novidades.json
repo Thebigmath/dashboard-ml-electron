@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.97",
+    "data": "2026-10-16",
+    "titulo": "Análise de vendas: anúncios em observação",
+    "texto": "- Análise de vendas: anúncio com o preço mudado nos últimos 3 dias mostra \"em observação desde dd/mm (preço antes → depois)\" no lugar da sugestão da IA. A IA volta a analisar quando a observação de 3 dias acaba.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.96",
     "data": "2026-10-16",
     "titulo": "Simulação de preços da IA com Aprovar/Rejeitar e o Complexo de IA",
