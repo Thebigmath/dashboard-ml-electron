@@ -1,5 +1,13 @@
 [
-{
+  {
+    "versao": "1.9.103",
+    "data": "2026-10-19",
+    "titulo": "Planilha avançada completa: NF-e do ML, impostos separados, rebates, brinde e embalagem",
+    "texto": "- Finance → Planilha avançada: a Nº da NF-e agora vem do Mercado Livre para todos os pedidos (inclusive as notas importadas do Olist/Bling), com o status da nota.\n- Impostos separados: a parte de PIS, COFINS e ICMS que está dentro do DAS aparece nas colunas de débito; IRPJ, CSLL e CPP ficam na coluna Simples. O total do imposto não muda.\n- Rebate da comissão: campanhas em que o ML devolve parte do desconto na tarifa (lido de cada pedido). Rebate do frete: compensação do ML no envio.\n- Brinde e Embalagem: campos na tela, valor por pedido, descontados do valor líquido.\n- Correção: a busca de pedidos do ML repetia alguns pedidos entre as páginas (13 por mês), que eram contados duas vezes — também no DRE do Finance. Agora cada pedido conta uma vez só e os que faltarem são completados.\n- Conciliação: nota de pacote é comparada com a soma dos pedidos do pacote; notas emitidas antes de 13/10 também entram (pela nota no ML).",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.102",
     "data": "2026-10-19",
     "titulo": "Planilha avançada: as colunas do GeFinance já vêm marcadas",

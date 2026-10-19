@@ -62,6 +62,7 @@
         <span style="margin-left:auto"></span>
         <span style="position:relative"><button class="bt" onclick="abrirColunas(event)"><i class="bi bi-layout-three-columns"></i> Colunas</button><div class="cols" id="cols" hidden></div></span>
         <label class="bt" title="Planilha 'Base tributária' do contador (.xlsm/.xlsx): regras fiscais por SKU e por estado"><i class="bi bi-file-earmark-ruled"></i> Base tributária<input type="file" accept=".xlsm,.xlsx" hidden onchange="importarBase(this)"></label>
+        <span class="bt" style="cursor:default" title="Valor por pedido (R$), descontado do Valor líquido">Brinde R$ <input class="in" id="cfgBrinde" type="number" min="0" step="0.01" style="width:70px;padding:3px 6px" onchange="salvarCustosPedido()"> Embalagem R$ <input class="in" id="cfgEmb" type="number" min="0" step="0.01" style="width:70px;padding:3px 6px" onchange="salvarCustosPedido()"></span>
         <button class="bt" onclick="exportar()"><i class="bi bi-download"></i> Exportar</button>
         <button class="bt pri" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar do Mercado Livre</button>
     </div>
@@ -92,7 +93,7 @@ const COLS = [
     ['allCommissionValue', 'Comissão', 'm'], ['rebateCommissionValue', 'Rebate comissão', 'm'], ['commission', 'Comissão final', 'm'], ['bonusValue', 'Bônus', 'm'],
     ['paidFreight', 'Frete pago', 'm'], ['shippingRebate', 'Rebate do frete', 'm'], ['freightDifference', 'Diferença do frete', 'm'],
     ['debitIpi', 'Déb. IPI', 'm'], ['debitPis', 'Déb. PIS', 'm'], ['debitCofins', 'Déb. COFINS', 'm'], ['debitIcms', 'Déb. ICMS', 'm'], ['debitSt', 'Déb. ST', 'm'], ['debitDifal', 'Déb. DIFAL', 'm'],
-    ['debitTotal', 'Déb. TOTAL', 'm', 0, 1], ['simplesDas', 'Simples (DAS)', 'm'], ['importTax', 'Imp. importação', 'm', 1], ['tax', 'Imposto', 'm'],
+    ['debitTotal', 'Déb. TOTAL', 'm', 0, 1], ['simplesDas', 'Simples (IRPJ+CSLL+CPP)', 'm'], ['importTax', 'Imp. importação', 'm', 1], ['tax', 'Imposto', 'm'],
     ['gift', 'Brinde', 'm'], ['package', 'Embalagem', 'm'],
     ['liquidValue', 'Valor líquido', 'm', 0, 1], ['margin', 'Margem', 'm', 0, 1], ['costPercentage', '% Custo', 'p'], ['salePercentage', '% Venda', 'p'],
 ];
@@ -149,6 +150,7 @@ async function carregar() {
     $('atualizado').innerHTML = D.meses.map(m => m.coletado ? `${m.mes.split('-').reverse().join('/')}: pedidos até ${m.ate.split('-').reverse().join('/')} (lidos ${new Date(m.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})` : `${m.mes.split('-').reverse().join('/')}: ainda não lido`).join(' · ')
         + (falta.length || velho.length ? ' · <b style="color:#ff9f0a">clique em "Atualizar do Mercado Livre" para trazer os pedidos que faltam</b>' : '');
     for (const [id, k, txt] of [['fStatus', 'status', 'Todos os status'], ['fEnvio', 'shippingMethod', 'Todos os envios']]) { const v = $(id).value; $(id).innerHTML = `<option value="">${txt}</option>` + [...new Set(D.pedidos.map(p => p[k]))].sort().map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join(''); }
+    if (document.activeElement !== $('cfgBrinde')) $('cfgBrinde').value = D.brinde || ''; if (document.activeElement !== $('cfgEmb')) $('cfgEmb').value = D.embalagem || '';
     pagina = 1; desenharSimulacao(); desenhar(); acompanhar(); verBase();
 }
 function filtrados() {
@@ -169,7 +171,8 @@ function cel(p, c) {
     if (k === 'products') return `<td class="prod">${p.products.map(x => `<div><b>${esc(x.sku || '—')}</b> · ${x.quantidade}× ${esc(String(x.nome).slice(0, 48))}${x.fiscal ? ` <span class="f" title="${esc(x.fiscal.fonte)}${x.fiscal.ncm ? ' · NCM ' + x.fiscal.ncm : ''}">${x.fiscal.monofasico ? 'mono' : 'PIS/COF'}${x.fiscal.st ? ' · ST' : ''}${x.fiscal.importado ? ' · imp.' : ''}</span>` : ''}</div>`).join('')}${p.sem_custo ? '<div class="f" style="color:#ff9f0a">sem custo na planilha</div>' : ''}</td>`;
     if (k === 'status') return `<td class="t"><span class="pill ${v === 'Devolvido' ? 'dev' : ''}">${esc(v)}</span></td>`;
     if (k === 'tax') return `<td class="${v < 0 ? 'neg' : ''}" title="${{ nota: 'Pela NF-e do Olist', estimado: 'Estimado: pedido ainda sem nota no Olist (DAS sobre a base)', simulado: 'Simulação do Lucro Real' }[p.imposto_origem] || ''}">${brl(v)}${p.imposto_origem === 'estimado' ? ' <span class="f">*</span>' : ''}</td>`;
-    if (k === 'invoiceNumberWithSerie') return `<td class="t">${v ? esc(v) : '<span class="f">sem nota</span>'}</td>`;
+    if (k === 'invoiceNumberWithSerie') return `<td class="t" title="${esc(p.nota_fonte ? 'Nota no ' + p.nota_fonte + (p.nota_situacao ? ' · ' + p.nota_situacao : '') : '')}">${v ? esc(v) : '<span class="f">sem nota</span>'}</td>`;
+    if (['debitPis', 'debitCofins', 'debitIcms'].includes(k) && p.debitos_do_das) return `<td class="${v < 0 ? 'neg' : ''}" title="Parte deste imposto dentro do DAS do Simples (o DAS restante — IRPJ, CSLL e CPP — fica na coluna Simples)">${brl(v)}</td>`;
     if (k === 'financialTransfer') return `<td class="dest" title="${p.repasse_do_mp ? 'Líquido que caiu no Mercado Pago' : 'Calculado: total venda + comissão + diferença do frete'}">${brl(v)}${p.repasse_do_mp ? '' : ' <span class="f">*</span>'}</td>`;
     if (tipo === 't') return `<td class="t">${esc(v || '—')}</td>`;
     if (tipo === 'p') return `<td class="${v == null ? '' : v < 0 ? 'neg' : ''}">${pct(v)}</td>`;
@@ -185,7 +188,7 @@ function desenhar() {
         ['Total venda', brl(soma(L, 'totalSale')), `${L.length} pedidos`], ['Margem', brl(mSoma), `${pct(bSoma ? mSoma / bSoma * 100 : null)} da venda · ${pct(cSoma ? mSoma / cSoma * 100 : null)} do custo`],
         ['Valor líquido', brl(soma(L, 'liquidValue')), `comissão ${brl(soma(L, 'commission'))} · dif. frete ${brl(soma(L, 'freightDifference'))}`],
         // como o "Déb. TOTAL" do GeFinance, mais o DAS do Simples (que o GeFinance não calcula)
-        ['Impostos', brl(soma(L, 'tax')), (() => { const a = Object.entries(D.aliquotas_simples || {}).filter(([, x]) => x); return a.length ? `DAS médio ${pct(soma(L, 'simplesDas') / (soma(L, 'valueWithDiscount') || 1) * 100)} por SKU · ` + a.map(([m, x]) => `cheio ${String(x.efetiva.toFixed(2)).replace('.', ',')}% em ${m.slice(5)}/${m.slice(2, 4)} (faixa ${x.faixa})`).join(' · ') + ` · NF ${brl(soma(L, 'debitTotal'))}` : `${String(D.imposto_pct).replace('.', ',')}% (Configurações)`; })()],
+        ['Impostos', brl(soma(L, 'tax')), (() => { const a = Object.entries(D.aliquotas_simples || {}).filter(([, x]) => x); return a.length ? `DAS médio ${pct(L.reduce((t, p) => t + (p.aliquota_das || 0) * (p.valueWithDiscount || 0), 0) / (soma(L, 'valueWithDiscount') || 1))} por SKU · ` + a.map(([m, x]) => `cheio ${String(x.efetiva.toFixed(2)).replace('.', ',')}% em ${m.slice(5)}/${m.slice(2, 4)} (faixa ${x.faixa})`).join(' · ') + ` · PIS/COFINS/ICMS ${brl(soma(L, 'debitTotal'))} + IRPJ/CSLL/CPP ${brl(soma(L, 'simplesDas'))}` : `${String(D.imposto_pct).replace('.', ',')}% (Configurações)`; })()],
     ].map(([a, b, c]) => `<div class="card2"><small>${a}</small><b>${b}</b><span>${c}</span></div>`).join('');
     const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
     const tot = vis.map(c => { const [k, , tipo] = c; if (k === 'date') return `<td class="t">Totais</td>`; if (tipo === 't') return `<td class="t">${k === 'products' ? `${mL.length < L.length ? `<span class="f">${L.length - mL.length} sem custo fora da margem</span>` : ''}` : ''}</td>`;
@@ -208,6 +211,10 @@ function exportar() {
     const val = (p, c) => { const k = c[0]; if (k === 'products') return p.products.map(x => `${x.sku} x${x.quantidade}`).join(' | '); if (k === 'date') return new Date(p.date).toLocaleString('pt-BR'); const v = p[k]; return typeof v === 'number' ? String(v).replace('.', ',') : (v ?? ''); };
     const csv = [vis.map(c => c[1]).join(';')].concat(L.map(p => vis.map(c => String(val(p, c)).replace(/;/g, ',')).join(';'))).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); const [de, ate] = intervalo(); a.download = `planilha_avancada_${de}_a_${ate}.csv`; a.click();
+}
+async function salvarCustosPedido() {
+    await fetch('/api/finance/planilha/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brinde: $('cfgBrinde').value || 0, embalagem: $('cfgEmb').value || 0 }) });
+    carregar();
 }
 async function verBase() {
     const b = await fetch('/api/finance/base-tributaria').then(x => x.json()).catch(() => null);
