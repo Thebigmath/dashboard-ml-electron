@@ -201,6 +201,7 @@ function detectarFornecedor(p) {
     const t = (p.titulo || '').toLowerCase();
     const s = (p.sku    || '').toLowerCase();
     if (t.includes('lanterna')) return 'Fitam';
+    if (/^tap-\d+/.test(s))    return 'Sanfil';   // tapetes Sanfil: SKU TAP-000
     if (/^\d+tb/.test(s))      return 'Attis';
     if (/^tb\d+/.test(s))      return 'Grid';
     return null;

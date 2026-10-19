@@ -1177,7 +1177,8 @@ router.get('/seven/promocoes', auth, (req, res) => { require('../lib/promocoes')
 // Area do desenvolvedor: senha (mesmo esquema do Harvey), monitor de cotas e saude do projeto.
 // Tudo menos o "entrar" exige o token de sessao (cabecalho x-dev-token).
 const senhaDev = require('../lib/senha');
-const soDev = (req, res, next) => senhaDev.valido(req.get('x-dev-token')) ? next() : res.status(401).json({ erro: 'Entre com a senha da Área do desenvolvedor.' });
+// Area do desenvolvedor sem senha (pedido do usuario em 19/10/2026): acessivel direto, em qualquer PC
+const soDev = (req, res, next) => next();
 router.post('/dev/entrar', (req, res) => { const r = senhaDev.entrar((req.body || {}).senha); res.status(r.ok ? 200 : 401).json(r); });
 router.post('/dev/sair', (req, res) => { senhaDev.sair(req.get('x-dev-token')); res.json({ ok: true }); });
 router.get('/dev/cotas', soDev, (req, res) => res.json(require('../lib/cotas').resumo()));

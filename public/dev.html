@@ -149,12 +149,11 @@ async function api(url, opts = {}) {
     opts.headers = { ...(opts.headers || {}), 'x-dev-token': token };
     const r = await fetch(url, opts);
     const d = await r.json().catch(() => ({}));
-    if (r.status === 401 && url !== '/api/dev/entrar') { mostrarLogin(); throw new Error('sessão expirada'); }
     if (!r.ok || d.erro) throw new Error(d.erro || 'erro ' + r.status);
     return d;
 }
 function mostrarLogin() { $('dvLogin').hidden = false; $('dvConteudo').hidden = true; $('dvTopo').hidden = true; }
-function mostrarConteudo() { $('dvLogin').hidden = true; $('dvConteudo').hidden = false; $('dvTopo').hidden = false; saude(false); }
+function mostrarConteudo() { $('dvLogin').hidden = true; $('dvConteudo').hidden = false; $('dvTopo').hidden = true; saude(false); }
 
 async function entrar(ev) {
     ev.preventDefault();
@@ -261,7 +260,8 @@ async function cotas() {
     } catch (e) { $('ctQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
 }
 
-if (token) mostrarConteudo(); else mostrarLogin();
+// sem senha: abre direto
+mostrarConteudo();
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>
