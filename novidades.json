@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.100",
+    "data": "2026-10-19",
+    "titulo": "Ata da IA: simulação sempre das datas certas",
+    "texto": "- Ata da IA: a simulação só aparece quando é das mesmas datas das vendas da tela. Antes, se a simulação do dia não tinha rodado (app fechado às 8h), a tela mostrava a de outro dia como se fosse de ontem.\n- Quando a simulação é de outras datas, aparece o aviso para clicar em \"Simular com a IA\".",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.99",
     "data": "2026-10-19",
     "titulo": "Área do desenvolvedor sem senha e filtro Sanfil",

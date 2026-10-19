@@ -1418,7 +1418,9 @@ async function vmDepoisDeAplicar(feito, r) {
 // ---- Simulacao da IA (16/10/2026): a IA analisa todos os anuncios que venderam e monta a simulacao; no lugar do
 // botao Precificar aparece o preco que ela sugeriu e os botoes Aprovar / Rejeitar. Nada muda sem a aprovacao.
 let vmSimDados = null, vmSimTimer = null;
-const vmSimDe = (item) => vmSimDados && cache.vendasmc && vmSimDados.periodo === cache.vendasmc.periodo ? (vmSimDados.itens || []).find(i => i.item_id === item) : null;
+// a simulacao so vale para as vendas das MESMAS datas (antes comparava so o nome "ontem" e mostrava a de outro dia)
+const vmSimMesmoDia = () => !!(vmSimDados && cache.vendasmc && vmSimDados.de === cache.vendasmc.de && vmSimDados.ate === cache.vendasmc.ate);
+const vmSimDe = (item) => vmSimMesmoDia() ? (vmSimDados.itens || []).find(i => i.item_id === item) : null;
 async function vmCarregarSim() {
     try { vmSimDados = await api('/api/seven/simulacao-precos'); } catch { return; }
     vmDesenharSim(); if (cache.vendasmc && $('vmTabela')) vmDesenhar();
@@ -1438,7 +1440,7 @@ function vmDesenharSim() {
     el.innerHTML = `<div class="pia-fraco" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 12px;border:1px solid var(--sep);border-radius:10px">
         <span><i class="bi bi-stars" style="color:#0a84ff"></i> <b>Simulação da IA</b> (${nomePer(vmSimDados.periodo)}, ${new Date(vmSimDados.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})</span>
         <span style="color:#0a84ff"><b>${c('pendente')}</b> para decidir</span><span style="color:#30D158">${c('aprovado')} aprovado(s)</span><span style="color:#ff453a">${c('rejeitado')} rejeitado(s)</span><span>${c('manter')} manter</span>${c('erro') ? `<span>${c('erro')} sem análise</span>` : ''}
-        ${vmSimDados.periodo !== per ? `<button class="ep-btn" onclick="$('vmPeriodo').value='${esc(vmSimDados.periodo)}';vmCarregar(true)">Ver o período da simulação</button>` : ''}</div>`;
+        ${!vmSimMesmoDia() ? `<span style="color:#ff9f0a">É de outras datas (${esc(String(vmSimDados.de || '').split('-').reverse().join('/'))}${vmSimDados.ate !== vmSimDados.de ? ' a ' + esc(String(vmSimDados.ate || '').split('-').reverse().join('/')) : ''}): clique em "Simular com a IA" para analisar estas vendas.</span>` : ''}</div>`;
 }
 async function vmSimular() {
     const per = $('vmPeriodo').value;
@@ -1455,7 +1457,7 @@ async function vmDecidir(item, aprovar, btn) {
 }
 // ---- Ata da IA (16/10/2026): em vez da tabela cheia de colunas, um card por anuncio com o que importa para decidir ----
 let vmModo = (() => { try { return localStorage.getItem('vmModo') || 'ata'; } catch { return 'ata'; } })();
-const vmTemSim = () => !!(vmSimDados && cache.vendasmc && vmSimDados.periodo === cache.vendasmc.periodo && (vmSimDados.itens || []).length);
+const vmTemSim = () => vmSimMesmoDia() && !!(vmSimDados.itens || []).length;
 function vmModoVisao() { return vmTemSim() ? vmModo : 'tabela'; }
 function vmTrocarModo(m) { vmModo = m; try { localStorage.setItem('vmModo', m); } catch {} vmDesenharSim(); vmDesenhar(); }
 function vmDesenharAta(d, q, alt) {
