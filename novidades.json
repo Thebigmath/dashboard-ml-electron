@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.101",
+    "data": "2026-10-19",
+    "titulo": "Métricas do STOCK Ops, Planilha avançada do Finance e Conciliação",
+    "texto": "- STOCK Ops → Métricas: quanto do estoque está no Full (a custo), o que está parado há mais de 60 dias e os quebrados perdidos (custo + frete). O agente Orquestrador analisa e diz o que fazer.\n- Finance → Planilha avançada: análise pedido a pedido no modelo do GeFinance — Total venda, Margem, Valor líquido e Impostos, 9 períodos, filtros de status e envio, escolha de colunas, exportação em CSV e o seletor de regime (Simples ou simulação do Lucro Real).\n- Finance → Conciliação (Escalada de Prata): confere sozinho ML × Mercado Pago, ML × nota do Olist, pedido × envio e SKU × custo. A IA recebe só as exceções e cada rodada fica registrada.\n- Base tributária e Simples: importa a planilha do contador (por SKU e por UF) e o Simples Nacional (RBT12) para calcular imposto de verdade por produto.\n- Segurança: guarda do Mercado Pago — só leitura, caminhos fixos e tudo auditado.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.100",
     "data": "2026-10-19",
     "titulo": "Ata da IA: simulação sempre das datas certas",

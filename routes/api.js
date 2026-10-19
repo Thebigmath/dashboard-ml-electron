@@ -1204,6 +1204,28 @@ router.get('/seven/premium', auth, (req, res) => { require('../lib/premium').mon
 router.get('/seven/premium/checar', auth, (req, res) => { require('../lib/premium').checar(String(req.query.item || '')).then(d => res.json(d)).catch(erroJson(res)); });
 // Finance: DRE do mes, conciliacao com o Mercado Pago, margem por produto e custos operacionais
 const finance = () => require('../lib/finance');
+// Planilha avancada (analise de vendas pedido a pedido)
+router.get('/finance/planilha', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').planilha({ de: req.query.de, ate: req.query.ate, base: req.query.base === 'pedido' ? 'pedido' : 'produtos', regime: req.query.regime === 'real' ? 'real' : 'simples', opcoes: (() => { try { return JSON.parse(req.query.opcoes || '{}'); } catch { return {}; } })() })); } catch (e) { res.status(400).json({ erro: e.message }); } });
+router.post('/finance/planilha/atualizar', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').atualizar(req.body || {})); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/planilha/config', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').configurar(req.body || {})); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/conciliacao', auth, (req, res) => { try { res.json(require('../lib/finance_conciliacao').conciliar({ de: req.query.de, ate: req.query.ate })); } catch (e) { res.status(400).json({ erro: e.message }); } });
+router.post('/finance/conciliacao/analisar', auth, (req, res) => { try { res.json(require('../lib/finance_conciliacao').analisar(req.body || {})); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/conciliacao/historico', auth, (req, res) => res.json(require('../lib/finance_conciliacao').historico()));
+router.get('/dev/mp-guarda', auth, (req, res) => res.json(require('../lib/mp_guarda').resumo()));
+router.get('/finance/conciliacao/ia', auth, (req, res) => res.json(require('../lib/finance_conciliacao').analiseIA()));
+// Base tributaria do contador (xlsm): importa e mostra o resumo
+router.get('/finance/base-tributaria', auth, (req, res) => res.json(require('../lib/base_tributaria').resumo()));
+router.post('/finance/base-tributaria', auth, upload.single('planilha'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ erro: 'Nenhum arquivo enviado' });
+    try { res.json(await require('../lib/base_tributaria').importar(fs.readFileSync(req.file.path), req.file.originalname)); }
+    catch (e) { res.status(400).json({ erro: e.message }); }
+    finally { try { fs.unlinkSync(req.file.path); } catch {} }
+});
+// aliquota efetiva do Simples Nacional (RBT12)
+router.get('/finance/simples', auth, (req, res) => res.json(require('../lib/simples_nacional').resumo()));
+router.post('/finance/simples/coletar', auth, (req, res) => res.json(require('../lib/simples_nacional').coletar()));
+router.post('/finance/simples/config', auth, (req, res) => { try { res.json(require('../lib/simples_nacional').configurar(req.body || {})); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/planilha/estado', auth, (req, res) => res.json(require('../lib/finance_planilha').estado()));
 router.get('/finance/meses', auth, (req, res) => res.json({ coletados: finance().meses(), estado: finance().estado }));
 router.get('/finance/mes', auth, (req, res) => { try { res.json(finance().analisar(String(req.query.mes || ''))); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/estado', auth, (req, res) => res.json(finance().estado));
@@ -1317,6 +1339,10 @@ router.post('/olist-estoque/upload/aplicar', auth, (req, res) => { try { res.jso
 router.post('/olist-estoque/upload/limpar', auth, (req, res) => res.json(require('../lib/olist_estoque').limparUpload()));
 router.post('/olist-estoque/sincronizar', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').sincronizar(req.body.itens)); } catch (e) { erroJson(res)(e); } });
 // Pop-up lateral de estoque em atencao (lista do Full)
+// Metricas do STOCK Ops: estoque no Full, parado e quebrados (a custo) + analise do agente Orquestrador
+router.get('/metricas-stock', auth, (req, res) => { try { res.json(require('../lib/metricas_stock').resumo()); } catch (e) { erroJson(res)(e); } });
+router.post('/metricas-stock/quebrados', auth, (req, res) => { try { res.json(require('../lib/metricas_stock').coletarQuebrados()); } catch (e) { erroJson(res)(e); } });
+router.post('/metricas-stock/analisar', auth, (req, res) => { try { res.json(require('../lib/metricas_stock').analisar()); } catch (e) { erroJson(res)(e); } });
 router.get('/alerta-estoque', auth, (req, res) => { try { res.json(require('../lib/alerta_estoque').lista()); } catch (e) { erroJson(res)(e); } });
 // Lista ERP do Painel: saldo do deposito Geral do Olist por produto da reposicao
 router.get('/olist-estoque/erp-reposicao', auth, (req, res) => { try { res.json(require('../lib/olist_estoque').erpReposicao()); } catch (e) { erroJson(res)(e); } });

@@ -7,6 +7,8 @@ const STORAGE = process.env.STORAGE_PATH || path.join(__dirname, 'storage');
 const app = express();
 // Monitor de cotas: conta toda chamada ao Mercado Livre e ao Mercado Pago (Area do desenvolvedor)
 require('./lib/cotas').ligarAxios(require('axios'));
+// guarda do Mercado Pago: so leitura, lista fechada de caminhos, token do ML nao sai para outros sites, tudo auditado
+require('./lib/mp_guarda').ligar(require('axios'));
 let httpServer = null;
 
 // a extensao da Agenda do Full devolve a agenda inteira do ML (centenas de horarios): limite maior so nessa rota
@@ -67,9 +69,12 @@ app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
 app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
+app.get('/finance-conciliacao', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_conciliacao.html')));
+app.get('/finance-planilha', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_planilha.html')));
 app.get('/finance', (req, res) => res.sendFile(path.join(__dirname, 'public/finance.html')));
 // a tela antiga de Parados esta em standby (dependia da ponte do Nubimetrics): vai para o Controle de estoque parado
 app.get('/parados', (req, res) => res.redirect('/seven#parados'));
+app.get('/metricas-stock', (req, res) => res.sendFile(path.join(__dirname, 'public/metricas_stock.html')));
 app.get('/erp-commander', (req, res) => res.sendFile(path.join(__dirname, 'public/erp_commander.html')));
 app.get('/full-erp', (req, res) => res.redirect('/erp-commander'));
 app.get('/agenda-full', (req, res) => res.sendFile(path.join(__dirname, 'public/agenda_full.html')));

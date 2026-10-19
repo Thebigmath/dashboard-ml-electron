@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas STOCK Ops — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .mt { padding:28px 32px 60px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        .mt h1 { font-size:26px; font-weight:700; color:var(--l1); margin:0; }
+        .mt .sub { color:var(--l3); font-size:13.5px; margin:4px 0 18px; }
+        .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-bottom:16px; }
+        .kpi { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:16px 18px; }
+        .kpi small { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); }
+        .kpi b { display:block; font-size:26px; color:var(--l1); margin-top:4px; font-variant-numeric:tabular-nums; }
+        .kpi span { font-size:12.5px; color:var(--l3); }
+        .kpi.full b { color:#0a84ff; } .kpi.par b { color:#ff9f0a; } .kpi.que b { color:#ff453a; }
+        .bl { background:var(--s1); border:1px solid var(--sep); border-radius:16px; padding:16px 18px; margin-bottom:14px; }
+        .bl h3 { font-size:16px; font-weight:700; color:var(--l1); margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+        .bl .d { font-size:12.5px; color:var(--l3); margin-bottom:12px; }
+        .duas { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:16px; }
+        @media (max-width:900px) { .duas { grid-template-columns:1fr; } }
+        .cat { display:grid; grid-template-columns:110px 1fr 110px; gap:10px; align-items:center; font-size:13px; margin-bottom:7px; }
+        .cat .tr { background:var(--s2); border-radius:6px; height:12px; overflow:hidden; } .cat .tr i { display:block; height:100%; border-radius:6px; }
+        .cat .v { text-align:right; font-variant-numeric:tabular-nums; color:var(--l1); font-weight:600; }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--l3); font-weight:600; padding:7px 8px; border-bottom:1px solid var(--sep); white-space:nowrap; }
+        td { padding:7px 8px; border-bottom:1px solid rgba(128,128,128,.10); color:var(--l1); }
+        .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .f { color:var(--l3); font-size:12px; }
+        .bt { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:9px; border:1px solid var(--sep); background:var(--s2); color:var(--l1); font-size:13px; font-weight:600; cursor:pointer; }
+        .bt:disabled { opacity:.5; cursor:not-allowed; }
+        .ia { border-color:color-mix(in srgb,#0a84ff 40%,var(--sep)); }
+        .ia .txt { font-size:13.5px; line-height:1.55; color:var(--l2); }
+        .ia ul { margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--l2); } .ia li { margin-bottom:4px; }
+        .ia .col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px; } @media (max-width:900px) { .ia .col { grid-template-columns:1fr; } }
+        .aviso { font-size:12.5px; color:#ff9f0a; margin-top:8px; }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="mt">
+    <h1><i class="bi bi-speedometer2"></i> Métricas · STOCK Ops</h1>
+    <div class="sub">Quanto dinheiro está no Full, quanto está parado e quanto perdemos com produto quebrado. Tudo a preço de custo (planilha de custos), desta conta.</div>
+
+    <div class="kpis" id="kpis"><div class="kpi"><small>Carregando…</small></div></div>
+
+    <div class="bl ia" id="blIA">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <h3><i class="bi bi-robot" style="color:#0a84ff"></i> Análise da IA <span class="f" id="iaQuem"></span></h3>
+            <button class="bt" id="btIA" onclick="analisar()"><i class="bi bi-stars"></i> Analisar agora</button>
+        </div>
+        <div id="iaCorpo" class="txt f">—</div>
+    </div>
+
+    <div class="bl">
+        <h3><i class="bi bi-box-seam" style="color:#0a84ff"></i> Valor de estoque no Full</h3>
+        <div class="d" id="fullD">—</div>
+        <div class="duas"><div id="fullCat"></div><div id="fullTop"></div></div>
+    </div>
+
+    <div class="bl">
+        <h3><i class="bi bi-hourglass-split" style="color:#ff9f0a"></i> Valor parado</h3>
+        <div class="d" id="parD">—</div>
+        <div class="duas"><div id="parCat"></div><div id="parTop"></div></div>
+    </div>
+
+    <div class="bl">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <h3><i class="bi bi-heartbreak" style="color:#ff453a"></i> Produtos quebrados (reclamações que perdemos)</h3>
+            <button class="bt" id="btQ" onclick="consultarQuebrados()"><i class="bi bi-arrow-repeat"></i> Consultar no Mercado Livre</button>
+        </div>
+        <div class="d" id="queD">—</div>
+        <div class="duas"><div id="queMes"></div><div id="queTop"></div></div>
+        <div id="queLista" style="margin-top:12px"></div>
+    </div>
+</div></main></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const brl0 = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+const n = (v) => Number(v || 0).toLocaleString('pt-BR');
+const quando = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+const MES = (m) => ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(m.slice(5, 7)) - 1] + '/' + m.slice(2, 4);
+let D = null, timer = null;
+
+function barras(cats, cor) {
+    const mx = Math.max(1, ...cats.map(c => c.valor));
+    return cats.length ? cats.map(c => `<div class="cat"><span>${esc(c.categoria)}</span><div class="tr"><i style="width:${(c.valor / mx * 100).toFixed(1)}%;background:${cor}"></i></div><span class="v">${brl0(c.valor)}</span></div>`).join('') : '<div class="f">Nada aqui.</div>';
+}
+function tabela(cab, linhas) { return `<table><tr>${cab.map(c => `<th class="${c[1] || ''}">${c[0]}</th>`).join('')}</tr>${linhas.join('')}</table>`; }
+
+async function carregar() {
+    try { D = await fetch('/api/metricas-stock').then(r => r.json()); } catch (e) { $('kpis').innerHTML = `<div class="kpi"><small style="color:#ff453a">${esc(e.message)}</small></div>`; return; }
+    const f = D.full, p = D.parado, q = D.quebrados;
+    $('kpis').innerHTML = `
+        <div class="kpi full"><small>Estoque no Full (custo)</small><b>${brl0(f.valor)}</b><span>${n(f.unidades)} un · ${f.skus} SKUs · vende por ${brl0(f.valor_venda)}</span></div>
+        <div class="kpi par"><small>Parado 60+ dias (custo)</small><b>${brl0(p.valor)}</b><span>${f.valor ? (p.valor / f.valor * 100).toFixed(0) : 0}% do Full · ${p.skus} SKUs · ${p.sem_venda} sem venda em 30 dias</span></div>
+        <div class="kpi que"><small>Quebrados perdidos</small><b>${q.em ? brl0(q.valor) : '—'}</b><span>${q.em ? `${q.perdidas} perdidas desde ${q.desde.split('-').reverse().join('/')}${q.abertas ? ` · +${brl0(q.valor_possivel)} em ${q.abertas} abertas` : ''}` : 'clique em Consultar no Mercado Livre'}</span></div>`;
+    // Full
+    $('fullD').innerHTML = `Custo × unidades no galpão do Full (inclui as em transferência). Estoque lido em ${quando(f.coletado_em)}.${f.sem_custo ? `<div class="aviso"><i class="bi bi-exclamation-triangle"></i> ${f.sem_custo} SKUs (${n(f.unidades_sem_custo)} unidades) estão sem custo na planilha e ficam fora da soma.</div>` : ''}`;
+    $('fullCat').innerHTML = barras(f.por_categoria, '#0a84ff');
+    $('fullTop').innerHTML = tabela([['SKU'], ['Produto'], ['Un', 'num'], ['Vendas 30d', 'num'], ['Valor', 'num']], f.top.map(x => `<tr><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.titulo).slice(0, 44))}</td><td class="num">${n(x.estoque)}</td><td class="num">${n(x.vendas30)}</td><td class="num"><b>${brl0(x.valor)}</b></td></tr>`));
+    // Parado
+    $('parD').innerHTML = `Anúncios ativos no Full cujo estoque dura ${p.min_dias} dias ou mais no ritmo de vendas de 30 dias (ou que não venderam), sem peças de empilhadeira. ${p.sem_venda} SKUs não venderam nada em 30 dias (${brl0(p.valor_sem_venda)}).${p.sem_custo ? `<div class="aviso"><i class="bi bi-exclamation-triangle"></i> ${p.sem_custo} SKUs parados estão sem custo na planilha e ficam fora da soma.</div>` : ''}`;
+    $('parCat').innerHTML = barras(p.por_categoria, '#ff9f0a');
+    $('parTop').innerHTML = tabela([['SKU'], ['Produto'], ['Un', 'num'], ['Dura', 'num'], ['Valor', 'num']], p.top.map(x => `<tr><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.titulo).slice(0, 44))}</td><td class="num">${n(x.estoque)}</td><td class="num">${x.dias == null ? 'sem venda' : n(x.dias) + ' d'}</td><td class="num"><b>${brl0(x.valor)}</b></td></tr>`));
+    // Quebrados
+    const eq = q.estado || {};
+    $('btQ').disabled = !!eq.rodando;
+    if (!q.em) {
+        $('queD').innerHTML = eq.rodando ? `Consultando o Mercado Livre: ${esc(eq.etapa || '…')}` : eq.erro ? `<span style="color:#ff453a">Erro: ${esc(eq.erro)}</span>` : 'Ainda não consultado. Clique em "Consultar no Mercado Livre" (leva cerca de 1 a 2 minutos).';
+        $('queMes').innerHTML = $('queTop').innerHTML = $('queLista').innerHTML = '';
+    } else {
+        $('queD').innerHTML = `Reclamações de produto quebrado desde ${q.desde.split('-').reverse().join('/')}: ${q.quebras} no total, <b>${q.perdidas} perdidas</b>, ${q.ganhamos} ganhamos, ${q.abertas} abertas. ${q.caixa_intacta} com a caixa intacta (quebrou dentro da embalagem). Prejuízo = custo + frete pago, sem descontar reembolso do Mercado Livre. Consultado em ${quando(q.em)}${eq.rodando ? ' · atualizando…' : ''}.`;
+        $('queMes').innerHTML = tabela([['Mês'], ['Quebras', 'num'], ['Perdidas', 'num'], ['Custo', 'num'], ['Frete', 'num'], ['Prejuízo', 'num']], q.meses.map(m => `<tr><td><b>${MES(m.mes)}</b></td><td class="num">${m.quebras}</td><td class="num">${m.perdidas}</td><td class="num">${brl0(m.custo)}</td><td class="num">${brl0(m.frete)}</td><td class="num"><b style="color:#ff453a">${brl0(m.valor)}</b></td></tr>`))
+            + `<div style="margin-top:12px">${barras(q.por_categoria, '#ff453a')}</div>`;
+        $('queTop').innerHTML = tabela([['SKU'], ['Produto'], ['Perdidas', 'num'], ['Prejuízo', 'num']], q.produtos.map(x => `<tr><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.produto).slice(0, 44))}</td><td class="num">${x.perdidas}</td><td class="num"><b>${brl(x.valor)}</b></td></tr>`));
+        $('queLista').innerHTML = `<details><summary class="f" style="cursor:pointer">Ver cada reclamação perdida (${q.perdidas}) e as abertas (${q.abertas})</summary><div style="margin-top:8px">`
+            + tabela([['Data'], ['Situação'], ['SKU'], ['Produto'], ['Caixa'], ['Custo', 'num'], ['Frete', 'num'], ['Total', 'num']], [...q.abertas_lista, ...q.perdidas_lista].map(x => `<tr><td>${x.data.split('-').reverse().join('/')}</td><td>${x.situacao === 'aberta' ? '<span style="color:#ff9f0a">aberta</span>' : 'perdemos'}</td><td><b>${esc(x.sku)}</b></td><td>${esc(String(x.produto).slice(0, 40))}</td><td class="f">${esc(x.tipo)}</td><td class="num">${x.custo == null ? '—' : brl(x.custo)}</td><td class="num">${x.frete == null ? '—' : brl(x.frete)}</td><td class="num"><b>${brl(x.total)}</b></td></tr>`)) + '</div></details>';
+    }
+    // IA
+    const ia = D.ia, ei = D.ia_estado || {};
+    $('btIA').disabled = !!ei.rodando;
+    $('iaQuem').innerHTML = ia && ia.agente ? `· ${esc(ia.agente.area_nome)} · ${esc(ia.agente.papel)} · ${quando(ia.em)}` : ia ? `· ${quando(ia.em)}` : '';
+    if (ei.rodando) $('iaCorpo').innerHTML = '<span class="f"><i class="bi bi-hourglass-split"></i> O agente está analisando os números…</span>';
+    else if (ei.erro) $('iaCorpo').innerHTML = `<span style="color:#ff453a">Erro: ${esc(ei.erro)}</span>`;
+    else if (!ia) $('iaCorpo').innerHTML = '<span class="f">Ainda sem análise. Clique em "Analisar agora" (se puder, consulte os quebrados antes, para a análise ter os três números).</span>';
+    else $('iaCorpo').innerHTML = `<div>${esc(ia.resumo)}</div>
+        <div class="col"><div><b>Estoque</b><div>${esc(ia.estoque)}</div><b style="display:block;margin-top:8px">Parado</b><div>${esc(ia.parado)}</div><b style="display:block;margin-top:8px">Quebrados</b><div>${esc(ia.quebrados)}</div></div>
+        <div>${(ia.alertas || []).length ? `<b>Alertas</b><ul>${ia.alertas.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}${(ia.acoes || []).length ? `<b style="display:block;margin-top:8px">O que fazer</b><ul>${ia.acoes.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}</div></div>`;
+    clearTimeout(timer);
+    if (eq.rodando || ei.rodando) timer = setTimeout(carregar, 4000);
+}
+async function consultarQuebrados() { await fetch('/api/metricas-stock/quebrados', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); carregar(); }
+async function analisar() { await fetch('/api/metricas-stock/analisar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); carregar(); }
+carregar();
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>
