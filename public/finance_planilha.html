@@ -82,21 +82,21 @@ const dia = (d) => d.toISOString().slice(0, 10);
 const hojeBR = () => new Date(Date.now() - 3 * 3600000);
 // colunas (mesma ordem e nomes da Planilha avançada)
 const COLS = [
-    ['date', 'Data', 't'], ['requestNumberEcommerce', 'Nº do pedido', 't'], ['invoiceNumberWithSerie', 'Nº da NF-e', 't'], ['ecommerceNumber', 'Nº no canal (pacote)', 't', 1],
-    ['client', 'Cliente', 't', 1], ['salesChannel', 'Canal de venda', 't'], ['city', 'Cidade', 't'], ['state', 'UF', 't'], ['shippingMethod', 'Envio', 't'], ['status', 'Status', 't'], ['products', 'Produtos', 't'],
+    ['date', 'Data', 't'], ['requestNumberEcommerce', 'Nº do pedido', 't'], ['invoiceNumberWithSerie', 'Nº da NF-e', 't'], ['ecommerceNumber', 'Nº no canal (pacote)', 't'],
+    ['client', 'Cliente', 't'], ['salesChannel', 'Canal de venda', 't'], ['city', 'Cidade', 't'], ['state', 'UF', 't'], ['shippingMethod', 'Envio', 't'], ['status', 'Status', 't'], ['products', 'Produtos', 't'],
     ['totalCost', 'Total custo', 'm'],
     ['creditIpi', 'Créd. IPI', 'm', 1], ['creditPis', 'Créd. PIS', 'm', 1], ['creditCofins', 'Créd. COFINS', 'm', 1], ['creditIcms', 'Créd. ICMS', 'm', 1], ['creditSt', 'Créd. ST', 'm', 1], ['creditDifal', 'Créd. DIFAL', 'm', 1], ['creditTotal', 'Créd. TOTAL', 'm', 1],
     ['valueWithoutDiscount', 'Valor do prod. vendido', 'm'], ['salesDiscount', 'Desconto', 'm'], ['devolucao', 'Devolução', 'm', 1],
-    ['valueWithDiscount', 'Total prod. vendidos', 'm'], ['receivedFreight', 'Frete recebido', 'm', 1], ['saleSt', 'ST da venda', 'm', 1], ['saleIpi', 'IPI da venda', 'm', 1],
+    ['valueWithDiscount', 'Total prod. vendidos', 'm'], ['receivedFreight', 'Frete recebido', 'm'], ['saleSt', 'ST da venda', 'm'], ['saleIpi', 'IPI da venda', 'm'],
     ['totalSale', 'Total venda', 'm', 0, 1], ['financialTransfer', 'Repasse', 'm', 0, 1],
-    ['allCommissionValue', 'Comissão', 'm', 1], ['rebateCommissionValue', 'Rebate comissão', 'm', 1], ['commission', 'Comissão final', 'm'], ['bonusValue', 'Bônus', 'm', 1],
+    ['allCommissionValue', 'Comissão', 'm'], ['rebateCommissionValue', 'Rebate comissão', 'm'], ['commission', 'Comissão final', 'm'], ['bonusValue', 'Bônus', 'm'],
     ['paidFreight', 'Frete pago', 'm'], ['shippingRebate', 'Rebate do frete', 'm'], ['freightDifference', 'Diferença do frete', 'm'],
-    ['debitIpi', 'Déb. IPI', 'm', 1], ['debitPis', 'Déb. PIS', 'm', 1], ['debitCofins', 'Déb. COFINS', 'm', 1], ['debitIcms', 'Déb. ICMS', 'm', 1], ['debitSt', 'Déb. ST', 'm', 1], ['debitDifal', 'Déb. DIFAL', 'm', 1],
-    ['debitTotal', 'Déb. TOTAL', 'm', 1], ['simplesDas', 'Simples (DAS)', 'm'], ['importTax', 'Imp. importação', 'm', 1], ['tax', 'Imposto', 'm'],
-    ['gift', 'Brinde', 'm', 1], ['package', 'Embalagem', 'm', 1],
+    ['debitIpi', 'Déb. IPI', 'm'], ['debitPis', 'Déb. PIS', 'm'], ['debitCofins', 'Déb. COFINS', 'm'], ['debitIcms', 'Déb. ICMS', 'm'], ['debitSt', 'Déb. ST', 'm'], ['debitDifal', 'Déb. DIFAL', 'm'],
+    ['debitTotal', 'Déb. TOTAL', 'm', 0, 1], ['simplesDas', 'Simples (DAS)', 'm'], ['importTax', 'Imp. importação', 'm', 1], ['tax', 'Imposto', 'm'],
+    ['gift', 'Brinde', 'm'], ['package', 'Embalagem', 'm'],
     ['liquidValue', 'Valor líquido', 'm', 0, 1], ['margin', 'Margem', 'm', 0, 1], ['costPercentage', '% Custo', 'p'], ['salePercentage', '% Venda', 'p'],
 ];
-let ocultas = (() => { try { return new Set(JSON.parse(localStorage.getItem('pa_ocultas2') || 'null') || COLS.filter(c => c[3]).map(c => c[0])); } catch { return new Set(COLS.filter(c => c[3]).map(c => c[0])); } })();
+let ocultas = (() => { try { return new Set(JSON.parse(localStorage.getItem('pa_ocultas4') || 'null') || COLS.filter(c => c[3]).map(c => c[0])); } catch { return new Set(COLS.filter(c => c[3]).map(c => c[0])); } })();
 let D = null, pagina = 1, ordem = { k: 'date', desc: true }, timer = null;
 const POR = 100;
 
@@ -117,8 +117,9 @@ function mudarPeriodo() { const c = $('periodo').value === 'custom'; $('de').hid
 function periodoCustom() { carregar(); }
 function mudarRegime() {
     const real = $('regime').value === 'real'; $('cenario').hidden = !real;
-    // no Lucro Real os debitos e creditos aparecem
-    for (const k of ['debitPis', 'debitCofins', 'debitIcms', 'debitDifal', 'debitTotal', 'creditPis', 'creditCofins', 'creditIcms', 'creditTotal']) real ? ocultas.delete(k) : (COLS.find(c => c[0] === k)[3] && ocultas.add(k));
+    // Lucro Real: mostra o jogo fiscal completo (debitos e creditos). Simples: ficam os debitos visiveis
+    // (como no GeFinance) e os creditos voltam a ficar ocultos.
+    for (const k of ['debitIpi', 'debitPis', 'debitCofins', 'debitIcms', 'debitSt', 'debitDifal', 'debitTotal', 'creditIpi', 'creditPis', 'creditCofins', 'creditIcms', 'creditSt', 'creditDifal', 'creditTotal']) real ? ocultas.delete(k) : (COLS.find(c => c[0] === k)[3] && ocultas.add(k));
     carregar();
 }
 function desenharSimulacao() {
@@ -201,7 +202,7 @@ function abrirColunas(ev) {
     el.innerHTML = COLS.map(c => `<label><input type="checkbox" ${ocultas.has(c[0]) ? '' : 'checked'} onchange="trocarColuna('${c[0]}', this.checked)"> ${c[1]}</label>`).join('');
 }
 document.addEventListener('click', (e) => { if (!e.target.closest('#cols')) $('cols').hidden = true; });
-function trocarColuna(k, v) { v ? ocultas.delete(k) : ocultas.add(k); try { localStorage.setItem('pa_ocultas2', JSON.stringify([...ocultas])); } catch {} desenhar(); }
+function trocarColuna(k, v) { v ? ocultas.delete(k) : ocultas.add(k); try { localStorage.setItem('pa_ocultas4', JSON.stringify([...ocultas])); } catch {} desenhar(); }
 function exportar() {
     if (!D) return; const L = filtrados(), vis = COLS.filter(c => !ocultas.has(c[0]));
     const val = (p, c) => { const k = c[0]; if (k === 'products') return p.products.map(x => `${x.sku} x${x.quantidade}`).join(' | '); if (k === 'date') return new Date(p.date).toLocaleString('pt-BR'); const v = p[k]; return typeof v === 'number' ? String(v).replace('.', ',') : (v ?? ''); };

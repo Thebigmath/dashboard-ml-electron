@@ -1,4 +1,12 @@
 [
+{
+    "versao": "1.9.102",
+    "data": "2026-10-19",
+    "titulo": "Planilha avançada: as colunas do GeFinance já vêm marcadas",
+    "texto": "- Finance → Planilha avançada: as colunas do GeFinance agora aparecem por padrão — Nº no canal (pacote), Cliente, ST da venda, IPI da venda, Rebate comissão, Bônus, Brinde, Embalagem e os Débitos (IPI, PIS, COFINS, ICMS, ST, DIFAL e TOTAL).\n- No regime Lucro Real, créditos e débitos aparecem juntos (14 colunas fiscais); no Simples os créditos continuam recolhidos.\n- Correção: a escolha das colunas volta a ser lembrada entre as sessões.",
+    "imagens": [],
+    "video": ""
+  },
   {
     "versao": "1.9.101",
     "data": "2026-10-19",
