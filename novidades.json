@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.107",
+    "data": "2026-10-20",
+    "titulo": "Ranking ML coletado por partes e Rankeamento sem a aba Mudança de preço",
+    "texto": "- Ranking ML: o botão de coleta agora pesquisa por partes (metade dos termos por clique: parte 1, depois parte 2, com o intervalo mínimo de 30 min). O ML barrava a coleta quando eram muitas buscas seguidas (~50); com metade por rodada, a coleta fica abaixo desse limite. A tela mostra qual parte está sendo coletada.\n- AD HEALTH → Rankeamento: a aba \"Mudança de preço\" saiu (a Análise de vendas faz o mesmo). O card abre direto na Análise de vendas.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.106",
     "data": "2026-10-20",
     "titulo": "14 fundos com novas paletas animadas (incluindo Air Force Commander Hub)",

@@ -627,7 +627,7 @@ try { if (sessionStorage.getItem('svLogoVisto')) document.getElementById('svSpla
                             <div class="rd-ico"><i class="bi bi-graph-up-arrow"></i></div>
                             <div><div class="rd-tit">Rankeamento</div><div class="rd-sub" id="rdRankSub">Carregando…</div></div>
                             <span class="rd-abrir"><i class="bi bi-arrows-angle-expand"></i> abrir</span>
-                            <div class="rd-topicos"><span><i class="bi bi-currency-dollar"></i> Análise de mudança de preço</span><span><i class="bi bi-sliders"></i> Precificação</span><span><i class="bi bi-stars"></i> Análise da IA</span></div>
+                            <div class="rd-topicos"><span><i class="bi bi-receipt"></i> Análise de vendas</span><span><i class="bi bi-sliders"></i> Precificação</span><span><i class="bi bi-stars"></i> Análise da IA</span></div>
                         </div>
                         <div class="rd-card" id="rdCardDef" onclick="rdAbrir('def')">
                             <div class="rd-ico def"><i class="bi bi-shield-check"></i></div>
@@ -827,12 +827,12 @@ async function acompanharRanking() {
     let e;
     try { e = await api('/api/seven/ranking_ml/estado'); } catch { return; }
     $('btnRankMt').disabled = e.rodando || e.coletor === false;
-    if (e.coletor !== false) $('btnRankMt').title = e.espera_min ? `Liberado em ${e.espera_min} min (intervalo de 30 min entre coletas, para o ML não barrar)` : 'Coleta o ranking de todos os termos das duas contas (até 10 minutos)';
+    if (e.coletor !== false) $('btnRankMt').title = e.espera_min ? `Liberado em ${e.espera_min} min (intervalo de 30 min entre coletas, para o ML não barrar)` : `Coleta a parte ${e.proxima_parte || 1} de 2 (metade dos termos, das duas contas): o ML barra quando são muitas buscas seguidas`;
     if (e.coletor === false) { $('btnRankMt').title = e.aviso; $('btnRankMt').innerHTML = '<i class="bi bi-trophy"></i> Coletado pelo app da Flavia'; }
     mostrarFalha(e.rodando ? null : e.ultima);
     if (e.rodando) {
         const p = e.progresso ? ` — ${e.progresso.feitos} de ${e.progresso.total} termos` : '';
-        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano (${e.abas} abas)${p}. Leva até 10 minutos.`);
+        mostrarRk(`<i class="bi bi-hourglass-split"></i> Coletando o ranking direto no Mercado Livre em segundo plano${e.parte ? ` — parte ${e.parte} de 2` : ''} (${e.abas} abas)${p}. Leva uns 5 minutos.`);
         if (rkVisto === undefined) rkVisto = null;   // abriu no meio: recarrega ao terminar
         rkTimer = setTimeout(acompanharRanking, 5000);
     } else if (e.iniciado_em && e.iniciado_em !== rkVisto) {
@@ -2068,7 +2068,7 @@ async function pcAplicar(confirmarGrande) {
 }
 
 // ---- Cards Rankeamento e Defesa (arquitetura "sistema de defesa e Rankeamento") ----
-let rd = { aberto: null, aba: 'preco', dados: null, ia: '', rodando: false };
+let rd = { aberto: null, aba: 'vendas', dados: null, ia: '', rodando: false };
 const rdR$ = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 // O card usa o motor de regras de preço (o mesmo da tela "Regras de preço"); a regra antiga do ±1% saiu.
 async function rdCarregar(forcar) { if (!rd.dados || forcar) { rd.dados = await api('/api/seven/regras_preco'); cache.regras = rd.dados; } return rd.dados; }
@@ -2077,7 +2077,7 @@ async function rdResumo() {
   catch (e) { $('rdRankSub').textContent = 'Erro: ' + e.message; }
 }
 function rdAbrir(qual) {
-  rd.aberto = qual; rd.aba = qual === 'rank' ? (rd.abaRank || 'vendas') : (rd.abaDef || 'defender');
+  rd.aberto = qual; rd.aba = qual === 'rank' ? ((rd.abaRank && rd.abaRank !== 'preco') ? rd.abaRank : 'vendas') : (rd.abaDef || 'defender');
   const rank = qual === 'rank';
   $('rdTopoIco').className = 'rd-ico' + (rank ? '' : ' def'); $('rdTopoIco').innerHTML = `<i class="bi ${rank ? 'bi-graph-up-arrow' : 'bi-shield-check'}"></i>`;
   $('rdTopoTit').textContent = rank ? 'Rankeamento' : 'Defesa';
@@ -2090,7 +2090,8 @@ function rdFechar() { rd.aberto = null; $('rdFundo').style.display = 'none'; $('
   if (/^#(rankeamento|defesa|regras|vendasmc|ads|promocoes)$/.test(location.hash)) history.replaceState(null, '', '#ia');
   window.dispatchEvent(new Event('sh-redesenhar')); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && rd.aberto && !document.querySelector('.pc-fundo.on, #pcFundo[style*="flex"]')) rdFechar(); });
-function rdAba(a) { rd.aba = a; $('rdPainel').classList.remove('rd-abas-on'); rdDesenhar(); rdAbaAtual(); }
+function rdAba(a) { rd.aba = a === 'preco' ? 'vendas' : a;   // a aba Mudanca de preco saiu (a Analise de vendas faz o mesmo)
+  $('rdPainel').classList.remove('rd-abas-on'); rdDesenhar(); rdAbaAtual(); }
 // Hamburguer: com o painel recolhido (padrao) as abas ficam num menu e o conteudo ocupa a largura toda
 let rdRecolhido = (() => { try { return localStorage.getItem('rdRecolhido') !== '0'; } catch { return true; } })();
 function rdHamb(e) {
@@ -2115,7 +2116,6 @@ function rdDesenhar() {
   if (rd.aberto === 'rank') {
     rd.abaRank = rd.aba;
     const abas = `<div class="rd-abas"><button class="${rd.aba === 'vendas' ? 'on' : ''}" onclick="rdAba('vendas')"><i class="bi bi-receipt"></i> Análise de vendas</button>
-      <button class="${rd.aba === 'preco' ? 'on' : ''}" onclick="rdAba('preco')"><i class="bi bi-currency-dollar"></i> Mudança de preço</button>
       <button class="${rd.aba === 'premium' ? 'on' : ''}" onclick="rdAba('premium')"><i class="bi bi-gem"></i> Premium × Clássico${pm && pm.subir ? ` <span class="pia-tag" style="background:#ff453a;color:#fff">${pm.subir}</span>` : ''}</button>
       <button class="${rd.aba === 'precif' ? 'on' : ''}" onclick="rdAba('precif')"><i class="bi bi-sliders"></i> Precificação</button>
       <button class="${rd.aba === 'ia' ? 'on' : ''}" onclick="rdAba('ia')"><i class="bi bi-stars"></i> Análise da IA</button></div>`;
@@ -2548,7 +2548,7 @@ atualizarNaPrimeiraAberturaDoDia();
 // Atalhos do menu do SEVEN (e links antigos): #rankeamento/#regras/#vendasmc abrem o card Rankeamento; #defesa/#ads/#promocoes, a Defesa
 function svIrHash(h, espera) {
     h = String(h || '').replace('#', '');
-    const rank = { rankeamento: 'vendas', vendasmc: 'vendas', regras: 'preco' }, def = { defesa: 'defender', ads: 'ads', promocoes: 'promo' };
+    const rank = { rankeamento: 'vendas', vendasmc: 'vendas', regras: 'vendas' }, def = { defesa: 'defender', ads: 'ads', promocoes: 'promo' };
     if (rank[h] || def[h]) {
         if (rd.aberto) rdFechar();
         mostrar('ia');
