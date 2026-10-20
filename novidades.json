@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.108",
+    "data": "2026-10-20",
+    "titulo": "Liberações do Mercado Pago no Finance",
+    "texto": "- Finance → Liberações (novo): o dinheiro das vendas do Mercado Livre que vai cair na conta do Mercado Pago, dia a dia, como o Calendário do app do MP. Visual de lista financeira: busca, período, situação (A liberar, Liberado, Retido, Em mediação), agrupado por dia, exportar CSV.\n- Informações: a liberar hoje, amanhã, próximos 7 dias, total, liberado hoje e retido (vendas com a data de liberação vencida que não caíram).\n- Botão Atualizar do Mercado Pago: relê só as vendas a liberar (1 a 2 minutos).\n- O app do MP também desconta no mesmo dia cobranças avulsas (frete à parte, devoluções, mediações); por isso lá o total do dia pode ser um pouco menor.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.107",
     "data": "2026-10-20",
     "titulo": "Ranking ML coletado por partes e Rankeamento sem a aba Mudança de preço",

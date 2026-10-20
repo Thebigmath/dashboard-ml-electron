@@ -1224,6 +1224,10 @@ router.post('/finance/base-tributaria', auth, upload.single('planilha'), async (
     catch (e) { res.status(400).json({ erro: e.message }); }
     finally { try { fs.unlinkSync(req.file.path); } catch {} }
 });
+// calendario de liberacoes do Mercado Pago
+router.get('/finance/liberacoes', auth, (req, res) => { try { res.json(require('../lib/finance_liberacoes').calendario({ de: /^\d{4}-\d{2}-\d{2}$/.test(req.query.de || '') ? req.query.de : null, ate: /^\d{4}-\d{2}-\d{2}$/.test(req.query.ate || '') ? req.query.ate : null })); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/liberacoes/atualizar', auth, (req, res) => res.json(require('../lib/finance_liberacoes').atualizar()));
+router.get('/finance/liberacoes/estado', auth, (req, res) => res.json(require('../lib/finance_liberacoes').estado()));
 // aliquota efetiva do Simples Nacional (RBT12)
 router.get('/finance/simples', auth, (req, res) => res.json(require('../lib/simples_nacional').resumo()));
 router.post('/finance/simples/coletar', auth, (req, res) => res.json(require('../lib/simples_nacional').coletar()));

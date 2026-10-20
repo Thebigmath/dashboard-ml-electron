@@ -30,11 +30,11 @@
             ['/seven#ia', 'bi-stars', 'Análise com IA'], ['/seven#parados', 'bi-hourglass-split', 'Controle de estoque parado'], ['/seven#clonagem', 'bi-copy', 'Clonagem de anúncios']] },
         fin: { nome: 'Finance', curto: 'Finance', sub: 'O financeiro da conta', icone: 'bi-cash-coin', itens: [
             ['/finance#resumo', 'bi-clipboard-data', 'Resultado do mês (DRE)'], ['/finance#conciliacao', 'bi-arrow-left-right', 'Conciliação'],
-            ['/finance#produtos', 'bi-box', 'Margem por produto'], ['/finance-planilha', 'bi-table', 'Planilha avançada'], ['/finance-conciliacao', 'bi-check2-all', 'Conciliação'], ['/finance#custos', 'bi-wallet2', 'Custos operacionais'],
+            ['/finance#produtos', 'bi-box', 'Margem por produto'], ['/finance-planilha', 'bi-table', 'Planilha avançada'], ['/finance-conciliacao', 'bi-check2-all', 'Conciliação'], ['/finance-liberacoes', 'bi-calendar-check', 'Liberações'], ['/finance#custos', 'bi-wallet2', 'Custos operacionais'],
             ['/finance#notas', 'bi-file-earmark-pdf', 'Notas de fornecedores']] },
     };
     const caminho = location.pathname.replace(/\/$/, '') || '/';
-    const appDaPagina = ['/finance', '/finance-planilha', '/finance-conciliacao'].includes(caminho) ? 'fin' : caminho === '/seven' ? 'ad' : ['/painel', '/feed', '/envio_full', '/agenda-full', '/erp-commander', '/metricas-stock', '/valor_estoque', '/frete', '/parados', '/stock-ops'].includes(caminho) ? 'stock' : null;
+    const appDaPagina = ['/finance', '/finance-planilha', '/finance-conciliacao', '/finance-liberacoes'].includes(caminho) ? 'fin' : caminho === '/seven' ? 'ad' : ['/painel', '/feed', '/envio_full', '/agenda-full', '/erp-commander', '/metricas-stock', '/valor_estoque', '/frete', '/parados', '/stock-ops'].includes(caminho) ? 'stock' : null;
     let aberto = appDaPagina;   // app mostrado na segunda aba
     let info = {};
 
