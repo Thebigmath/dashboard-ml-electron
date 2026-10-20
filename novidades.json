@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.104",
+    "data": "2026-10-20",
+    "titulo": "Pausar e reativar anúncios pelo Painel",
+    "texto": "- Painel (Stock): marque os produtos e use \"Pausar anúncios\" ou \"Reativar anúncios\" no quadro de seleção. Mostra a lista e pede confirmação antes de mexer no Mercado Livre.\n- Confere o status real no ML antes de mudar: só mexe em anúncio ativo ou pausado (em revisão ou encerrado fica de fora, com aviso).\n- No fim mostra quantos mudaram, quantos já estavam assim e em quais não deu. Toda mudança fica registrada no histórico. Pausar não mexe no estoque do Full.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.103",
     "data": "2026-10-19",
     "titulo": "Planilha avançada completa: NF-e do ML, impostos separados, rebates, brinde e embalagem",

@@ -738,6 +738,35 @@ window.toggleEstrela = function(chave, botao) {
     if (filtroCategoria === 'estrela' && !rank) aplicarFiltros();
 };
 
+/* ── Pausar / reativar os anúncios selecionados no Mercado Livre ───────── */
+async function mudarStatusSelecionados(status) {
+    const porChave = {};
+    window.produtosReposicao.forEach(p => { porChave[chaveDe(p)] = p; });
+    const sel = [...window.selecionados].map(c => porChave[c]).filter(Boolean);
+    const alvo = sel.filter(p => p.item_id && (status === 'paused' ? p.status !== 'paused' : p.status !== 'active'));
+    const verbo = status === 'paused' ? 'Pausar' : 'Reativar';
+    if (!alvo.length) { alert(status === 'paused' ? 'Os anúncios selecionados já estão pausados (ou não têm anúncio no ML).' : 'Os anúncios selecionados já estão ativos (ou não têm anúncio no ML).'); return; }
+    const lista = alvo.slice(0, 12).map(p => `• ${p.sku} — ${String(p.titulo || '').slice(0, 50)}`).join('\n') + (alvo.length > 12 ? `
+… e mais ${alvo.length - 12}` : '');
+    if (!confirm(`${verbo} ${alvo.length} anúncio${alvo.length > 1 ? 's' : ''} no Mercado Livre?
+
+${lista}
+
+${status === 'paused' ? 'O anúncio sai do ar até ser reativado (o estoque no Full continua lá).' : 'O anúncio volta a ficar à venda.'}`)) return;
+    try {
+        const r = await fetch('/api/anuncios/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itens: alvo.map(p => p.item_id), status }) }).then(x => x.json());
+        if (r.erro) throw new Error(r.erro);
+        const ok = new Set(r.itens.filter(i => i.ok).map(i => i.item_id));
+        window.produtosReposicao.forEach(p => { if (ok.has(String(p.item_id))) p.status = status; });
+        const falhas = r.itens.filter(i => !i.ok);
+        alert(`${status === 'paused' ? 'Pausados' : 'Reativados'}: ${r.alterados}${r.sem_mudanca ? ` · já estavam assim: ${r.sem_mudanca}` : ''}${falhas.length ? `
+
+Não deu em ${falhas.length}:
+` + falhas.slice(0, 8).map(f => `• ${f.item_id}: ${f.erro}`).join('\n') : ''}`);
+        aplicarFiltros();
+    } catch (e) { alert('Não foi possível alterar: ' + e.message); }
+}
+
 /* ── Seleção de produtos ────────────────────────────────────────────────── */
 function sincronizarSelecaoUI() {
     const n = window.selecionados.size;
@@ -766,6 +795,7 @@ function sincronizarSelecaoUI() {
             if (acao === 'limpar')  { window.selecionados.clear(); apenasSelecionados = false; paginaAtual = 1; aplicarFiltros(); }
             if (acao === 'txt') gerarTxtSelecionados();
             if (acao === 'planilha') document.getElementById('btnGerarPlanilhaFull')?.click();
+            if (acao === 'pausar' || acao === 'reativar') mudarStatusSelecionados(acao === 'pausar' ? 'paused' : 'active');
         });
     }
 
@@ -788,6 +818,8 @@ function sincronizarSelecaoUI() {
         </button>
         <button class="ps-btn" data-acao="planilha"><i class="bi bi-file-earmark-arrow-down"></i> Gerar planilha dos selecionados</button>
         <button class="ps-btn" data-acao="txt"><i class="bi bi-filetype-txt"></i> Gerar txt</button>
+        <button class="ps-btn" data-acao="pausar"><i class="bi bi-pause-circle"></i> Pausar anúncios</button>
+        <button class="ps-btn" data-acao="reativar"><i class="bi bi-play-circle"></i> Reativar anúncios</button>
         <button class="ps-btn ps-limpar" data-acao="limpar"><i class="bi bi-x-circle"></i> Limpar seleção</button>`;
 }
 

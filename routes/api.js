@@ -1211,6 +1211,9 @@ router.post('/finance/planilha/config', auth, (req, res) => { try { res.json(req
 router.get('/finance/conciliacao', auth, (req, res) => { try { res.json(require('../lib/finance_conciliacao').conciliar({ de: req.query.de, ate: req.query.ate })); } catch (e) { res.status(400).json({ erro: e.message }); } });
 router.post('/finance/conciliacao/analisar', auth, (req, res) => { try { res.json(require('../lib/finance_conciliacao').analisar(req.body || {})); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/conciliacao/historico', auth, (req, res) => res.json(require('../lib/finance_conciliacao').historico()));
+// pausar / reativar anuncios no ML (selecionados no Painel)
+router.post('/anuncios/status', auth, (req, res) => { require('../lib/anuncios_status').alterar((req.body || {}).itens, (req.body || {}).status, 'painel').then(d => res.json(d)).catch(e => res.status(400).json({ erro: e.message })); });
+router.get('/anuncios/status/historico', auth, (req, res) => res.json(require('../lib/anuncios_status').historico()));
 router.get('/dev/mp-guarda', auth, (req, res) => res.json(require('../lib/mp_guarda').resumo()));
 router.get('/finance/conciliacao/ia', auth, (req, res) => res.json(require('../lib/finance_conciliacao').analiseIA()));
 // Base tributaria do contador (xlsm): importa e mostra o resumo
