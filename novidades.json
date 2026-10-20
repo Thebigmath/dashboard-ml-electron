@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.105",
+    "data": "2026-10-20",
+    "titulo": "Simples: alíquota real também no mês passado",
+    "texto": "- Finance: a alíquota real do Simples agora também é calculada para o mês passado (o sistema passou a ler 13 meses de faturamento para trás, mais o mês atual). Antes, o mês anterior ficava com os 7% fixos.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.104",
     "data": "2026-10-20",
     "titulo": "Pausar e reativar anúncios pelo Painel",
