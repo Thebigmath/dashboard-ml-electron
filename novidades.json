@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.106",
+    "data": "2026-10-20",
+    "titulo": "14 fundos com novas paletas animadas (incluindo Air Force Commander Hub)",
+    "texto": "- Novos fundos no menu da conta (bolinhas no rodapé), iguais nos dois apps: agora são 14.\n- Com efeito animado: Neon (grade em perspectiva), Aurora boreal (faixas ondulando), Brasa (brasas subindo), Abismo (bolhas), Air Force Commander Hub (grade tática + radar girando), Ouro (brilho passando) e Sakura (pétalas caindo).\n- A Cordeiro ganhou o Espacial e o Natalino; a Flavia ganhou Oceano, Menta, Poente e Grafite.\n- Cada fundo muda a paleta inteira (cards, botões, destaques). Com \"reduzir movimento\" ligado no Windows, os efeitos ficam parados.",
+    "imagens": [],
+    "video": ""
+  },
+  {
     "versao": "1.9.105",
     "data": "2026-10-20",
     "titulo": "Simples: alíquota real também no mês passado",

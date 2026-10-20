@@ -224,9 +224,20 @@
 /* ── Tema de fundo (aurora) ─────────────────────────────────────────────── */
 (function() {
     const FUNDOS = [
-        { id: 'padrao',   nome: 'Original', cor: 'var(--accent)' },   // segue a cor da marca do app
-        { id: 'espacial', nome: 'Espacial', cor: 'linear-gradient(140deg,#7C3AED,#22D3EE)' },
-        { id: 'natalino', nome: 'Natalino', cor: 'linear-gradient(140deg,#C81E2D,#148C46)' },
+        { id: 'padrao',    nome: 'Original',      cor: 'var(--accent)' },   // segue a cor da marca do app
+        { id: 'oceano',    nome: 'Oceano',        cor: '#5AC8FA' },
+        { id: 'menta',     nome: 'Menta',         cor: '#34C759' },
+        { id: 'poente',    nome: 'Poente',        cor: '#FF9500' },
+        { id: 'grafite',   nome: 'Grafite',       cor: '#8E8E93' },
+        { id: 'espacial',  nome: 'Espacial',      cor: 'linear-gradient(140deg,#7C3AED,#22D3EE)' },
+        { id: 'natalino',  nome: 'Natalino',      cor: 'linear-gradient(140deg,#C81E2D,#148C46)' },
+        { id: 'neon',      nome: 'Neon',          cor: 'linear-gradient(140deg,#FF00AA,#00E5FF)' },
+        { id: 'boreal',    nome: 'Aurora boreal', cor: 'linear-gradient(140deg,#2EE6A0,#3C8CFF 55%,#A05AFF)' },
+        { id: 'brasa',     nome: 'Brasa',         cor: 'radial-gradient(circle at 35% 35%,#FFD166,#FF5A14 55%,#3A0E05)' },
+        { id: 'abismo',    nome: 'Abismo',        cor: 'linear-gradient(160deg,#38BDF8,#0C1F38)' },
+        { id: 'airforce',  nome: 'Air Force Commander Hub', cor: 'radial-gradient(circle at 50% 50%,#3CFF8C 0 2px,#10202E 3px 60%,#3CFF8C 61% 64%,#050B12 66%)' },
+        { id: 'ouro',      nome: 'Ouro',          cor: 'linear-gradient(140deg,#F2D27A,#D4AF37 45%,#121015 90%)' },
+        { id: 'sakura',    nome: 'Sakura',        cor: 'linear-gradient(140deg,#FFC2D6,#E8457E)' },
     ];
 
     // Aplica antes de montar a UI para não piscar o fundo anterior.
