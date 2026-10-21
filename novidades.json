@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.109",
+    "data": "2026-10-20",
+    "titulo": "Liberações em segundos e Conciliação corrigida",
+    "texto": "- Finance → Liberações: o botão Atualizar do Mercado Pago agora faz uma única busca no Mercado Pago pela data de liberação (de 45 dias atrás até 60 dias à frente). Leva segundos, em vez de minutos, e não depende mais da coleta do Resultado do mês (DRE).\n- Corrige a página zerada em computadores onde o DRE nunca tinha sido coletado.\n- Ao abrir a página, atualiza sozinho se a última atualização tiver mais de 30 minutos.\n- Entram também as vendas feitas depois da última coleta do DRE; essas aparecem com o título do anúncio (o SKU aparece depois que o mês é coletado no DRE).\n- Finance → Conciliação: pedidos com um pagamento recusado antes do aprovado (cartão negado) apareciam como \"retidos\" mesmo com o dinheiro já liberado; agora as tentativas recusadas/canceladas são ignoradas.\n- O mesmo pedido podia entrar duas vezes na coleta do mês; agora fica um por pedido. Para ver os números corrigidos de um mês já coletado, clique em Atualizar o mês.\n- Motor Nexus (interno): integração com o Bling (API v3) com renovação automática do token, base para a ponte Bling → Olist."
+  },
+  {
     "versao": "1.9.108",
     "data": "2026-10-20",
     "titulo": "Liberações do Mercado Pago no Finance",

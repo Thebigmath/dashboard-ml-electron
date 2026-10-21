@@ -208,10 +208,12 @@ async function acompanhar() {
     const e = await fetch('/api/finance/liberacoes/estado').then(x => x.json()).catch(() => null);
     if (!e) return;
     const b = $('btAtualizar'); b.disabled = e.rodando; clearTimeout(timer);
-    if (e.rodando) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> Relendo ${e.feito} de ${e.total}…`; b.dataset.r = '1'; timer = setTimeout(acompanhar, 2000); }
-    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do Mercado Pago'; if (b.dataset.r) { delete b.dataset.r; carregar(); } }
+    if (e.rodando) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${e.total ? `${e.feito} de ${e.total}` : 'Atualizando…'}`; $('notaFiltro').textContent = e.etapa || ''; b.dataset.r = '1'; timer = setTimeout(acompanhar, 2000); }
+    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do Mercado Pago'; if (e.erro) $('notaFiltro').textContent = 'Erro ao atualizar: ' + e.erro; if (b.dataset.r) { delete b.dataset.r; carregar(); } }
+    return e;
 }
-carregar(); acompanhar();
+// busca rapida no MP (segundos): sozinha ao abrir se nunca rodou ou tem mais de 30 min
+(async () => { await carregar(); const e = await acompanhar(); if (D && (!D.rapido_em || Date.now() - Date.parse(D.rapido_em) > 30 * 60000) && e && !e.rodando) atualizar(); })();
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>
