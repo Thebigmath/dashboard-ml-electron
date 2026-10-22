@@ -1205,8 +1205,11 @@ router.get('/seven/premium/checar', auth, (req, res) => { require('../lib/premiu
 // Finance: DRE do mes, conciliacao com o Mercado Pago, margem por produto e custos operacionais
 const finance = () => require('../lib/finance');
 // Planilha avancada (analise de vendas pedido a pedido)
-router.get('/finance/planilha', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').planilha({ de: req.query.de, ate: req.query.ate, base: req.query.base === 'pedido' ? 'pedido' : 'produtos', regime: req.query.regime === 'real' ? 'real' : 'simples', opcoes: (() => { try { return JSON.parse(req.query.opcoes || '{}'); } catch { return {}; } })() })); } catch (e) { res.status(400).json({ erro: e.message }); } });
+router.get('/finance/planilha', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').planilha({ de: req.query.de, ate: req.query.ate, base: req.query.base === 'pedido' ? 'pedido' : 'produtos', regime: ['real', 'simples'].includes(req.query.regime) ? req.query.regime : 'auto', opcoes: (() => { try { return JSON.parse(req.query.opcoes || '{}'); } catch { return {}; } })() })); } catch (e) { res.status(400).json({ erro: e.message }); } });
 router.post('/finance/planilha/atualizar', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').atualizar(req.body || {})); } catch (e) { erroJson(res)(e); } });
+// configuracao fiscal por produto: le no Olist o NCM dos SKUs fora da Base tributaria
+router.post('/finance/fiscal/ncm', auth, (req, res) => res.json(require('../lib/fiscal_produto').atualizarNcm(Array.isArray((req.body || {}).skus) ? req.body.skus : [])));
+router.get('/finance/fiscal/ncm/estado', auth, (req, res) => res.json(require('../lib/fiscal_produto').estado()));
 router.post('/finance/planilha/config', auth, (req, res) => { try { res.json(require('../lib/finance_planilha').configurar(req.body || {})); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/conciliacao', auth, (req, res) => { try { res.json(require('../lib/finance_conciliacao').conciliar({ de: req.query.de, ate: req.query.ate })); } catch (e) { res.status(400).json({ erro: e.message }); } });
 router.post('/finance/conciliacao/analisar', auth, (req, res) => { try { res.json(require('../lib/finance_conciliacao').analisar(req.body || {})); } catch (e) { erroJson(res)(e); } });
@@ -1224,6 +1227,12 @@ router.post('/finance/base-tributaria', auth, upload.single('planilha'), async (
     catch (e) { res.status(400).json({ erro: e.message }); }
     finally { try { fs.unlinkSync(req.file.path); } catch {} }
 });
+// contas a pagar (Bling, pelo motor Nexus) e os 3 cards da IA
+router.get('/finance/contas-pagar', auth, (req, res) => { try { const d = (k) => /^\d{4}-\d{2}-\d{2}$/.test(req.query[k] || '') ? req.query[k] : null; res.json(require('../lib/finance_contas_pagar').listar({ de: d('de'), ate: d('ate') })); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/contas-pagar/atualizar', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').atualizar(req.body || {})));
+router.get('/finance/contas-pagar/estado', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').estado()));
+router.post('/finance/contas-pagar/ia', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').analisarIA()));
+router.get('/finance/contas-pagar/ia', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').cardsIA()));
 // calendario de liberacoes do Mercado Pago
 router.get('/finance/liberacoes', auth, (req, res) => { try { res.json(require('../lib/finance_liberacoes').calendario({ de: /^\d{4}-\d{2}-\d{2}$/.test(req.query.de || '') ? req.query.de : null, ate: /^\d{4}-\d{2}-\d{2}$/.test(req.query.ate || '') ? req.query.ate : null })); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/liberacoes/atualizar', auth, (req, res) => res.json(require('../lib/finance_liberacoes').atualizar()));

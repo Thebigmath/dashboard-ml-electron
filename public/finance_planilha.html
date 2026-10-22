@@ -54,7 +54,7 @@
         <input type="date" class="in" id="de" onchange="periodoCustom()" hidden> <input type="date" class="in" id="ate" onchange="periodoCustom()" hidden>
         <select class="sel" id="campo"><option value="search">Buscar nos pedidos</option><option value="sku">Buscar por SKU</option><option value="productName">Buscar por nome do produto</option></select>
         <input class="in" id="busca" placeholder="Digite para buscar…" style="min-width:220px" oninput="pagina=1;desenhar()">
-        <select class="sel" id="regime" onchange="mudarRegime()" title="Regime tributário"><option value="simples">Regime: Simples Nacional (atual)</option><option value="real">Simular: Lucro Real</option></select>
+        <select class="sel" id="regime" onchange="mudarRegime()" title="Regime tributário"><option value="auto">Regime: o da conta</option><option value="real">Simular: Lucro Real no período todo</option><option value="simples">Forçar: Simples Nacional</option></select>
         <select class="sel" id="cenario" onchange="carregar()" hidden title="ICMS no Lucro Real"><option value="st">ICMS: produto com ST (como nas notas de hoje)</option><option value="normal">ICMS: normal, sem ST</option></select>
         <select class="sel" id="base" onchange="carregar()" title="Base da margem"><option value="produtos">Base: valor dos produtos</option><option value="pedido">Base: valor do pedido total</option></select>
         <select class="sel" id="fStatus" onchange="pagina=1;desenhar()"><option value="">Todos os status</option></select>
@@ -69,6 +69,7 @@
     <div class="f" id="estado" style="margin:-4px 0 10px"></div>
     <div class="f" id="baseTrib" style="margin:-6px 0 10px"></div>
     <div id="simul"></div>
+    <div id="cfgFiscal" hidden></div>
     <div class="cards" id="cards"></div>
     <div class="tabela"><table id="tab"></table></div>
     <div class="pag" id="pag"></div>
@@ -116,18 +117,18 @@ function intervalo() {
 }
 function mudarPeriodo() { const c = $('periodo').value === 'custom'; $('de').hidden = $('ate').hidden = !c; if (c) { const [a, b] = intervalo(); $('de').value = a; $('ate').value = b; } try { localStorage.setItem('pa_periodo', $('periodo').value); } catch {} carregar(); }
 function periodoCustom() { carregar(); }
-function mudarRegime() {
-    const real = $('regime').value === 'real'; $('cenario').hidden = !real;
-    // Lucro Real: mostra o jogo fiscal completo (debitos e creditos). Simples: ficam os debitos visiveis
-    // (como no GeFinance) e os creditos voltam a ficar ocultos.
+function mudarRegime() { $('cenario').hidden = $('regime').value !== 'real'; carregar(); }
+// Lucro Real (o da conta ou simulado): mostra o jogo fiscal completo (debitos e creditos). Simples: ficam os debitos
+// visiveis (como no GeFinance) e os creditos voltam a ficar ocultos.
+function colunasFiscais() {
+    const real = D && D.regime !== 'simples';
     for (const k of ['debitIpi', 'debitPis', 'debitCofins', 'debitIcms', 'debitSt', 'debitDifal', 'debitTotal', 'creditIpi', 'creditPis', 'creditCofins', 'creditIcms', 'creditSt', 'creditDifal', 'creditTotal']) real ? ocultas.delete(k) : (COLS.find(c => c[0] === k)[3] && ocultas.add(k));
-    carregar();
 }
 function desenharSimulacao() {
     const L = D.lucro_real; if (!L) { $('simul').innerHTML = ''; return; }
     const dif = L.lucro_depois_ir - L.simples.margin, t = D.totais;
-    $('simul').innerHTML = `<div class="card2" style="margin-bottom:12px;border-color:#bf5af2">
-        <small style="color:#bf5af2"><i class="bi bi-flask"></i> Simulação · Lucro Real · ${L.opcoes.cenario === 'st' ? 'produtos com ICMS-ST' : 'ICMS normal, sem ST'} · ${L.dias} dias</small>
+    $('simul').innerHTML = `<div class="card2" style="margin-bottom:12px;border-color:${L.oficial ? '#0a84ff' : '#bf5af2'}">
+        <small style="color:${L.oficial ? '#0a84ff' : '#bf5af2'}">${L.oficial ? `<i class="bi bi-bank"></i> Lucro Real · regime da conta desde ${L.desde.split('-').reverse().join('/')} · ${L.pedidos} pedidos · regras da Base tributária por produto e por estado` : `<i class="bi bi-flask"></i> Simulação · Lucro Real · ${L.opcoes.cenario === 'st' ? 'produtos com ICMS-ST' : 'ICMS normal, sem ST'} · ${L.dias} dias`}</small>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:8px">
             <div><span>Simples hoje (DAS)</span><b>${brl(L.simples.margin)}</b><span>imposto ${brl(L.simples.tax)}</span></div>
             <div><span>Lucro Real: impostos do pedido</span><b>${brl(t.tax)}</b><span>débitos ${brl(t.debitTotal)} − créditos ${brl(t.creditTotal)}</span></div>
@@ -135,13 +136,14 @@ function desenharSimulacao() {
             <div><span>IRPJ + CSLL (sobre a margem)</span><b>${brl(L.irpj + L.csll)}</b><span>margem antes ${brl(L.lucro_antes_ir)}</span></div>
             <div><span>Lucro Real: sobra</span><b style="color:${dif < 0 ? '#ff453a' : '#30D158'}">${brl(L.lucro_depois_ir)}</b><span>${dif < 0 ? 'pior' : 'melhor'} que o Simples em ${brl(Math.abs(dif))}</span></div>
         </div>
-        <div class="f" style="margin-top:8px">Alíquotas gerais (PIS 1,65% e COFINS 7,6% não cumulativos, com crédito sobre custo e frete; ICMS de SP; DIFAL pela alíquota interna do destino; IRPJ 15% + 10% acima de R$ 20 mil/mês e CSLL 9%). ADS e custos fixos não entram aqui e reduziriam o IRPJ/CSLL. É simulação para decidir: conferir com o contador.</div></div>`;
+        <div class="f" style="margin-top:8px">${L.oficial ? 'Regras da Base tributária do contador: por SKU (ST, monofásico, PIS/COFINS, origem) e por estado de destino (alíquota interna, interestadual e DIFAL). SKU sem regra usa o caso geral (ICMS próprio, PIS 1,65% + COFINS 7,6% não cumulativos). Crédito de ICMS: o da nota de compra quando lida; sem ela, 12% do custo. IRPJ/CSLL é estimativa sobre a margem (ADS e custos fixos reduziriam). Conferir com o contador.' : ''}</div>
+        <div class="f" style="margin-top:8px" ${L.oficial ? 'hidden' : ''}>Alíquotas gerais (PIS 1,65% e COFINS 7,6% não cumulativos, com crédito sobre custo e frete; ICMS de SP; DIFAL pela alíquota interna do destino; IRPJ 15% + 10% acima de R$ 20 mil/mês e CSLL 9%). ADS e custos fixos não entram aqui e reduziriam o IRPJ/CSLL. É simulação para decidir: conferir com o contador.</div></div>`;
 }
 
 async function carregar() {
     const [de, ate] = intervalo();
     try {
-        const reg = $('regime').value, op = encodeURIComponent(JSON.stringify({ cenario: $('cenario').value }));
+        const reg = $('regime').value, op = encodeURIComponent(JSON.stringify(reg === 'real' ? { cenario: $('cenario').value } : {}));
         const r = await fetch(`/api/finance/planilha?de=${de}&ate=${ate}&base=${$('base').value}&regime=${reg}&opcoes=${op}`).then(x => x.json());
         if (r.erro) throw new Error(r.erro);
         D = r;
@@ -151,7 +153,7 @@ async function carregar() {
         + (falta.length || velho.length ? ' · <b style="color:#ff9f0a">clique em "Atualizar do Mercado Livre" para trazer os pedidos que faltam</b>' : '');
     for (const [id, k, txt] of [['fStatus', 'status', 'Todos os status'], ['fEnvio', 'shippingMethod', 'Todos os envios']]) { const v = $(id).value; $(id).innerHTML = `<option value="">${txt}</option>` + [...new Set(D.pedidos.map(p => p[k]))].sort().map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join(''); }
     if (document.activeElement !== $('cfgBrinde')) $('cfgBrinde').value = D.brinde || ''; if (document.activeElement !== $('cfgEmb')) $('cfgEmb').value = D.embalagem || '';
-    pagina = 1; desenharSimulacao(); desenhar(); acompanhar(); verBase();
+    colunasFiscais(); pagina = 1; desenharSimulacao(); desenhar(); acompanhar(); verBase(); if (!$('cfgFiscal').hidden) desenharFiscal();
 }
 function filtrados() {
     const q = ($('busca').value || '').trim().toLowerCase(), c = $('campo').value;
@@ -188,7 +190,7 @@ function desenhar() {
         ['Total venda', brl(soma(L, 'totalSale')), `${L.length} pedidos`], ['Margem', brl(mSoma), `${pct(bSoma ? mSoma / bSoma * 100 : null)} da venda · ${pct(cSoma ? mSoma / cSoma * 100 : null)} do custo`],
         ['Valor líquido', brl(soma(L, 'liquidValue')), `comissão ${brl(soma(L, 'commission'))} · dif. frete ${brl(soma(L, 'freightDifference'))}`],
         // como o "Déb. TOTAL" do GeFinance, mais o DAS do Simples (que o GeFinance não calcula)
-        ['Impostos', brl(soma(L, 'tax')), (() => { const a = Object.entries(D.aliquotas_simples || {}).filter(([, x]) => x); return a.length ? `DAS médio ${pct(L.reduce((t, p) => t + (p.aliquota_das || 0) * (p.valueWithDiscount || 0), 0) / (soma(L, 'valueWithDiscount') || 1))} por SKU · ` + a.map(([m, x]) => `cheio ${String(x.efetiva.toFixed(2)).replace('.', ',')}% em ${m.slice(5)}/${m.slice(2, 4)} (faixa ${x.faixa})`).join(' · ') + ` · PIS/COFINS/ICMS ${brl(soma(L, 'debitTotal'))} + IRPJ/CSLL/CPP ${brl(soma(L, 'simplesDas'))}` : `${String(D.imposto_pct).replace('.', ',')}% (Configurações)`; })()],
+        ['Impostos', brl(soma(L, 'tax')), (() => { if (D.regime !== 'simples') { const v = soma(L, 'valueWithDiscount') || 1; return `Lucro Real: ${pct(soma(L, 'tax') / v * 100)} da venda · débitos ${brl(soma(L, 'debitTotal'))} − créditos ${brl(soma(L, 'creditTotal'))}`; } const a = Object.entries(D.aliquotas_simples || {}).filter(([, x]) => x); return a.length ? `DAS médio ${pct(L.reduce((t, p) => t + (p.aliquota_das || 0) * (p.valueWithDiscount || 0), 0) / (soma(L, 'valueWithDiscount') || 1))} por SKU · ` + a.map(([m, x]) => `cheio ${String(x.efetiva.toFixed(2)).replace('.', ',')}% em ${m.slice(5)}/${m.slice(2, 4)} (faixa ${x.faixa})`).join(' · ') + ` · PIS/COFINS/ICMS ${brl(soma(L, 'debitTotal'))} + IRPJ/CSLL/CPP ${brl(soma(L, 'simplesDas'))}` : `${String(D.imposto_pct).replace('.', ',')}% (Configurações)`; })()],
     ].map(([a, b, c]) => `<div class="card2"><small>${a}</small><b>${b}</b><span>${c}</span></div>`).join('');
     const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
     const tot = vis.map(c => { const [k, , tipo] = c; if (k === 'date') return `<td class="t">Totais</td>`; if (tipo === 't') return `<td class="t">${k === 'products' ? `${mL.length < L.length ? `<span class="f">${L.length - mL.length} sem custo fora da margem</span>` : ''}` : ''}</td>`;
@@ -223,6 +225,41 @@ async function verBase() {
     $('baseTrib').innerHTML = b.importada
         ? `<i class="bi bi-file-earmark-ruled"></i> Base tributária: <b>${esc(b.info.empresa || '')}</b> · regime na base: ${esc(b.info.regime || '—')} · ${b.skus} SKUs (${b.monofasicos} monofásicos, ${b.com_st} com ST) · elaborada por ${esc(b.info['base elaborada por'] || '—')} · importada ${new Date(b.importado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${itens.length ? ` · regra oficial em ${cob} de ${itens.length} itens do período` : ''}`
         : '<span style="color:#ff9f0a">Sem a Base tributária do contador: o imposto usa as opções gerais. Importe a planilha no botão "Base tributária".</span>';
+    const rc = D && D.regime_conta, sem = D ? (D.config_fiscal || []).filter(x => !x.fiscal).length : 0;
+    $('baseTrib').innerHTML += `<br><i class="bi bi-bank"></i> Regime da conta: <b>${rc && rc.regime === 'lucro_real' ? `Lucro Real desde ${rc.desde.split('-').reverse().join('/')}` : 'Simples Nacional'}</b> · <a href="#" onclick="alterarRegime();return false">alterar</a>`
+        + ` · <a href="#" onclick="verFiscal();return false"><i class="bi bi-sliders"></i> Configuração fiscal por produto</a>${sem ? ` <b style="color:#ff9f0a">(${sem} SKUs sem regra)</b>` : ''}`;
+}
+async function alterarRegime() {
+    const atual = D && D.regime_conta && D.regime_conta.regime === 'lucro_real' ? D.regime_conta.desde : '';
+    const v = prompt('Lucro Real a partir de qual mês? (AAAA-MM, ex.: 2026-10)\nDeixe em branco para voltar ao Simples Nacional.', atual);
+    if (v == null) return;
+    const body = v.trim() ? { regime: 'lucro_real', desde: v.trim() } : { regime: 'simples' };
+    const r = await fetch('/api/finance/planilha/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ erro: e.message }));
+    if (r.erro) { alert(r.erro); return; }
+    carregar();
+}
+// configuracao fiscal por produto: cada SKU vendido no periodo e a regra que o imposto usa (sempre da Base tributaria)
+function verFiscal() { $('cfgFiscal').hidden = !$('cfgFiscal').hidden; if (!$('cfgFiscal').hidden) desenharFiscal(); }
+function desenharFiscal() {
+    const L = D.config_fiscal || [], cor = (f) => /^base/.test(f || '') ? '#30D158' : /^NCM/.test(f || '') ? '#0a84ff' : '#ff9f0a';
+    const sim = (v) => v == null ? '—' : v ? 'Sim' : 'Não', pc = (v) => v == null ? '—' : String(v).replace('.', ',') + '%';
+    const sem = L.filter(x => !x.fiscal);
+    $('cfgFiscal').innerHTML = `<div class="card2" style="margin-bottom:12px">
+        <small><i class="bi bi-sliders"></i> Configuração fiscal por produto · ${L.length} SKUs no período · <span style="color:#30D158">${L.filter(x => x.fiscal && /^base/.test(x.fonte || '')).length} na Base tributária</span> · <span style="color:#0a84ff">${L.filter(x => x.fiscal && /^NCM/.test(x.fonte || '')).length} pelo NCM</span> · <span style="color:#ff9f0a">${sem.length} sem regra</span>
+        ${sem.length ? ` · <a href="#" onclick="buscarNcm();return false">buscar o NCM no Olist</a> <span id="ncmEstado"></span>` : ''}</small>
+        <div class="f" style="margin:6px 0">Sem regra: o imposto usa o caso geral (ICMS próprio, PIS/COFINS 1,65% + 7,6% não cumulativo). Para corrigir, o contador inclui o SKU na Base tributária e você importa a planilha de novo.</div>
+        <div style="max-height:360px;overflow:auto"><table style="width:100%"><thead><tr><th>SKU</th><th>Produto</th><th>Regra</th><th>NCM</th><th>Origem</th><th>ICMS ST</th><th>Monofásico</th><th>PIS</th><th>COFINS</th><th>Vendido no período</th></tr></thead><tbody>
+        ${L.map(x => { const f = x.fiscal || {}; return `<tr><td>${esc(x.sku)}</td><td>${esc((x.nome || '').slice(0, 60))}</td><td style="color:${cor(x.fiscal ? x.fonte : 'sem')}">${esc(x.fiscal ? x.fonte : (x.fonte || 'sem regra'))}</td><td>${esc(x.ncm || '—')}</td><td>${f.origem == null ? '—' : f.origem + (f.importado ? ' (importado)' : '')}</td><td>${sim(f.st)}</td><td>${sim(f.monofasico)}</td><td>${pc(f.pis)}</td><td>${pc(f.cofins)}</td><td>${brl(x.venda)} · ${x.unidades} un.</td></tr>`; }).join('')}
+        </tbody></table></div></div>`;
+}
+async function buscarNcm() {
+    const skus = (D.config_fiscal || []).filter(x => !x.fiscal).map(x => x.sku);
+    const r = await fetch('/api/finance/fiscal/ncm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skus }) }).then(x => x.json()).catch(e => ({ erro: e.message }));
+    if (!r.ok) { alert(r.erro || 'não deu'); return; }
+    const tick = async () => { const e = await fetch('/api/finance/fiscal/ncm/estado').then(x => x.json()).catch(() => null); if (!e) return;
+        if ($('ncmEstado')) $('ncmEstado').textContent = e.rodando ? `· lendo ${e.feito} de ${e.total}…` : e.erro ? '· erro: ' + e.erro : '· pronto';
+        if (e.rodando) setTimeout(tick, 2000); else carregar(); };
+    tick();
 }
 async function importarBase(inp) {
     const f = inp.files[0]; if (!f) return;

@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.110",
+    "data": "2026-10-22",
+    "titulo": "Lucro Real oficial, Contas a pagar e Conciliação única",
+    "texto": "- Finance → Planilha avançada: o Lucro Real oficial da conta entra no cálculo de todos os impostos (ICMS e DIFAL por estado, PIS/COFINS por produto), com a base tributária do contador. Para ativar: Planilha avançada → alterar → informar o mês (2026-10).\n- Finance → Planilha avançada: cada SKU mostra a regra de impostos que usa (base, NCM ou sem regra), e o botão buscar NCM no Olist completa os SKUs que ainda estão fora da base.\n- Finance → Liberações passa a se chamar Contas a receber, e o DRE vai direto para a Conciliação única: o que caiu no Mercado Pago, pedido a pedido.\n- Finance → Contas a pagar (novo): as contas lançadas no Bling, com vencimento, fornecedor e situação (vence hoje, atrasada, paga), e 3 resumos de IA do fluxo de caixa.\n- Custos e Despesas: cada lançamento agora é fixo ou variável, e o DRE mostra os dois separados.\n- Para o Bling ler as contas a pagar, o app NEXUS ENGINE precisa receber os escopos Contas a pagar, Contas a receber, Contatos, Formas de pagamento e Categorias financeiras; depois é preciso autorizar de novo."
+  },
+  {
     "versao": "1.9.109",
     "data": "2026-10-20",
     "titulo": "Liberações em segundos e Conciliação corrigida",

@@ -69,6 +69,7 @@ app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
 app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
+app.get('/finance-contas-pagar', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_contas_pagar.html')));
 app.get('/finance-liberacoes', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_liberacoes.html')));
 app.get('/finance-conciliacao', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_conciliacao.html')));
 app.get('/finance-planilha', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_planilha.html')));

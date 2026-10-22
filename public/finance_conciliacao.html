@@ -51,27 +51,21 @@
 <div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
 <div class="d-flex"><main class="content"><div class="cc">
     <h1><i class="bi bi-check2-all"></i> Conciliação</h1>
-    <div class="sub">Mercado Livre × Mercado Pago × NF-e do Olist × envio × planilha de custos, pedido a pedido. Escalada de Prata: o <b>motor</b> confere tudo por regra, só as <b>exceções</b> sobem para a <b>IA</b> (agente Conciliação do Complexo), e quem decide é <b>você</b>. Nada é alterado nas plataformas: a conciliação só lê.</div>
+    <div class="sub">O que o <b>Mercado Livre</b> diz que a loja recebe em cada pedido (venda − cupom − tarifa − frete) × o líquido que de fato <b>caiu no Mercado Pago</b>, pedido a pedido. Só leitura: nada é alterado nas plataformas.</div>
 
     <div class="barra">
         <select class="sel" id="periodo" onchange="carregar()">
-            <option value="7" selected>Últimos 7 dias</option><option value="mes">Esse mês</option><option value="15">Últimos 15 dias</option><option value="ontem">Ontem</option>
+            <option value="7" selected>Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="mes">Esse mês</option><option value="mes_passado">Mês passado</option><option value="ontem">Ontem</option>
         </select>
+        <select class="sel" id="fSit" onchange="tabela()"><option value="">Todas as situações</option><option value="dif">Com diferença</option><option value="ok">Batem</option><option value="exp">Diferença explicada</option><option value="ag">Aguardando o MP</option><option value="dev">Devolvidos</option></select>
+        <input class="in" id="busca" placeholder="Buscar pedido ou SKU…" oninput="tabela()" style="min-width:200px">
         <span style="margin-left:auto"></span>
-        <button class="bt" onclick="atualizar()" id="btAtualizar"><i class="bi bi-arrow-repeat"></i> Atualizar dados (ML, MP e Olist)</button>
-        <button class="bt ia" onclick="pedirIA()" id="btIA"><i class="bi bi-stars"></i> Pedir análise à IA</button>
+        <button class="bt" onclick="exportar()"><i class="bi bi-download"></i> Exportar</button>
+        <button class="bt" onclick="atualizar()" id="btAtualizar"><i class="bi bi-arrow-repeat"></i> Atualizar dados (ML e MP)</button>
     </div>
     <div class="f" id="estado" style="margin:-6px 0 10px"></div>
-
-    <div class="box"><h3>Escalada de Prata</h3><div class="escada" id="escada"></div></div>
-    <div class="box"><h3>Trilhas <span class="f" style="text-transform:none;letter-spacing:0;font-weight:400">· clique numa trilha para ver as exceções dela</span></h3><div class="trilhas" id="trilhas"></div></div>
-    <div class="box" id="boxIA" hidden><h3><i class="bi bi-stars"></i> Análise da IA <span class="f" id="iaQuem" style="text-transform:none;letter-spacing:0;font-weight:400"></span></h3><div id="ia"></div></div>
-    <div class="box">
-        <h3 style="display:flex;align-items:center;gap:8px">Pedidos <select class="sel" id="filtro" onchange="tabela()" style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400">
-            <option value="divergente" selected>Só exceções (divergentes)</option><option value="aguardando">Aguardando</option><option value="conciliado">Conciliados</option><option value="">Todos</option></select></h3>
-        <div style="max-height:520px;overflow:auto"><table id="tab"></table></div>
-    </div>
-    <div class="box"><h3>Rodadas registradas</h3><div id="hist" class="f"></div></div>
+    <div class="f" id="conta" style="margin:0 0 8px"></div>
+    <div class="box"><div style="max-height:640px;overflow:auto"><table id="tab"></table></div></div>
 </div></main></div>
 
 <script>
@@ -81,69 +75,45 @@ const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR',
 const dia = (d) => d.toISOString().slice(0, 10);
 const PILL = { ok: ['ok', 'ok'], conciliado: ['ok', 'conciliado'], aguardando: ['ag', 'aguardando'], divergente: ['dv', 'divergente'], fora: ['fo', 'fora'] };
 const pill = (s) => `<span class="pill ${PILL[s][0]}">${PILL[s][1]}</span>`;
-let D = null, trilha = null, timer = null;
+let D = null, timer = null;
 
 function intervalo() {
     const p = $('periodo').value, h = new Date(Date.now() - 3 * 3600000), d = (n) => { const x = new Date(h); x.setUTCDate(x.getUTCDate() + n); return x; };
     if (p === 'ontem') return [dia(d(-1)), dia(d(-1))];
     if (p === 'mes') return [dia(h).slice(0, 8) + '01', dia(h)];
+    if (p === 'mes_passado') { const ini = new Date(Date.UTC(h.getUTCFullYear(), h.getUTCMonth() - 1, 1)), fim = new Date(Date.UTC(h.getUTCFullYear(), h.getUTCMonth(), 0)); return [dia(ini), dia(fim)]; }
     return [dia(d(-(Number(p) - 1))), dia(h)];
 }
 async function carregar() {
     const [de, ate] = intervalo();
     const r = await fetch(`/api/finance/conciliacao?de=${de}&ate=${ate}`).then(x => x.json());
-    if (r.erro) { $('escada').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; return; }
-    D = r; desenhar(); historico(); verIA(); acompanhar();
+    if (r.erro) { $('conta').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; return; }
+    D = r; desenhar(); acompanhar();
 }
-function desenhar() {
-    const R = D.resumo;
-    $('escada').innerHTML = `
-        <div class="degrau"><small style="color:#30D158"><i class="bi bi-gear"></i> 1 · Motor (regras)</small><b>${R.taxa_delegacao == null ? '—' : String(R.taxa_delegacao).replace('.', ',') + '%'}</b>
-            <span>taxa de delegação: ${R.conciliados} conciliados + ${R.aguardando} aguardando o prazo normal, de ${R.pedidos} pedidos · meta ≥ 60%</span></div>
-        <div class="degrau"><small style="color:#bf5af2"><i class="bi bi-stars"></i> 2 · IA (exceções)</small><b>${R.excecoes}</b>
-            <span>pedidos com alguma divergência, agrupados por causa para o agente de Conciliação explicar</span></div>
-        <div class="degrau"><small style="color:#0a84ff"><i class="bi bi-person-check"></i> 3 · Você (decisão)</small><b>${D.trilhas.reduce((s, t) => s + Object.keys(t.motivos).length, 0)}</b>
-            <span>grupos de causa para decidir · notas do Olist lidas: ${D.fiscal.notas}${D.fiscal.atualizado_em ? ` (${new Date(D.fiscal.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})` : ''}</span></div>`;
-    $('trilhas').innerHTML = D.trilhas.map(t => { const n = t.ok + t.aguardando + t.divergente + t.fora || 1, w = (x) => (x / n * 100).toFixed(1) + '%';
-        return `<div class="tr ${trilha === t.id ? 'ativo' : ''}" onclick="escolher('${t.id}')"><b>${t.nome}</b>
-            <div class="barrinha"><div style="width:${w(t.ok)};background:#30D158"></div><div style="width:${w(t.aguardando)};background:#ff9f0a"></div><div style="width:${w(t.divergente)};background:#ff453a"></div><div style="width:${w(t.fora)};background:var(--l3)"></div></div>
-            <div class="leg"><span><i style="background:#30D158"></i>${t.ok} ok</span><span><i style="background:#ff9f0a"></i>${t.aguardando} aguardando</span><span><i style="background:#ff453a"></i>${t.divergente} divergentes</span>${t.fora ? `<span><i style="background:var(--l3)"></i>${t.fora} fora</span>` : ''}</div>
-            ${t.valor ? `<div class="mot"><b style="font-size:12.5px;color:#ff453a">${brl(t.valor)}</b> em diferença</div>` : ''}
-            ${Object.entries(t.motivos).map(([m, q]) => `<div class="mot">· ${esc(m)}: <b>${q}</b></div>`).join('')}</div>`; }).join('');
-    tabela();
-}
-function escolher(id) { trilha = trilha === id ? null : id; desenhar(); }
+function situacao(l) { return l.status_pedido === 'Devolvido' ? 'dev' : l.recebido == null ? 'ag' : Math.abs(l.diferenca) <= 0.1 ? 'ok' : l.explicado ? 'exp' : 'dif'; }
+const SIT = { ok: ['ok', 'bate'], exp: ['ag', 'explicada'], dif: ['dv', 'diferença'], ag: ['ag', 'aguardando o MP'], dev: ['fo', 'devolvido'] };
 function tabela() {
-    const f = $('filtro').value;
-    let L = D.linhas.filter(l => !f || (trilha ? l.trilhas[trilha].s === (f === 'conciliado' ? 'ok' : f) : l.status === f));
-    $('tab').innerHTML = `<thead><tr><th>Pedido</th><th>Data</th><th>Envio</th><th>NF-e</th><th>Status</th>${D.trilhas.map(t => `<th>${t.nome}</th>`).join('')}<th style="text-align:right">Venda</th></tr></thead><tbody>`
-        + L.slice(0, 400).map(l => `<tr><td><b>${l.id}</b><div class="f">${esc(l.produtos)}</div></td><td>${l.dia.split('-').reverse().join('/')}</td><td>${esc(l.envio)}</td><td>${l.nf ? esc(l.nf) : '<span class="f">—</span>'}</td><td>${pill(l.status)}</td>`
-            + D.trilhas.map(t => { const x = l.trilhas[t.id]; return `<td>${pill(x.s)}${x.motivo && x.s !== 'ok' ? `<div class="f">${esc(x.motivo)}${x.valor && x.s === 'divergente' ? ` · ${brl(x.valor)}` : ''}</div>` : ''}</td>`; }).join('')
-            + `<td class="n">${brl(l.venda)}</td></tr>`).join('')
-        + (L.length ? '' : `<tr><td colspan="9" class="f">Nada aqui.</td></tr>`) + (L.length > 400 ? `<tr><td colspan="9" class="f">Mostrando 400 de ${L.length}.</td></tr>` : '') + '</tbody>';
+    if (!D) return;
+    const f = $('fSit').value, q = ($('busca').value || '').trim().toLowerCase();
+    const L = D.linhas.filter(l => (!f || situacao(l) === f) && (!q || (l.id + ' ' + l.produtos).toLowerCase().includes(q)))
+        .sort((a, b) => Math.abs(b.diferenca || 0) - Math.abs(a.diferenca || 0) || String(b.dia).localeCompare(String(a.dia)));
+    const n = (k) => D.linhas.filter(l => situacao(l) === k).length;
+    const soma = (k) => D.linhas.filter(l => situacao(l) === k).reduce((s, l) => s + (l.diferenca || 0), 0);
+    $('conta').innerHTML = `${D.linhas.length} pedidos · ${n('ok')} batem · ${n('exp')} com diferença explicada (${brl(soma('exp'))}) · <b style="color:#ff453a">${n('dif')} com diferença (${brl(soma('dif'))})</b> · ${n('ag')} aguardando o MP · ${n('dev')} devolvidos${L.length !== D.linhas.length ? ` · mostrando ${L.length}` : ''}`;
+    $('tab').innerHTML = `<thead><tr><th>Pedido</th><th>Data</th><th>Envio</th><th style="text-align:right">Venda</th><th style="text-align:right">Recebido no ML</th><th style="text-align:right">Caiu no MP</th><th style="text-align:right">Diferença</th><th>Situação</th></tr></thead><tbody>`
+        + L.slice(0, 600).map(l => { const s = situacao(l), m = l.trilhas && l.trilhas.mp;
+            return `<tr><td><b>${l.id}</b><div class="f">${esc(l.produtos)}</div></td><td>${l.dia.split('-').reverse().join('/')}</td><td>${esc(l.envio || '—')}</td>
+                <td style="text-align:right">${brl(l.venda)}</td><td style="text-align:right">${brl(l.esperado)}</td><td style="text-align:right">${brl(l.recebido)}</td>
+                <td style="text-align:right;color:${s === 'dif' ? '#ff453a' : 'inherit'}">${l.diferenca == null ? '—' : brl(l.diferenca)}</td>
+                <td><span class="pill ${SIT[s][0]}">${SIT[s][1]}</span>${s === 'exp' ? `<div class="f">${esc(l.explicado)}</div>` : s === 'dif' && l.comparativo ? `<div class="f">Tarifa: ML ${brl(l.comparativo.tarifa_ml)} × MP ${brl(l.comparativo.tarifa_mp)}<br>Frete: ML ${brl(l.comparativo.frete_ml)} × MP ${brl(l.comparativo.frete_mp)}${l.comparativo.cupom_mp ? ` · cupom no MP ${brl(l.comparativo.cupom_mp)}` : ''}</div>` : ''}</td></tr>`; }).join('')
+        + (L.length > 600 ? `<tr><td colspan="8" class="f">mostrando os 600 primeiros de ${L.length}</td></tr>` : '') + '</tbody>';
 }
-async function historico() {
-    const h = await fetch('/api/finance/conciliacao/historico').then(x => x.json());
-    $('hist').innerHTML = h.length ? h.slice(0, 10).map(r => `${new Date(r.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · ${r.de.split('-').reverse().join('/')} a ${r.ate.split('-').reverse().join('/')} · ${r.resumo.pedidos} pedidos · delegação ${String(r.resumo.taxa_delegacao).replace('.', ',')}% · ${r.resumo.excecoes} exceções`).join('<br>')
-        : 'Nenhuma rodada registrada ainda. Cada "Pedir análise à IA" registra a rodada aqui.';
-}
-async function verIA() {
-    const a = await fetch('/api/finance/conciliacao/ia').then(x => x.json());
-    $('btIA').disabled = a.estado.rodando;
-    if (a.estado.rodando) { $('boxIA').hidden = false; $('ia').innerHTML = '<span class="f"><i class="bi bi-hourglass-split"></i> O agente de Conciliação está analisando as exceções…</span>'; clearTimeout(timer); timer = setTimeout(verIA, 3000); return; }
-    if (a.estado.erro) { $('boxIA').hidden = false; $('ia').innerHTML = `<span style="color:#ff453a">${esc(a.estado.erro)}</span>`; return; }
-    if (!a.em) { $('boxIA').hidden = true; return; }
-    $('boxIA').hidden = false;
-    $('iaQuem').textContent = `· ${a.agente ? (a.agente.papel || a.agente.id) : 'IA'} · ${a.de.split('-').reverse().join('/')} a ${a.ate.split('-').reverse().join('/')} · ${new Date(a.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
-    $('ia').innerHTML = `<div style="font-size:13.5px;color:var(--l1);margin-bottom:6px">${esc(a.resumo)}</div>`
-        + (a.grupos || []).map(g => `<div class="ia-g"><b>${esc(g.grupo)}</b> <span class="pill fo">${esc(g.quem)}</span><div><b style="font-weight:600">Causa:</b> ${esc(g.causa)}</div><div><b style="font-weight:600">Ação:</b> ${esc(g.acao)}</div>${g.nova_regra ? `<div style="color:#30D158"><i class="bi bi-gear"></i> Regra nova para o motor: ${esc(g.nova_regra)}</div>` : ''}</div>`).join('')
-        + ((a.prioridade || []).length ? `<div class="f" style="margin-top:8px"><b>Prioridade:</b><br>${a.prioridade.map((p, i) => `${i + 1}. ${esc(p)}`).join('<br>')}</div>` : '');
-}
-async function pedirIA() {
-    const [de, ate] = intervalo();
-    const r = await fetch('/api/finance/conciliacao/analisar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de, ate }) }).then(x => x.json());
-    if (!r.ok) return alert(r.erro || 'não deu');
-    verIA(); setTimeout(historico, 4000);
+function desenhar() { tabela(); }
+function exportar() {
+    if (!D) return;
+    const csv = ['Pedido;Data;Envio;Produtos;Venda;Recebido no ML;Caiu no MP;Diferença;Situação'].concat(D.linhas.map(l => [l.id, l.dia, l.envio || '', String(l.produtos || '').replace(/;/g, ','),
+        ...[l.venda, l.esperado, l.recebido, l.diferenca].map(v => v == null ? '' : String(v).replace('.', ',')), SIT[situacao(l)][1]].join(';'))).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); a.download = `conciliacao_${intervalo().join('_a_')}.csv`; a.click();
 }
 async function atualizar() {
     const [de, ate] = intervalo();

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contas a pagar — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        /* visual de lista financeira (molde do "Contas a pagar" do Bling): titulo + seletor, botao verde,
+           busca, periodo em pilula, tabela limpa com situacao em pilula e uma coluna lateral de acoes e informacoes */
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .lb { --verde:#2E9E5B; --verde-2:#258A4E; --amarelo-f:#FCE9B8; --amarelo-t:#8A5A00; --verm-f:#FDE0DD; --verm-t:#B42318; --verde-f:#DDF3E6; --verde-t:#1E7A45; --cinza-f:var(--s2); --cinza-t:var(--l2);
+              padding:22px 28px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        [data-theme="dark"] .lb { --amarelo-f:rgba(255,190,60,.18); --amarelo-t:#FFC861; --verm-f:rgba(255,80,70,.18); --verm-t:#FF8A80; --verde-f:rgba(60,200,120,.16); --verde-t:#5BD38E; }
+        .topo { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
+        .topo h1 { font-size:30px; font-weight:700; color:var(--l1); margin:0; display:flex; align-items:center; gap:8px; }
+        .topo h1 .seta { color:var(--verde); font-size:22px; }
+        .sel-sit { border:0; border-left:1px solid var(--sep); padding:4px 0 4px 16px; background:transparent; color:var(--verde); font-size:20px; font-weight:700; cursor:pointer; outline:none; }
+        .sel-sit option { color:#111; }
+        .bt-verde { margin-left:auto; display:inline-flex; align-items:center; justify-content:center; gap:10px; min-width:260px; padding:11px 22px; border-radius:8px; border:0; background:var(--verde); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+        .bt-verde:hover { background:var(--verde-2); } .bt-verde:disabled { opacity:.6; cursor:not-allowed; }
+        .grade { display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:22px; align-items:start; }
+        .filtros { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        .ic { width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--sep); border-radius:8px; background:var(--s1); color:var(--verde); font-size:18px; cursor:pointer; }
+        .ic.cinza { color:var(--l3); }
+        .busca { flex:1 1 320px; min-width:220px; display:flex; align-items:center; border:1px solid var(--sep); border-radius:8px; background:var(--s1); padding:0 12px; height:42px; }
+        .busca input { flex:1; border:0; outline:none; background:transparent; color:var(--l1); font-size:14px; }
+        .busca i { color:var(--verde); font-size:18px; }
+        .periodo { display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 12px; border:1px solid var(--sep); border-radius:8px; background:var(--s1); color:var(--verde); font-size:14px; font-weight:600; }
+        .periodo input { border:0; outline:none; background:transparent; color:var(--verde); font-weight:600; font-size:14px; width:126px; }
+        .acoes-dir { margin-left:auto; display:flex; gap:10px; }
+        .nota-filtro { color:var(--l2); font-size:14px; margin:10px 0 6px 2px; }
+        table.lista { width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px; }
+        .lista th { font-weight:400; color:var(--l2); padding:10px 8px; vertical-align:bottom; text-align:left; white-space:nowrap; cursor:pointer; }
+        .lista th.n, .lista td.n { text-align:right; }
+        .lista td { padding:0 8px; height:57px; border-bottom:1px solid var(--sep); color:var(--l1); background:var(--s1); vertical-align:middle; }
+        .lista tbody tr:hover td { background:var(--s2); }
+        .lista td.hist { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lista td.hist small { display:block; color:var(--l3); font-size:12px; overflow:hidden; text-overflow:ellipsis; }
+        .lista td.n { font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .chk { width:20px; height:20px; accent-color:var(--verde); cursor:pointer; }
+        .pill { display:inline-block; font-size:13px; font-weight:700; border-radius:999px; padding:3px 12px; white-space:nowrap; }
+        .p-a_liberar { background:var(--amarelo-f); color:var(--amarelo-t); }
+        .p-liberado { background:var(--verde-f); color:var(--verde-t); }
+        .p-retido, .p-mediacao { background:var(--verm-f); color:var(--verm-t); }
+        .p-aberta, .p-parcial { background:var(--amarelo-f); color:var(--amarelo-t); }
+        .p-vence_hoje { background:#FFC861; color:#5A3A00; }
+        .p-atrasada { background:var(--verm-f); color:var(--verm-t); }
+        .p-paga { background:var(--verde-f); color:var(--verde-t); }
+        .p-cancelada, .p-devolvida { background:var(--cinza-f); color:var(--cinza-t); }
+        /* 3 cards discretos da IA no topo */
+        .cards-ia { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 16px; }
+        .card-ia { border:1px solid var(--sep); border-radius:10px; background:var(--s1); padding:10px 14px; min-height:74px; }
+        .card-ia small { display:flex; align-items:center; gap:6px; color:var(--l3); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+        .card-ia b { display:block; color:var(--l1); font-size:17px; margin:2px 0; font-variant-numeric:tabular-nums; }
+        .card-ia span { color:var(--l2); font-size:12.5px; line-height:1.35; }
+        .ia-rod { font-size:11.5px; color:var(--l3); margin:-10px 0 12px; }
+        .ia-rod a { color:var(--verde); cursor:pointer; }
+        @media (max-width: 900px) { .cards-ia { grid-template-columns:1fr; } }
+        .kebab { color:var(--l2); font-size:18px; text-align:center; }
+        .grupo td { height:40px; background:transparent !important; font-weight:700; color:var(--l1); border-bottom:1px solid var(--sep); }
+        .grupo td .t { float:right; color:var(--verde); font-variant-numeric:tabular-nums; }
+        .lateral { background:var(--s1); border:1px solid var(--sep); border-radius:10px; padding:16px 22px; position:sticky; top:12px; }
+        .lateral a { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--sep); color:var(--l1); font-size:15px; text-decoration:none; cursor:pointer; }
+        .lateral a i { font-size:20px; color:var(--l2); }
+        .lateral a.desligado { color:var(--l3); pointer-events:none; }
+        .lateral h4 { font-size:21px; font-weight:700; color:var(--l1); margin:22px 0 10px; }
+        .info { display:flex; flex-direction:column; gap:10px; font-size:14px; color:var(--l2); }
+        .info div { display:flex; justify-content:space-between; gap:10px; }
+        .info b { color:var(--l1); font-variant-numeric:tabular-nums; }
+        .info .alerta b { color:var(--verm-t); }
+        .rodape-nota { margin-top:14px; font-size:12px; color:var(--l3); line-height:1.5; }
+        .pag { display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:10px; font-size:13px; color:var(--l3); }
+        .pag button { border:1px solid var(--sep); background:var(--s1); color:var(--l1); border-radius:6px; padding:3px 10px; cursor:pointer; }
+        @media (max-width: 1100px) { .grade { grid-template-columns:minmax(0,1fr); } .lateral { position:static; } .bt-verde { min-width:0; } }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="lb">
+    <div class="topo">
+        <h1><span class="seta">›</span>Contas a pagar</h1>
+        <select class="sel-sit" id="sit" onchange="pagina=1;desenhar()" aria-label="Situação">
+            <option value="">Todas as contas</option>
+            <option value="abertas" selected>Em aberto</option>
+            <option value="vence_hoje">Vence hoje</option>
+            <option value="atrasada">Atrasadas</option>
+            <option value="paga">Pagas</option>
+            <option value="cancelada">Canceladas</option>
+        </select>
+        <button class="bt-verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar do Bling</button>
+    </div>
+
+    <div class="cards-ia" id="cardsIA"></div>
+    <div class="ia-rod" id="iaRod"></div>
+
+    <div class="grade">
+        <div style="min-width:0">
+            <div class="filtros">
+                <label class="busca"><input id="busca" placeholder="Pesquise por fornecedor, histórico ou categoria" oninput="pagina=1;desenhar()"><i class="bi bi-search"></i></label>
+                <span class="periodo"><i class="bi bi-calendar-event"></i><input type="date" id="de" onchange="carregar()"> até <input type="date" id="ate" onchange="carregar()"></span>
+                <span class="acoes-dir"><span class="ic cinza" title="Exportar CSV" onclick="exportar()"><i class="bi bi-download"></i></span></span>
+            </div>
+            <div class="nota-filtro" id="notaFiltro">Carregando…</div>
+            <div style="overflow-x:auto">
+            <table class="lista">
+                <thead><tr>
+                    <th style="width:34px"><input type="checkbox" class="chk" id="todos" onchange="marcarTodos(this.checked)" aria-label="Selecionar todos"></th>
+                    <th onclick="ordenar('fornecedor')">Fornecedor</th>
+                    <th onclick="ordenar('historico')">Histórico</th>
+                    <th onclick="ordenar('forma')">Forma de pagamento</th>
+                    <th onclick="ordenar('vencimento')">Vencimento</th>
+                    <th class="n" onclick="ordenar('valor')">Valor</th>
+                    <th onclick="ordenar('situacao')">Situação</th>
+                </tr></thead>
+                <tbody id="tb"></tbody>
+            </table>
+            </div>
+            <div class="pag" id="pag"></div>
+        </div>
+
+        <aside class="lateral">
+            <a id="acSel" class="desligado" onclick="exportar(true)"><i class="bi bi-check-circle-fill"></i><span>Exportar selecionados</span></a>
+            <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
+            <h4>Informações</h4>
+            <div class="info" id="info"></div>
+            <div class="rodape-nota">Contas lançadas no Bling (Financeiro › Contas a pagar), lidas pela API. Só leitura: baixar ou pagar continua no Bling.</div>
+        </aside>
+    </div>
+</div></main></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dataBR = (d) => d ? d.split('-').reverse().join('/') : '—';
+const SIT = { aberta: 'Em aberto', parcial: 'Paga em parte', vence_hoje: 'Vence hoje', atrasada: 'Atrasada', paga: 'Paga', cancelada: 'Cancelada', devolvida: 'Devolvida' };
+const ABERTAS = ['aberta', 'parcial', 'vence_hoje', 'atrasada'];
+const dia = (n) => new Date(Date.now() - 3 * 3600000 + n * 86400000).toISOString().slice(0, 10);
+let D = null, pagina = 1, ordem = { k: 'vencimento', asc: true }, timer = null, sel = new Set();
+const POR = 150;
+$('de').value = dia(-30); $('ate').value = dia(40);
+
+async function carregar() {
+    try { D = await fetch(`/api/finance/contas-pagar?de=${$('de').value}&ate=${$('ate').value}`).then(x => x.json()); }
+    catch (e) { $('tb').innerHTML = `<tr><td colspan="7" style="color:#ff453a">${esc(e.message)}</td></tr>`; return; }
+    if (D.erro) { $('tb').innerHTML = `<tr><td colspan="7" style="color:#ff453a">${esc(D.erro)}</td></tr>`; return; }
+    sel.clear(); pagina = 1; desenhar(); info(); cards();
+}
+function filtrados() {
+    const s = $('sit').value, q = $('busca').value.trim().toLowerCase();
+    let L = D.linhas;
+    if (s === 'abertas') L = L.filter(l => ABERTAS.includes(l.situacao)); else if (s) L = L.filter(l => l.situacao === s);
+    if (q) L = L.filter(l => [l.fornecedor, l.historico, l.documento, l.categoria].join(' ').toLowerCase().includes(q));
+    const k = ordem.k, f = ordem.asc ? 1 : -1;
+    return [...L].sort((a, b) => ((a[k] ?? '') > (b[k] ?? '') ? 1 : (a[k] ?? '') < (b[k] ?? '') ? -1 : 0) * f || b.valor - a.valor);
+}
+function ordenar(k) { ordem = { k, asc: ordem.k === k ? !ordem.asc : k !== 'valor' }; desenhar(); }
+function linha(l) {
+    return `<tr><td><input type="checkbox" class="chk" ${sel.has(l.id) ? 'checked' : ''} onchange="marcar(${l.id}, this.checked)" aria-label="Selecionar"></td>
+        <td>${esc(l.fornecedor)}</td>
+        <td class="hist" title="${esc(l.historico)}">${esc(l.historico || l.documento || '—')}${l.categoria ? `<small>${esc(l.categoria)}</small>` : ''}</td>
+        <td>${esc(l.forma)}</td>
+        <td>${dataBR(l.vencimento)}</td>
+        <td class="n">${brl(l.valor)}</td>
+        <td><span class="pill p-${l.situacao}">${SIT[l.situacao] || l.situacao}</span></td></tr>`;
+}
+function desenhar() {
+    if (!D) return;
+    if (!D.lido) { $('notaFiltro').innerHTML = 'Ainda não há contas lidas do Bling. Clique em <b>Atualizar do Bling</b>.'; $('tb').innerHTML = ''; return; }
+    const L = filtrados(), total = L.reduce((s, l) => s + l.valor, 0);
+    $('notaFiltro').innerHTML = `${L.length} contas · <b style="color:var(--l1)">R$ ${brl(total)}</b> com vencimento de ${dataBR($('de').value)} até ${dataBR($('ate').value)} · lidas do Bling ${D.atualizado_em ? new Date(D.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}`;
+    const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
+    $('tb').innerHTML = fatia.map(linha).join('') || '<tr><td colspan="7" style="color:var(--l3)">Nenhuma conta com esse filtro.</td></tr>';
+    const pags = Math.max(1, Math.ceil(L.length / POR));
+    $('pag').innerHTML = pags > 1 ? `<button ${pagina <= 1 ? 'disabled' : ''} onclick="pagina--;desenhar()">‹</button> ${pagina} / ${pags} <button ${pagina >= pags ? 'disabled' : ''} onclick="pagina++;desenhar()">›</button>` : '';
+    $('todos').checked = fatia.length > 0 && fatia.every(l => sel.has(l.id));
+    $('acSel').classList.toggle('desligado', !sel.size);
+    $('acSel').querySelector('span').textContent = sel.size ? `Exportar selecionados (${sel.size})` : 'Exportar selecionados';
+}
+function marcar(id, v) { v ? sel.add(id) : sel.delete(id); desenhar(); }
+function marcarTodos(v) { const L = filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(l.id) : sel.delete(l.id); desenhar(); }
+function info() {
+    const R = D.resumo;
+    if (!R) { $('info').innerHTML = '<div><span>Quantidade de contas a pagar</span><b>—</b></div>'; return; }
+    $('info').innerHTML = [
+        ['Quantidade de contas a pagar', R.qtd], ['Valor total', 'R$ ' + brl(R.total)], ['Vence hoje', 'R$ ' + brl(R.hoje)], ['Próximos 7 dias', 'R$ ' + brl(R.sete_dias)],
+        ['Atrasadas', `R$ ${brl(R.valor_atrasadas)} (${R.atrasadas})`, R.atrasadas ? 'alerta' : ''], ['Pagas no período', 'R$ ' + brl(R.pagas_periodo)],
+    ].map(([a, b, c]) => `<div class="${c || ''}"><span>${a}</span><b>${b}</b></div>`).join('');
+}
+// 3 cards discretos: o texto vem da IA (agente Fluxo de caixa); sem analise ainda, mostram os numeros do motor
+async function cards() {
+    const a = await fetch('/api/finance/contas-pagar/ia').then(x => x.json()).catch(() => ({}));
+    const R = D && D.resumo;
+    const padrao = R ? [{ titulo: 'Próximos 7 dias', valor: 'R$ ' + brl(R.sete_dias), texto: 'Vence nos próximos 7 dias.' }, { titulo: 'Vence hoje', valor: 'R$ ' + brl(R.hoje), texto: 'Contas com vencimento hoje.' },
+        { titulo: 'Atenção', valor: `${R.atrasadas} atrasada${R.atrasadas === 1 ? '' : 's'}`, texto: R.atrasadas ? `R$ ${brl(R.valor_atrasadas)} em contas vencidas e em aberto.` : 'Nenhuma conta atrasada.' }] : [];
+    const C = (a.cards && a.cards.length ? a.cards : padrao), ic = ['bi-calendar-week', 'bi-cash-stack', 'bi-exclamation-triangle'];
+    $('cardsIA').innerHTML = C.map((c, i) => `<div class="card-ia"><small><i class="bi ${ic[i] || 'bi-stars'}"></i>${esc(c.titulo)}</small><b>${esc(c.valor)}</b><span>${esc(c.texto)}</span></div>`).join('');
+    $('iaRod').innerHTML = a.estado && a.estado.rodando ? '<i class="bi bi-stars"></i> A IA está resumindo…'
+        : `<i class="bi bi-stars"></i> ${a.em ? `Resumo da IA (${esc(a.agente || 'Fluxo de caixa')}) de ${new Date(a.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : 'Sem resumo da IA ainda'} · <a onclick="pedirIA()">${a.em ? 'atualizar' : 'gerar'} resumo</a>${a.estado && a.estado.erro ? ` · <span style="color:var(--verm-t)">${esc(a.estado.erro)}</span>` : ''}`;
+    if (a.estado && a.estado.rodando) setTimeout(cards, 2500);
+}
+async function pedirIA() { const r = await fetch('/api/finance/contas-pagar/ia', { method: 'POST' }).then(x => x.json()).catch(e => ({ erro: e.message })); if (!r.ok) { $('iaRod').textContent = r.erro || 'não deu'; return; } setTimeout(cards, 800); }
+function exportar(soSel) {
+    if (!D || !D.lido) return;
+    const L = filtrados().filter(l => !soSel || sel.has(l.id));
+    const csv = ['Vencimento;Fornecedor;Histórico;Categoria;Forma de pagamento;Valor;Situação'].concat(L.map(l => [dataBR(l.vencimento), l.fornecedor, l.historico, l.categoria, l.forma, String(l.valor).replace('.', ','), SIT[l.situacao]].map(x => String(x || '').replace(/;/g, ',')).join(';'))).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); a.download = `contas_a_pagar_${$('de').value}_a_${$('ate').value}.csv`; a.click();
+}
+async function atualizar() {
+    const r = await fetch('/api/finance/contas-pagar/atualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: $('de').value, ate: $('ate').value }) }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
+    if (!r.ok) { $('notaFiltro').textContent = r.erro || 'Não foi possível atualizar.'; return; }
+    acompanhar();
+}
+async function acompanhar() {
+    const e = await fetch('/api/finance/contas-pagar/estado').then(x => x.json()).catch(() => null);
+    if (!e) return;
+    const b = $('btAtualizar'); b.disabled = e.rodando; clearTimeout(timer);
+    if (e.rodando) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${e.total ? `${e.feito} de ${e.total}` : 'Atualizando…'}`; $('notaFiltro').textContent = e.etapa || ''; b.dataset.r = '1'; timer = setTimeout(acompanhar, 2000); }
+    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do Bling'; if (b.dataset.r) { delete b.dataset.r; await carregar(); } if (e.erro) $('notaFiltro').innerHTML = `<span style="color:var(--verm-t)">${esc(e.erro)}</span>`; }
+    return e;
+}
+carregar(); acompanhar();
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>
