@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.111",
+    "data": "2026-10-22",
+    "titulo": "Bling até 3 vezes mais rápido",
+    "texto": "- Motor Nexus (integração com o Bling): as chamadas passam a sair em paralelo, respeitando o limite do Bling (cerca de 3 por segundo). Antes cada chamada esperava a anterior terminar. Leituras grandes, como Contas a pagar e o cadastro de produtos, ficam até 3 vezes mais rápidas.\n- Contas a pagar: com as permissões liberadas no Bling, a página já lê as contas, os fornecedores e as categorias."
+  },
+  {
     "versao": "1.9.110",
     "data": "2026-10-22",
     "titulo": "Lucro Real oficial, Contas a pagar e Conciliação única",
