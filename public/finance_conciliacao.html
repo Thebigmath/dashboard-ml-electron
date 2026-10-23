@@ -55,9 +55,9 @@
 
     <div class="barra">
         <select class="sel" id="periodo" onchange="carregar()">
-            <option value="7" selected>Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="mes">Esse mês</option><option value="mes_passado">Mês passado</option><option value="ontem">Ontem</option>
+            <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option><option value="45" selected>Últimos 45 dias</option><option value="60">Últimos 60 dias</option><option value="mes">Esse mês</option><option value="mes_passado">Mês passado</option><option value="ontem">Ontem</option>
         </select>
-        <select class="sel" id="fSit" onchange="tabela()"><option value="">Todas as situações</option><option value="dif">Com diferença</option><option value="ok">Batem</option><option value="exp">Diferença explicada</option><option value="ag">A liberar (não entregue)</option><option value="dev">Devolvidos</option></select>
+        <select class="sel" id="fSit" onchange="tabela()"><option value="">Todas as situações</option><option value="caiu">Já caiu no MP (bate ou diferença)</option><option value="dif">Com diferença</option><option value="ok">Batem</option><option value="exp">Diferença explicada</option><option value="ag">A liberar (não entregue)</option><option value="dev">Devolvidos</option></select>
         <input class="in" id="busca" placeholder="Buscar pedido ou SKU…" oninput="tabela()" style="min-width:200px">
         <span style="margin-left:auto"></span>
         <button class="bt" onclick="exportar()"><i class="bi bi-download"></i> Exportar</button>
@@ -95,7 +95,7 @@ const SIT = { ok: ['ok', 'bate'], exp: ['ag', 'explicada'], dif: ['dv', 'diferen
 function tabela() {
     if (!D) return;
     const f = $('fSit').value, q = ($('busca').value || '').trim().toLowerCase();
-    const L = D.linhas.filter(l => (!f || situacao(l) === f) && (!q || (l.id + ' ' + l.produtos).toLowerCase().includes(q)))
+    const L = D.linhas.filter(l => (!f || (f === 'caiu' ? ['ok', 'exp', 'dif'].includes(situacao(l)) : situacao(l) === f)) && (!q || (l.id + ' ' + l.produtos).toLowerCase().includes(q)))
         .sort((a, b) => Math.abs(b.diferenca || 0) - Math.abs(a.diferenca || 0) || String(b.dia).localeCompare(String(a.dia)));
     const n = (k) => D.linhas.filter(l => situacao(l) === k).length;
     const soma = (k) => D.linhas.filter(l => situacao(l) === k).reduce((s, l) => s + (l.diferenca || 0), 0);

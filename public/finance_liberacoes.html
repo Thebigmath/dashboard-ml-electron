@@ -59,6 +59,9 @@
         .grupo.gaveta td .t i { color:var(--l3); margin-left:10px; font-size:13px; transition:transform .2s; display:inline-block; }
         .grupo.gaveta.aberta td .t i { transform:rotate(180deg); }
         .grupo.gaveta.hoje td .dia::after { content:'hoje'; margin-left:8px; font-size:11px; font-weight:700; color:#fff; background:var(--verde); border-radius:999px; padding:2px 8px; }
+        .grupo.gaveta td { border-bottom:1px solid var(--sep); padding:0 14px; }
+        .grupo.gaveta td .t { color:var(--verde); font-weight:600; }
+        .grupo.gaveta.aberta td { background:var(--s2) !important; }
         .lateral { background:var(--s1); border:1px solid var(--sep); border-radius:10px; padding:16px 22px; position:sticky; top:12px; }
         .lateral a { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--sep); color:var(--l1); font-size:15px; text-decoration:none; cursor:pointer; }
         .lateral a i { font-size:20px; color:var(--l2); }
@@ -121,8 +124,6 @@
         <aside class="lateral">
             <a id="acSel" class="desligado" onclick="exportar(true)"><i class="bi bi-check-circle-fill"></i><span>Exportar selecionados</span></a>
             <a onclick="agrupar=!agrupar;desenhar()"><i class="bi bi-calendar3"></i><span id="txtAgrupar">Ver agrupado por dia</span></a>
-            <a onclick="if(D){abertos=new Set(D.linhas.map(l=>l.dia));desenhar()}"><i class="bi bi-arrows-expand"></i><span>Abrir todos os dias</span></a>
-            <a onclick="abertos=new Set();desenhar()"><i class="bi bi-arrows-collapse"></i><span>Fechar todos os dias</span></a>
             <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
             <h4>Informações</h4>
             <div class="info" id="info"></div>
@@ -180,7 +181,7 @@ function desenhar() {
     let html = '';
     if (agrupar && ordem.k === 'dia') {
         // gaveta por dia: todos os dias do filtro (sem paginar), so o dia aberto mostra as vendas; hoje comeca aberto
-        if (!abertos) abertos = new Set([D.hoje]);
+        if (!abertos) abertos = new Set();   // como o Calendario do app do MP: todos os dias fechados
         for (const d of [...new Set(L.map(l => l.dia))]) {
             const doDia = L.filter(x => x.dia === d), x = new Date(d + 'T12:00:00Z'), ab = abertos.has(d);
             html += `<tr class="grupo gaveta${ab ? ' aberta' : ''}${d === D.hoje ? ' hoje' : ''}" onclick="gaveta('${d}')"><td colspan="8"><span class="dia">${SEM[x.getUTCDay()].replace(/^./, c => c.toUpperCase())}, ${Number(d.slice(8))}${d.slice(0, 7) !== D.hoje.slice(0, 7) ? '/' + d.slice(5, 7) : ''}</span><span class="qtd">${doDia.length} venda${doDia.length === 1 ? '' : 's'}</span><span class="t">+ R$ ${brl(doDia.reduce((s, y) => s + y.valor, 0))}<i class="bi bi-chevron-down"></i></span></td></tr>`;

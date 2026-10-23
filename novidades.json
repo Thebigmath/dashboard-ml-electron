@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.113",
+    "data": "2026-10-23",
+    "titulo": "Contas a receber em gavetas e Conciliação em 45 dias",
+    "texto": "- Finance → Contas a receber: um dia por linha, como o Calendário do app do Mercado Pago. Todos os dias começam fechados, só com o dia da semana, o total e a setinha; clique no dia para abrir as vendas dele.\n- Finance → Conciliação: abre em 45 dias (há 30 e 60) e ganhou o filtro \"Já caiu no MP\". Na Cordeiro o dinheiro leva de 4 a 5 semanas para ser liberado, então nos últimos 7 dias tudo aparece como \"a liberar\"."
+  },
+  {
     "versao": "1.9.112",
     "data": "2026-10-23",
     "titulo": "Saldo Mercado Pago e gaveta por dia · Conciliação, DRE e concorrentes",
