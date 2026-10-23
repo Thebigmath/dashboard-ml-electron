@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.112",
+    "data": "2026-10-23",
+    "titulo": "Saldo Mercado Pago e gaveta por dia · Conciliação, DRE e concorrentes",
+    "texto": "- Finance → Saldo Mercado Pago (novo): saldo oficial pelo relatório de liberações do Mercado Pago (gerado sozinho 2x por dia, de manhã e à tarde, e pelo botão; ~8 min) e saldo estimado agora, com os bots somando a cada 3 minutos as vendas liberadas e as devoluções. Saques, mediações e pagamentos feitos com o saldo entram no próximo saldo oficial.\n- Finance → Contas a receber: gaveta por dia, como o Calendário do app do Mercado Pago. Cada dia mostra o total e a quantidade de vendas; clique para abrir as vendas do dia. Hoje já abre sozinho.\n- Finance → Conciliação: corrigida. O \"recebido no ML\" contava o frete pago pelo comprador duas vezes. Agora é o mesmo da tela de venda do ML (preço − tarifa − envios) e só é comparado com o Mercado Pago o que já caiu; pedido não entregue fica \"a liberar\", com a previsão e a data de liberação. Conferido contra o extrato do MP: 420 de 420 pagamentos batem.\n- Finance → DRE: fecha com a Planilha avançada (receita, custo, tarifas, frete, impostos e margem). O cupom passa a ser só o que a loja pagou, e pedidos com produto sem custo ficam fora da margem, com aviso.\n- AD HEALTH → Defesa e Concorrentes: vendas do líder do grupo em 7 e em 30 dias (Nubimetrics, via Astra), com o ritmo (%). Novo alerta \"líder acelerando\" quando o líder vende bem acima da própria média e já vende mais que nós na semana (só com 10+ vendas em 30 dias).\n- Estoque (ERP Commander): cada app trabalha com o Olist da sua empresa (Flavia e Cordeiro têm Olist próprio). Corrigido o cache de SKUs \"não encontrados\"."
+  },
+  {
     "versao": "1.9.111",
     "data": "2026-10-22",
     "titulo": "Bling até 3 vezes mais rápido",

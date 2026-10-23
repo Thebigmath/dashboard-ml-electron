@@ -142,6 +142,7 @@ function desenharResumo() {
     const avisos = [];
     if (d.sem_custo) avisos.push(`${d.sem_custo} venda(s) sem custo na planilha: o CMV está menor do que o real.`);
     if (d.sem_frete) avisos.push(`${d.sem_frete} venda(s) sem o frete do envio.`);
+    if (x.sem_custo_pedidos) avisos.push(`${x.sem_custo_pedidos} pedido(s) com produto sem custo na planilha (R$ ${Number(x.sem_custo_receita).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} de receita): ficam fora da margem, como na Planilha avançada. Cadastre o custo para entrarem.`);
     if (!d.custos_operacionais.length) avisos.push('Custos e despesas do mês não cadastrados: o lucro líquido está sem eles (aba Custos e Despesas).');
     if (d.ads_info && d.ads_info.erro) avisos.push('Não consegui ler o gasto de ADS: ' + d.ads_info.erro);
     const linha = (rot, v, cls) => `<tr class="${cls || ''}"><td>${rot}</td><td class="${cls === 'fim' || cls === 'sub' ? cor(v) : ''}">${cls === 'menos' ? '− ' : ''}${R(v)}</td><td>${x.receita ? P(v / x.receita * 100) : ''}</td></tr>`;

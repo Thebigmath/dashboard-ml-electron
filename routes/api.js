@@ -1227,6 +1227,9 @@ router.post('/finance/base-tributaria', auth, upload.single('planilha'), async (
     catch (e) { res.status(400).json({ erro: e.message }); }
     finally { try { fs.unlinkSync(req.file.path); } catch {} }
 });
+// saldo do Mercado Pago: ancora (relatorio de liberacoes) + bots (pagamentos a cada 3 min)
+router.get('/finance/saldo-mp', auth, (req, res) => { try { res.json(require('../lib/finance_saldo_mp').resultado()); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/saldo-mp/ancora', auth, (req, res) => res.json(require('../lib/finance_saldo_mp').gerarAncora()));
 // contas a pagar (Bling, pelo motor Nexus) e os 3 cards da IA
 router.get('/finance/contas-pagar', auth, (req, res) => { try { const d = (k) => /^\d{4}-\d{2}-\d{2}$/.test(req.query[k] || '') ? req.query[k] : null; res.json(require('../lib/finance_contas_pagar').listar({ de: d('de'), ate: d('ate') })); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/contas-pagar/atualizar', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').atualizar(req.body || {})));

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saldo Mercado Pago — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        /* saldo do Mercado Pago: ancora (relatorio oficial) + bots (pagamentos a cada 3 min), no visual das listas do Finance */
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .sd { --verde:#2E9E5B; --verde-2:#258A4E; --verm:#B42318; padding:22px 28px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        [data-theme="dark"] .sd { --verm:#FF8A80; }
+        .topo { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+        .topo h1 { font-size:30px; font-weight:700; color:var(--l1); margin:0; display:flex; align-items:center; gap:8px; }
+        .topo h1 .seta { color:var(--verde); font-size:22px; }
+        .bt-verde { margin-left:auto; display:inline-flex; align-items:center; gap:10px; padding:11px 22px; border-radius:8px; border:0; background:var(--verde); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+        .bt-verde:hover { background:var(--verde-2); } .bt-verde:disabled { opacity:.6; cursor:not-allowed; }
+        .cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:10px; }
+        .card-s { border:1px solid var(--sep); border-radius:12px; background:var(--s1); padding:16px 18px; }
+        .card-s small { color:var(--l3); font-size:12px; text-transform:uppercase; letter-spacing:.04em; display:flex; gap:6px; align-items:center; }
+        .card-s b { display:block; font-size:28px; color:var(--l1); font-variant-numeric:tabular-nums; margin:4px 0; }
+        .card-s span { color:var(--l2); font-size:13px; }
+        .card-s.destaque b { color:var(--verde); }
+        .nota { color:var(--l3); font-size:12.5px; margin:0 0 18px; line-height:1.5; }
+        .abas { display:flex; gap:18px; border-bottom:1px solid var(--sep); margin-bottom:6px; }
+        .abas a { padding:8px 0; color:var(--l2); cursor:pointer; text-decoration:none; font-weight:600; }
+        .abas a.on { color:var(--verde); border-bottom:2px solid var(--verde); }
+        table.lista { width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px; }
+        .lista th { font-weight:400; color:var(--l2); padding:10px 8px; text-align:left; white-space:nowrap; }
+        .lista th.n, .lista td.n { text-align:right; }
+        .lista td { padding:0 8px; height:48px; border-bottom:1px solid var(--sep); color:var(--l1); background:var(--s1); font-variant-numeric:tabular-nums; }
+        .lista tbody tr:hover td { background:var(--s2); }
+        .ent { color:var(--verde); } .sai { color:var(--verm); }
+        @media (max-width: 900px) { .cards { grid-template-columns:1fr; } .bt-verde { margin-left:0; } }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="sd">
+    <div class="topo">
+        <h1><span class="seta">›</span>Saldo Mercado Pago</h1>
+        <button class="bt-verde" id="btAncora" onclick="gerar()"><i class="bi bi-arrow-repeat"></i> Atualizar saldo oficial (~8 min)</button>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="nota" id="nota"></div>
+    <div class="abas"><a id="abaB" class="on" onclick="aba='bots';desenhar()">Desde o saldo oficial</a><a id="abaR" onclick="aba='rel';desenhar()">Movimentos do relatório</a></div>
+    <div style="overflow-x:auto"><table class="lista"><thead><tr><th>Data</th><th>Movimento</th><th>Referência</th><th class="n">Entrada</th><th class="n">Saída</th><th class="n" id="thSaldo">Saldo</th></tr></thead><tbody id="tb"></tbody></table></div>
+</div></main></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const quando = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+let D = null, aba = 'bots', timer = null;
+
+async function carregar() {
+    D = await fetch('/api/finance/saldo-mp').then(x => x.json()).catch(e => ({ erro: e.message }));
+    desenhar(); acompanhar();
+}
+function desenhar() {
+    if (!D) return;
+    $('abaB').classList.toggle('on', aba === 'bots'); $('abaR').classList.toggle('on', aba === 'rel');
+    const A = D.ancora, X = D.delta;
+    if (!A) {
+        $('cards').innerHTML = '';
+        $('nota').innerHTML = D.erro ? `<span style="color:var(--verm)">${esc(D.erro)}</span>` : 'Ainda não há saldo oficial. Clique em <b>Atualizar saldo oficial</b>: o Mercado Pago leva cerca de 8 minutos para gerar o relatório. Depois disso, ele é gerado sozinho todo dia de manhã.';
+        $('tb').innerHTML = ''; return;
+    }
+    $('cards').innerHTML = `
+        <div class="card-s destaque"><small><i class="bi bi-wallet2"></i>Saldo estimado agora</small><b>${brl(X ? X.saldo_estimado : A.saldo)}</b><span>${X ? `atualizado ${quando(X.em)}` : 'aguardando os bots'}</span></div>
+        <div class="card-s"><small><i class="bi bi-patch-check"></i>Saldo oficial</small><b>${brl(A.saldo)}</b><span>no relatório do Mercado Pago, até ${quando(A.ate)}</span></div>
+        <div class="card-s"><small><i class="bi bi-arrow-left-right"></i>Desde o saldo oficial</small><b><span class="ent">+${brl(X ? X.entrada : 0).replace('R$ ', 'R$ ')}</span></b><span>${X && X.saida ? `<span class="sai">− ${brl(X.saida)}</span> em devoluções · ` : ''}${X ? X.movimentos.length : 0} movimentos</span></div>`;
+    $('nota').innerHTML = `Saldo oficial = relatório de liberações do Mercado Pago (gerado sozinho 2x por dia, de manhã e à tarde, e pelo botão; cada geração leva ~8 min e cria um arquivo na área Relatórios do MP). Estimado agora = saldo oficial + vendas liberadas − devoluções, lidos pelos bots a cada 3 minutos. <b>Saques, mediações e pagamentos feitos com o saldo só entram no próximo saldo oficial.</b>${D.delta_erro ? ` · <span style="color:var(--verm)">bots: ${esc(D.delta_erro)}</span>` : ''}`;
+    const L = aba === 'bots' ? (X ? X.movimentos : []) : (D.movimentos || []);
+    $('thSaldo').style.display = aba === 'rel' ? '' : 'none';
+    $('tb').innerHTML = L.map(m => `<tr><td>${quando(m.data)}</td><td>${esc(m.nome)}</td><td>${esc(m.id || '')}</td><td class="n ent">${m.entrada ? brl(m.entrada) : ''}</td><td class="n sai">${m.saida ? brl(m.saida) : ''}</td>${aba === 'rel' ? `<td class="n">${brl(m.saldo)}</td>` : ''}</tr>`).join('')
+        || `<tr><td colspan="6" style="color:var(--l3)">${aba === 'bots' ? 'Nenhum movimento desde o saldo oficial.' : 'Sem movimentos.'}</td></tr>`;
+}
+async function gerar() {
+    const r = await fetch('/api/finance/saldo-mp/ancora', { method: 'POST' }).then(x => x.json()).catch(e => ({ erro: e.message }));
+    if (!r.ok) { $('nota').innerHTML = `<span style="color:var(--verm)">${esc(r.erro || 'não deu')}</span>`; return; }
+    acompanhar();
+}
+async function acompanhar() {
+    const e = D && D.estado; const b = $('btAncora'); clearTimeout(timer);
+    if (e && e.rodando) { b.disabled = true; b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${esc(e.etapa || 'Gerando…')}`; timer = setTimeout(async () => { D = await fetch('/api/finance/saldo-mp').then(x => x.json()).catch(() => D); desenhar(); acompanhar(); }, 15000); }
+    else { b.disabled = false; b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar saldo oficial (~8 min)'; if (e && e.erro) $('nota').innerHTML += ` · <span style="color:var(--verm)">${esc(e.erro)}</span>`; timer = setTimeout(carregar, 3 * 60 * 1000); }
+}
+carregar();
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

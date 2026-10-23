@@ -50,6 +50,15 @@
         .kebab { color:var(--l2); font-size:18px; text-align:center; }
         .grupo td { height:40px; background:transparent !important; font-weight:700; color:var(--l1); border-bottom:1px solid var(--sep); }
         .grupo td .t { float:right; color:var(--verde); font-variant-numeric:tabular-nums; }
+        /* gaveta por dia (como o Calendario do app do Mercado Pago): clica no dia e abre as vendas dele */
+        .grupo.gaveta td { height:52px; cursor:pointer; user-select:none; }
+        .grupo.gaveta:hover td { background:var(--s2) !important; }
+        .grupo.gaveta td .dia { font-size:15.5px; }
+        .grupo.gaveta td .qtd { color:var(--l3); font-weight:400; font-size:12.5px; margin-left:8px; }
+        .grupo.gaveta td .t { font-size:15px; }
+        .grupo.gaveta td .t i { color:var(--l3); margin-left:10px; font-size:13px; transition:transform .2s; display:inline-block; }
+        .grupo.gaveta.aberta td .t i { transform:rotate(180deg); }
+        .grupo.gaveta.hoje td .dia::after { content:'hoje'; margin-left:8px; font-size:11px; font-weight:700; color:#fff; background:var(--verde); border-radius:999px; padding:2px 8px; }
         .lateral { background:var(--s1); border:1px solid var(--sep); border-radius:10px; padding:16px 22px; position:sticky; top:12px; }
         .lateral a { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--sep); color:var(--l1); font-size:15px; text-decoration:none; cursor:pointer; }
         .lateral a i { font-size:20px; color:var(--l2); }
@@ -112,6 +121,8 @@
         <aside class="lateral">
             <a id="acSel" class="desligado" onclick="exportar(true)"><i class="bi bi-check-circle-fill"></i><span>Exportar selecionados</span></a>
             <a onclick="agrupar=!agrupar;desenhar()"><i class="bi bi-calendar3"></i><span id="txtAgrupar">Ver agrupado por dia</span></a>
+            <a onclick="if(D){abertos=new Set(D.linhas.map(l=>l.dia));desenhar()}"><i class="bi bi-arrows-expand"></i><span>Abrir todos os dias</span></a>
+            <a onclick="abertos=new Set();desenhar()"><i class="bi bi-arrows-collapse"></i><span>Fechar todos os dias</span></a>
             <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
             <h4>Informações</h4>
             <div class="info" id="info"></div>
@@ -127,7 +138,7 @@ const dataBR = (d) => d.split('-').reverse().join('/');
 const SIT = { a_liberar: 'A liberar', liberado: 'Liberado', retido: 'Data passou', mediacao: 'Em mediação', vencido: 'Data vencida' };
 const SEM = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const dia = (n) => new Date(Date.now() - 3 * 3600000 + n * 86400000).toISOString().slice(0, 10);
-let D = null, pagina = 1, ordem = { k: 'dia', asc: true }, timer = null, sel = new Set();
+let D = null, pagina = 1, ordem = { k: 'dia', asc: true }, timer = null, sel = new Set(), abertos = null;
 let agrupar = (() => { try { return localStorage.getItem('lb_agrupar') !== '0'; } catch { return true; } })();
 const POR = 150;
 $('de').value = dia(-7); $('ate').value = dia(30);
@@ -168,21 +179,23 @@ function desenhar() {
     const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
     let html = '';
     if (agrupar && ordem.k === 'dia') {
-        let atual = null;
-        for (const l of fatia) {
-            if (l.dia !== atual) { atual = l.dia; const doDia = L.filter(x => x.dia === atual); const x = new Date(atual + 'T12:00:00Z');
-                html += `<tr class="grupo"><td colspan="8">${SEM[x.getUTCDay()].replace(/^./, c => c.toUpperCase())}, ${dataBR(atual)}${atual === D.hoje ? ' · hoje' : ''} <span class="t">R$ ${brl(doDia.reduce((s, y) => s + y.valor, 0))}</span></td></tr>`; }
-            html += linha(l);
+        // gaveta por dia: todos os dias do filtro (sem paginar), so o dia aberto mostra as vendas; hoje comeca aberto
+        if (!abertos) abertos = new Set([D.hoje]);
+        for (const d of [...new Set(L.map(l => l.dia))]) {
+            const doDia = L.filter(x => x.dia === d), x = new Date(d + 'T12:00:00Z'), ab = abertos.has(d);
+            html += `<tr class="grupo gaveta${ab ? ' aberta' : ''}${d === D.hoje ? ' hoje' : ''}" onclick="gaveta('${d}')"><td colspan="8"><span class="dia">${SEM[x.getUTCDay()].replace(/^./, c => c.toUpperCase())}, ${Number(d.slice(8))}${d.slice(0, 7) !== D.hoje.slice(0, 7) ? '/' + d.slice(5, 7) : ''}</span><span class="qtd">${doDia.length} venda${doDia.length === 1 ? '' : 's'}</span><span class="t">+ R$ ${brl(doDia.reduce((s, y) => s + y.valor, 0))}<i class="bi bi-chevron-down"></i></span></td></tr>`;
+            if (ab) html += doDia.map(linha).join('');
         }
     } else html = fatia.map(linha).join('');
     $('tb').innerHTML = html || '<tr><td colspan="8" style="color:var(--l3)">Nenhuma liberação com esse filtro.</td></tr>';
-    const pags = Math.max(1, Math.ceil(L.length / POR));
+    const pags = agrupar && ordem.k === 'dia' ? 1 : Math.max(1, Math.ceil(L.length / POR));
     $('pag').innerHTML = pags > 1 ? `<button ${pagina <= 1 ? 'disabled' : ''} onclick="pagina--;desenhar()">‹</button> ${pagina} / ${pags} <button ${pagina >= pags ? 'disabled' : ''} onclick="pagina++;desenhar()">›</button>` : '';
     $('todos').checked = fatia.length > 0 && fatia.every(l => sel.has(l.pagamento));
     $('acSel').classList.toggle('desligado', !sel.size);
     $('acSel').querySelector('span').textContent = sel.size ? `Exportar selecionados (${sel.size})` : 'Exportar selecionados';
 }
 function marcar(id, v) { v ? sel.add(id) : sel.delete(id); desenhar(); }
+function gaveta(d) { if (!abertos) abertos = new Set(); abertos.has(d) ? abertos.delete(d) : abertos.add(d); desenhar(); }
 function marcarTodos(v) { const L = filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(l.pagamento) : sel.delete(l.pagamento); desenhar(); }
 function info() {
     const R = D.resumo;

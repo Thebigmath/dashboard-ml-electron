@@ -69,6 +69,7 @@ app.get('/frete', (req, res) => res.sendFile(path.join(__dirname, 'public/frete.
 app.get('/novidades', (req, res) => res.sendFile(path.join(__dirname, 'public/novidades.html')));
 app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/avisos.html')));
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
+app.get('/finance-saldo-mp', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_saldo_mp.html')));
 app.get('/finance-contas-pagar', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_contas_pagar.html')));
 app.get('/finance-liberacoes', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_liberacoes.html')));
 app.get('/finance-conciliacao', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_conciliacao.html')));
@@ -109,6 +110,7 @@ module.exports = {
         require('./lib/ranking_mt').iniciarAgendador();
         require('./lib/motor_preco').iniciarAgendador();
         require('./lib/flex_auto').iniciarAgendador();
+        require('./lib/finance_saldo_mp').iniciarAgendador();   // saldo do Mercado Pago: ancora diaria (7h) + bots a cada 3 min
         require('./lib/simulacao_precos').iniciarAgendador();   // simulacao de precos da IA (vendas de ontem), todo dia a partir das 8h    // Flex automatico pelo estoque do Olist (so no Dashboard da Flavia, so se ligado)
         require('./lib/central_ml').iniciarAgendador();   // vigias da Agenda do Full (so se houver vigia ativa)   // modo automatico das regras de preco (so se ligado)
         // "Versão X instalada — veja o que mudou": 8 s depois de subir, para a
@@ -122,6 +124,7 @@ module.exports = {
         require('./lib/ranking_mt').pararAgendador();
         require('./lib/motor_preco').pararAgendador();
         require('./lib/flex_auto').pararAgendador();
+        require('./lib/finance_saldo_mp').pararAgendador();
         require('./lib/simulacao_precos').pararAgendador();
         if (httpServer) httpServer.close();
     }
