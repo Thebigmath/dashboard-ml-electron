@@ -8,226 +8,283 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
-        /* visual de lista financeira (molde do "Contas a pagar" do Bling): titulo + seletor, botao verde,
-           busca, periodo em pilula, tabela limpa com situacao em pilula e uma coluna lateral de acoes e informacoes */
+        /* molde do "Contas a receber" do Olist (23/10/2026): titulo, caixa de busca com o botao de opcoes, filtros em pilula
+           (meio de recebimento, vencimento, filtros, limpar filtros), abas em aberto / emitidas / recebidas / atrasadas /
+           canceladas e o aviso laranja quando a busca nao acha nada. As vendas ficam em gavetas por dia (calendario do MP). */
         body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
         body.page-ready { opacity:1; }
-        .lb { --verde:#2E9E5B; --verde-2:#258A4E; --amarelo-f:#FCE9B8; --amarelo-t:#8A5A00; --verm-f:#FDE0DD; --verm-t:#B42318; --verde-f:#DDF3E6; --verde-t:#1E7A45; --cinza-f:var(--s2); --cinza-t:var(--l2);
-              padding:22px 28px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
-        [data-theme="dark"] .lb { --amarelo-f:rgba(255,190,60,.18); --amarelo-t:#FFC861; --verm-f:rgba(255,80,70,.18); --verm-t:#FF8A80; --verde-f:rgba(60,200,120,.16); --verde-t:#5BD38E; }
-        .topo { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
-        .topo h1 { font-size:30px; font-weight:700; color:var(--l1); margin:0; display:flex; align-items:center; gap:8px; }
-        .topo h1 .seta { color:var(--verde); font-size:22px; }
-        .sel-sit { border:0; border-left:1px solid var(--sep); padding:4px 0 4px 16px; background:transparent; color:var(--verde); font-size:20px; font-weight:700; cursor:pointer; outline:none; }
-        .sel-sit option { color:#111; }
-        .bt-verde { margin-left:auto; display:inline-flex; align-items:center; justify-content:center; gap:10px; min-width:260px; padding:11px 22px; border-radius:8px; border:0; background:var(--verde); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+        .cr { --verde:#2E9E5B; --verde-2:#258A4E; --azul:#1F5FD1; --laranja:#F0A030; --caixa:var(--s2);
+              --amarelo-f:#FCE9B8; --amarelo-t:#8A5A00; --verm-f:#FDE0DD; --verm-t:#B42318; --verde-f:#DDF3E6; --verde-t:#1E7A45;
+              padding:22px 32px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        [data-theme="dark"] .cr { --azul:#7FA8F5; --amarelo-f:rgba(255,190,60,.18); --amarelo-t:#FFC861; --verm-f:rgba(255,80,70,.18); --verm-t:#FF8A80; --verde-f:rgba(60,200,120,.16); --verde-t:#5BD38E; }
+        .topo { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
+        .topo h1 { font-size:30px; font-weight:600; color:var(--l1); margin:0; letter-spacing:-.01em; }
+        .bt-verde { margin-left:auto; display:inline-flex; align-items:center; gap:10px; padding:10px 20px; border-radius:999px; border:0; background:var(--verde); color:#fff; font-size:14.5px; font-weight:600; cursor:pointer; }
         .bt-verde:hover { background:var(--verde-2); } .bt-verde:disabled { opacity:.6; cursor:not-allowed; }
-        .grade { display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:22px; align-items:start; }
-        .filtros { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-        .ic { width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--sep); border-radius:8px; background:var(--s1); color:var(--verde); font-size:18px; cursor:pointer; }
-        .ic.cinza { color:var(--l3); }
-        .busca { flex:1 1 320px; min-width:220px; display:flex; align-items:center; border:1px solid var(--sep); border-radius:8px; background:var(--s1); padding:0 12px; height:42px; }
-        .busca input { flex:1; border:0; outline:none; background:transparent; color:var(--l1); font-size:14px; }
-        .busca i { color:var(--verde); font-size:18px; }
-        .periodo { display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 12px; border:1px solid var(--sep); border-radius:8px; background:var(--s1); color:var(--verde); font-size:14px; font-weight:600; }
-        .periodo input { border:0; outline:none; background:transparent; color:var(--verde); font-weight:600; font-size:14px; width:126px; }
-        .acoes-dir { margin-left:auto; display:flex; gap:10px; }
-        .nota-filtro { color:var(--l2); font-size:14px; margin:10px 0 6px 2px; }
+        .busca { display:flex; align-items:center; gap:10px; max-width:840px; background:var(--caixa); border:1px solid var(--sep); border-radius:10px; padding:8px 8px 8px 22px; }
+        .busca input { flex:1; border:0; outline:none; background:transparent; color:var(--l1); font-size:17px; min-width:0; }
+        .busca input::placeholder { color:var(--l3); }
+        .busca > i { color:var(--l2); font-size:20px; }
+        .opc { position:relative; }
+        .opc > button { display:inline-flex; align-items:center; gap:4px; height:46px; padding:0 14px; border:1px solid var(--sep); border-radius:999px; background:var(--s1); color:var(--l1); font-size:18px; cursor:pointer; }
+        .menu { position:absolute; top:calc(100% + 6px); right:0; z-index:20; min-width:250px; background:var(--s1); border:1px solid var(--sep); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.14); padding:6px; display:none; }
+        .menu.on { display:block; }
+        .menu a { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; color:var(--l1); font-size:14px; text-decoration:none; cursor:pointer; }
+        .menu a:hover { background:var(--s2); } .menu a.sel { color:var(--verde); font-weight:600; }
+        .menu .sep { height:1px; background:var(--sep); margin:5px 4px; }
+        .menu .datas { display:flex; gap:6px; align-items:center; padding:8px 12px; font-size:13px; color:var(--l2); }
+        .menu .datas input { border:1px solid var(--sep); border-radius:6px; background:var(--s1); color:var(--l1); padding:3px 6px; font-size:13px; }
+        .menu.esq { left:0; right:auto; }
+        .menu label { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:7px 12px; font-size:13.5px; color:var(--l2); }
+        .menu label input { width:110px; border:1px solid var(--sep); border-radius:6px; background:var(--s1); color:var(--l1); padding:4px 8px; font-size:13.5px; }
+        .chips { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:22px 0 26px; }
+        .chip { position:relative; }
+        .chip > button { display:inline-flex; align-items:center; gap:8px; height:46px; padding:0 18px; border:1px solid var(--sep); border-radius:999px; background:transparent; color:var(--l1); font-size:16.5px; cursor:pointer; white-space:nowrap; }
+        .chip > button:hover { background:var(--s2); }
+        .chip.ativo > button { color:var(--azul); }
+        .limpar { display:inline-flex; align-items:center; gap:6px; padding:0 10px; height:46px; border:0; background:transparent; color:var(--l1); font-size:16.5px; cursor:pointer; }
+        .limpar:disabled { color:var(--l3); cursor:default; }
+        .abas { display:flex; gap:6px; border-bottom:1px solid var(--sep); overflow-x:auto; scrollbar-width:none; }
+        .abas a { padding:12px 30px 14px; color:var(--l2); font-size:17.5px; text-decoration:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; white-space:nowrap; }
+        .abas a:hover { color:var(--l1); }
+        .abas a.on { color:var(--l1); border-bottom-color:var(--verde); }
+        .abas a small { font-size:12px; color:var(--l3); margin-left:6px; }
+        .resumo { display:flex; gap:26px; flex-wrap:wrap; margin:16px 0 4px; font-size:13.5px; color:var(--l2); }
+        .resumo b { color:var(--l1); font-variant-numeric:tabular-nums; margin-left:6px; }
+        .conta { margin:12px 0 8px; font-size:14px; color:var(--l2); }
+        .conta b { color:var(--l1); }
         table.lista { width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px; }
-        .lista th { font-weight:400; color:var(--l2); padding:10px 8px; vertical-align:bottom; text-align:left; white-space:nowrap; cursor:pointer; }
+        .lista th { font-weight:400; color:var(--l2); padding:10px 10px; text-align:left; white-space:nowrap; cursor:pointer; border-bottom:1px solid var(--sep); }
         .lista th.n, .lista td.n { text-align:right; }
-        .lista td { padding:0 8px; height:57px; border-bottom:1px solid var(--sep); color:var(--l1); background:var(--s1); vertical-align:middle; }
-        .lista tbody tr:hover td { background:var(--s2); }
-        .lista td.hist { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lista td { padding:0 10px; height:56px; border-bottom:1px solid var(--sep); color:var(--l1); vertical-align:middle; }
+        .lista tbody tr.item:hover td { background:var(--s2); }
+        .lista td.hist { max-width:380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .lista td.hist small { display:block; color:var(--l3); font-size:12px; overflow:hidden; text-overflow:ellipsis; }
         .lista td.n { font-variant-numeric:tabular-nums; white-space:nowrap; }
-        .chk { width:20px; height:20px; accent-color:var(--verde); cursor:pointer; }
-        .pill { display:inline-block; font-size:13px; font-weight:700; border-radius:999px; padding:3px 12px; white-space:nowrap; }
+        .chk { width:18px; height:18px; accent-color:var(--verde); cursor:pointer; }
+        .pill { display:inline-block; font-size:12.5px; font-weight:600; border-radius:999px; padding:3px 12px; white-space:nowrap; }
         .p-a_liberar { background:var(--amarelo-f); color:var(--amarelo-t); }
         .p-liberado { background:var(--verde-f); color:var(--verde-t); }
-        .p-retido, .p-mediacao { background:var(--verm-f); color:var(--verm-t); }
-        .p-vencido { background:var(--cinza-f); color:var(--cinza-t); }
+        .p-retido, .p-mediacao, .p-vencido { background:var(--verm-f); color:var(--verm-t); }
+        .p-cancelado { background:var(--s2); color:var(--l3); text-decoration:line-through; }
         .kebab { color:var(--l2); font-size:18px; text-align:center; }
-        .grupo td { height:40px; background:transparent !important; font-weight:700; color:var(--l1); border-bottom:1px solid var(--sep); }
-        .grupo td .t { float:right; color:var(--verde); font-variant-numeric:tabular-nums; }
-        /* gaveta por dia (como o Calendario do app do Mercado Pago): clica no dia e abre as vendas dele */
-        .grupo.gaveta td { height:52px; cursor:pointer; user-select:none; }
-        .grupo.gaveta:hover td { background:var(--s2) !important; }
-        .grupo.gaveta td .dia { font-size:15.5px; }
-        .grupo.gaveta td .qtd { color:var(--l3); font-weight:400; font-size:12.5px; margin-left:8px; }
-        .grupo.gaveta td .t { font-size:15px; }
-        .grupo.gaveta td .t i { color:var(--l3); margin-left:10px; font-size:13px; transition:transform .2s; display:inline-block; }
-        .grupo.gaveta.aberta td .t i { transform:rotate(180deg); }
-        .grupo.gaveta.hoje td .dia::after { content:'hoje'; margin-left:8px; font-size:11px; font-weight:700; color:#fff; background:var(--verde); border-radius:999px; padding:2px 8px; }
-        .grupo.gaveta td { border-bottom:1px solid var(--sep); padding:0 14px; }
-        .grupo.gaveta td .t { color:var(--verde); font-weight:600; }
-        .grupo.gaveta.aberta td { background:var(--s2) !important; }
-        .lateral { background:var(--s1); border:1px solid var(--sep); border-radius:10px; padding:16px 22px; position:sticky; top:12px; }
-        .lateral a { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--sep); color:var(--l1); font-size:15px; text-decoration:none; cursor:pointer; }
-        .lateral a i { font-size:20px; color:var(--l2); }
-        .lateral a.desligado { color:var(--l3); pointer-events:none; }
-        .lateral h4 { font-size:21px; font-weight:700; color:var(--l1); margin:22px 0 10px; }
-        .info { display:flex; flex-direction:column; gap:10px; font-size:14px; color:var(--l2); }
-        .info div { display:flex; justify-content:space-between; gap:10px; }
-        .info b { color:var(--l1); font-variant-numeric:tabular-nums; }
-        .info .alerta b { color:var(--verm-t); }
-        .rodape-nota { margin-top:14px; font-size:12px; color:var(--l3); line-height:1.5; }
+        /* gaveta por dia (Calendario do app do MP): clica no dia e abre as vendas dele; todas comecam fechadas */
+        .gaveta td { height:54px; cursor:pointer; user-select:none; padding:0 14px; border-bottom:1px solid var(--sep); }
+        .gaveta:hover td, .gaveta.aberta td { background:var(--s2); }
+        .gaveta .dia { font-size:15.5px; font-weight:600; color:var(--l1); }
+        .gaveta .qtd { color:var(--l3); font-size:12.5px; margin-left:8px; }
+        .gaveta .t { float:right; color:var(--verde); font-weight:600; font-size:15px; font-variant-numeric:tabular-nums; }
+        .gaveta .t i { color:var(--l3); margin-left:10px; font-size:13px; transition:transform .2s; display:inline-block; }
+        .gaveta.aberta .t i { transform:rotate(180deg); }
+        .gaveta.hoje .dia::after { content:'hoje'; margin-left:8px; font-size:11px; font-weight:700; color:#fff; background:var(--verde); border-radius:999px; padding:2px 8px; }
+        .vazio { max-width:846px; margin:44px auto; border:2px solid var(--laranja); border-radius:10px; padding:44px 46px; }
+        .vazio h3 { font-size:24px; font-weight:600; color:var(--l1); margin:0 0 18px; }
+        .vazio p { font-size:16.5px; color:var(--l2); margin:0; }
         .pag { display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:10px; font-size:13px; color:var(--l3); }
         .pag button { border:1px solid var(--sep); background:var(--s1); color:var(--l1); border-radius:6px; padding:3px 10px; cursor:pointer; }
-        @media (max-width: 1100px) { .grade { grid-template-columns:minmax(0,1fr); } .lateral { position:static; } .bt-verde { min-width:0; } }
+        .nota { margin-top:18px; font-size:12px; color:var(--l3); line-height:1.5; max-width:900px; }
+        @media (max-width: 900px) { .cr { padding:18px 16px 40px; } .abas a { padding:10px 14px 12px; font-size:15.5px; } .bt-verde { margin-left:0; } }
     </style>
 <script src="/assets/js/shell.js"></script>
 </head>
 <body>
 <canvas id="canvas-bg"></canvas>
 <div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
-<div class="d-flex"><main class="content"><div class="lb">
+<div class="d-flex"><main class="content"><div class="cr">
     <div class="topo">
-        <h1><span class="seta">›</span>Contas a receber</h1>
-        <select class="sel-sit" id="sit" onchange="pagina=1;desenhar()" aria-label="Situação">
-            <option value="">Todas as liberações</option>
-            <option value="a_liberar" selected>A liberar</option>
-            <option value="liberado">Liberadas</option>
-            <option value="retido">Data passou e em mediação</option>
-            <option value="vencido">Data vencida (falta reler)</option>
-        </select>
+        <h1>Contas a receber</h1>
         <button class="bt-verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar do Mercado Pago</button>
     </div>
 
-    <div class="grade">
-        <div style="min-width:0">
-            <div class="filtros">
-                <span class="ic" title="Agrupar por dia" id="btAgrupar" onclick="agrupar=!agrupar;try{localStorage.setItem('lb_agrupar',agrupar?'1':'0')}catch{};desenhar()"><i class="bi bi-calendar3-week"></i></span>
-                <label class="busca"><input id="busca" placeholder="Pesquise por pedido, SKU ou produto" oninput="pagina=1;desenhar()"><i class="bi bi-search"></i></label>
-                <span class="periodo"><i class="bi bi-calendar-event"></i><input type="date" id="de" onchange="carregar()"> até <input type="date" id="ate" onchange="carregar()"></span>
-                <span class="acoes-dir"><span class="ic cinza" title="Exportar CSV" onclick="exportar()"><i class="bi bi-download"></i></span></span>
+    <div class="busca">
+        <input id="busca" placeholder="Pesquise por pedido, SKU ou produto" oninput="pagina=1;desenhar()" aria-label="Pesquisar">
+        <i class="bi bi-search"></i>
+        <span class="opc"><button onclick="abrir('mOpc', event)" aria-label="Opções"><i class="bi bi-sliders2-vertical"></i><i class="bi bi-caret-down-fill" style="font-size:11px"></i></button>
+            <div class="menu" id="mOpc">
+                <a id="opAgrupar" onclick="agrupar=!agrupar;salvarPref();desenhar()"><i class="bi bi-calendar3"></i><span>Ver agrupado por dia</span></a>
+                <div class="sep"></div>
+                <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar a lista (CSV)</span></a>
+                <a id="opSel" onclick="exportar(true)"><i class="bi bi-check2-square"></i><span>Exportar selecionados</span></a>
             </div>
-            <div class="nota-filtro" id="notaFiltro">Carregando…</div>
-            <div style="overflow-x:auto">
-            <table class="lista">
-                <thead><tr>
-                    <th style="width:34px"><input type="checkbox" class="chk" id="todos" onchange="marcarTodos(this.checked)" aria-label="Selecionar todos"></th>
-                    <th onclick="ordenar('origem')">Origem</th>
-                    <th onclick="ordenar('pedido')">Histórico</th>
-                    <th>Forma de<br>recebimento</th>
-                    <th onclick="ordenar('dia')">Liberação</th>
-                    <th class="n" onclick="ordenar('valor')">Valor</th>
-                    <th onclick="ordenar('situacao')">Situação</th>
-                    <th style="width:30px"></th>
-                </tr></thead>
-                <tbody id="tb"></tbody>
-            </table>
-            </div>
-            <div class="pag" id="pag"></div>
-        </div>
-
-        <aside class="lateral">
-            <a id="acSel" class="desligado" onclick="exportar(true)"><i class="bi bi-check-circle-fill"></i><span>Exportar selecionados</span></a>
-            <a onclick="agrupar=!agrupar;desenhar()"><i class="bi bi-calendar3"></i><span id="txtAgrupar">Ver agrupado por dia</span></a>
-            <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
-            <h4>Informações</h4>
-            <div class="info" id="info"></div>
-            <div class="rodape-nota">Entram as vendas do Mercado Livre (valor líquido). O calendário do app do Mercado Pago também desconta no mesmo dia cobranças avulsas (frete cobrado à parte, devoluções, mediações), por isso lá o total do dia pode ser um pouco menor. A antecipação não vem pela API.</div>
-        </aside>
+        </span>
     </div>
+
+    <div class="chips">
+        <span class="chip" id="cMeio"><button onclick="abrir('mMeio', event)"><span id="tMeio">por meio de recebimento</span></button>
+            <div class="menu esq" id="mMeio">
+                <a data-v="" onclick="meio='';fechar();desenhar()">Todos</a>
+                <a data-v="mp" onclick="meio='mp';fechar();desenhar()">Mercado Pago (liberação de vendas)</a>
+            </div>
+        </span>
+        <span class="chip ativo" id="cVenc"><button onclick="abrir('mVenc', event)"><span id="tVenc">vencimento</span></button>
+            <div class="menu esq" id="mVenc">
+                <a data-p="hoje" onclick="periodo('hoje')">Hoje</a>
+                <a data-p="p7" onclick="periodo('p7')">Próximos 7 dias</a>
+                <a data-p="p30" onclick="periodo('p30')">Próximos 30 dias</a>
+                <a data-p="u7" onclick="periodo('u7')">Últimos 7 dias</a>
+                <a data-p="u30" onclick="periodo('u30')">Últimos 30 dias</a>
+                <a data-p="u30p30" onclick="periodo('u30p30')">Últimos 30 e próximos 30 dias</a>
+                <a data-p="mes" onclick="periodo('mes')">Este mês</a>
+                <a data-p="mesant" onclick="periodo('mesant')">Mês passado</a>
+                <div class="sep"></div>
+                <div class="datas"><input type="date" id="de"> até <input type="date" id="ate"></div>
+                <a onclick="periodo('livre')"><i class="bi bi-check2"></i>Aplicar datas</a>
+            </div>
+        </span>
+        <span class="chip" id="cFiltros"><button onclick="abrir('mFiltros', event)"><i class="bi bi-funnel"></i><span>filtros</span></button>
+            <div class="menu esq" id="mFiltros" onclick="event.stopPropagation()">
+                <label>Valor mínimo <input type="number" step="0.01" id="vMin" oninput="pagina=1;desenhar()"></label>
+                <label>Valor máximo <input type="number" step="0.01" id="vMax" oninput="pagina=1;desenhar()"></label>
+                <label>Só em mediação <input type="checkbox" id="soMed" class="chk" style="width:18px" onchange="pagina=1;desenhar()"></label>
+            </div>
+        </span>
+        <button class="limpar" id="btLimpar" onclick="limpar()"><i class="bi bi-dash-circle"></i>limpar filtros</button>
+    </div>
+
+    <nav class="abas" id="abas">
+        <a data-a="aberto" onclick="aba='aberto';pagina=1;desenhar()">em aberto<small></small></a>
+        <a data-a="emitidas" onclick="aba='emitidas';pagina=1;desenhar()">emitidas<small></small></a>
+        <a data-a="recebidas" onclick="aba='recebidas';pagina=1;desenhar()">recebidas<small></small></a>
+        <a data-a="atrasadas" onclick="aba='atrasadas';pagina=1;desenhar()">atrasadas<small></small></a>
+        <a data-a="canceladas" onclick="aba='canceladas';pagina=1;desenhar()">canceladas<small></small></a>
+    </nav>
+    <div class="resumo" id="resumo"></div>
+    <div class="conta" id="conta">Carregando…</div>
+    <div id="area"></div>
+    <div class="pag" id="pag"></div>
+    <div class="nota">Entram as vendas do Mercado Livre (valor líquido, já sem tarifa e frete). Vencimento = dia em que o Mercado Pago libera o dinheiro. O calendário do app do Mercado Pago também desconta no mesmo dia cobranças avulsas (frete cobrado à parte, devoluções, mediações), por isso lá o total do dia pode ser um pouco menor. A antecipação não vem pela API.</div>
 </div></main></div>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dataBR = (d) => d.split('-').reverse().join('/');
-const SIT = { a_liberar: 'A liberar', liberado: 'Liberado', retido: 'Data passou', mediacao: 'Em mediação', vencido: 'Data vencida' };
+const SIT = { a_liberar: 'em aberto', liberado: 'recebida', retido: 'atrasada', vencido: 'atrasada', mediacao: 'em mediação', cancelado: 'cancelada' };
 const SEM = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+// aba do Olist -> situacoes do Mercado Pago
+const ABA = { aberto: ['a_liberar'], emitidas: ['a_liberar', 'liberado', 'retido', 'vencido', 'mediacao'], recebidas: ['liberado'], atrasadas: ['retido', 'vencido', 'mediacao'], canceladas: ['cancelado'] };
+const PER = { hoje: 'Hoje', p7: 'Próximos 7 dias', p30: 'Próximos 30 dias', u7: 'Últimos 7 dias', u30: 'Últimos 30 dias', u30p30: 'Últimos 30 e próximos 30 dias', mes: 'Este mês', mesant: 'Mês passado' };
 const dia = (n) => new Date(Date.now() - 3 * 3600000 + n * 86400000).toISOString().slice(0, 10);
-let D = null, pagina = 1, ordem = { k: 'dia', asc: true }, timer = null, sel = new Set(), abertos = null;
+let D = null, pagina = 1, ordem = { k: 'dia', asc: true }, timer = null, sel = new Set(), abertos = new Set(), aba = 'aberto', meio = '', per = 'u30p30';
 let agrupar = (() => { try { return localStorage.getItem('lb_agrupar') !== '0'; } catch { return true; } })();
+const salvarPref = () => { try { localStorage.setItem('lb_agrupar', agrupar ? '1' : '0'); } catch {} };
 const POR = 150;
-$('de').value = dia(-7); $('ate').value = dia(30);
+
+function abrir(id, ev) { ev.stopPropagation(); const m = $(id), on = m.classList.contains('on'); fechar(); if (!on) m.classList.add('on'); }
+function fechar() { document.querySelectorAll('.menu.on').forEach(m => m.classList.remove('on')); }
+document.addEventListener('click', fechar);
+
+function datasDo(p) {
+    const h = dia(0), m = h.slice(0, 7);
+    if (p === 'hoje') return [h, h];
+    if (p === 'p7') return [h, dia(7)];
+    if (p === 'p30') return [h, dia(30)];
+    if (p === 'u7') return [dia(-7), h];
+    if (p === 'u30') return [dia(-30), h];
+    if (p === 'u30p30') return [dia(-30), dia(30)];
+    if (p === 'mes') { const [a, b] = m.split('-').map(Number); return [m + '-01', new Date(Date.UTC(a, b, 0)).toISOString().slice(0, 10)]; }
+    if (p === 'mesant') { const [a, b] = m.split('-').map(Number); return [new Date(Date.UTC(a, b - 2, 1)).toISOString().slice(0, 10), new Date(Date.UTC(a, b - 1, 0)).toISOString().slice(0, 10)]; }
+    return [$('de').value, $('ate').value];
+}
+function periodo(p) {
+    if (p === 'livre' && (!$('de').value || !$('ate').value || $('de').value > $('ate').value)) return;
+    per = p; const [a, b] = datasDo(p); $('de').value = a; $('ate').value = b; fechar(); carregar();
+}
 
 async function carregar() {
+    $('tVenc').textContent = 'vencimento: ' + (PER[per] || `${dataBR($('de').value)} a ${dataBR($('ate').value)}`);
+    document.querySelectorAll('#mVenc a[data-p]').forEach(a => a.classList.toggle('sel', a.dataset.p === per));
     try { D = await fetch(`/api/finance/liberacoes?de=${$('de').value}&ate=${$('ate').value}`).then(x => x.json()); }
-    catch (e) { $('tb').innerHTML = `<tr><td colspan="8" style="color:#ff453a">${esc(e.message)}</td></tr>`; return; }
-    if (D.erro) { $('tb').innerHTML = `<tr><td colspan="8" style="color:#ff453a">${esc(D.erro)}</td></tr>`; return; }
-    sel.clear(); pagina = 1; desenhar(); info();
+    catch (e) { $('conta').innerHTML = `<span style="color:#ff453a">${esc(e.message)}</span>`; return; }
+    if (D.erro) { $('conta').innerHTML = `<span style="color:#ff453a">${esc(D.erro)}</span>`; return; }
+    sel.clear(); pagina = 1; desenhar(); resumo();
+}
+function base() {
+    // tudo do periodo com os filtros (menos a aba): serve para contar cada aba
+    const q = $('busca').value.trim().toLowerCase(), mn = parseFloat($('vMin').value), mx = parseFloat($('vMax').value);
+    return D.linhas.filter(l => (!q || [l.pedido, l.produtos, l.titulo, l.pagamento].join(' ').toLowerCase().includes(q))
+        && (isNaN(mn) || l.valor >= mn) && (isNaN(mx) || l.valor <= mx) && (!$('soMed').checked || l.situacao === 'mediacao'));
 }
 function filtrados() {
-    const s = $('sit').value, q = $('busca').value.trim().toLowerCase();
-    let L = D.linhas;
-    if (s === 'retido') L = L.filter(l => l.situacao === 'retido' || l.situacao === 'mediacao');
-    else if (s) L = L.filter(l => l.situacao === s);
-    if (q) L = L.filter(l => [l.pedido, l.produtos, l.titulo].join(' ').toLowerCase().includes(q));
+    const L = base().filter(l => ABA[aba].includes(l.situacao));
     const k = ordem.k, f = ordem.asc ? 1 : -1;
     return [...L].sort((a, b) => ((a[k] ?? '') > (b[k] ?? '') ? 1 : (a[k] ?? '') < (b[k] ?? '') ? -1 : 0) * f || b.valor - a.valor);
 }
 function ordenar(k) { ordem = { k, asc: ordem.k === k ? !ordem.asc : k !== 'valor' }; desenhar(); }
 function linha(l) {
-    return `<tr><td><input type="checkbox" class="chk" ${sel.has(l.pagamento) ? 'checked' : ''} onchange="marcar('${l.pagamento}', this.checked)" aria-label="Selecionar"></td>
-        <td>MERCADO PAGO</td>
+    return `<tr class="item"><td style="width:34px"><input type="checkbox" class="chk" ${sel.has(l.pagamento) ? 'checked' : ''} onchange="marcar('${l.pagamento}', this.checked)" aria-label="Selecionar"></td>
+        <td>Mercado Livre</td>
         <td class="hist" title="${esc(l.titulo)}">Pedido ${esc(l.pedido || '—')}<small>${esc(l.produtos || l.titulo || '')}</small></td>
-        <td>Liberação de dinheiro</td>
         <td>${dataBR(l.dia)}</td>
         <td class="n">${brl(l.valor)}</td>
+        <td>Mercado Pago</td>
         <td><span class="pill p-${l.situacao}">${SIT[l.situacao] || l.situacao}</span></td>
         <td class="kebab" title="Venda de ${l.data ? new Date(l.data).toLocaleDateString('pt-BR') : '—'} · pagamento ${esc(l.pagamento)}"><i class="bi bi-three-dots-vertical"></i></td></tr>`;
 }
 function desenhar() {
     if (!D) return;
-    const L = filtrados();
-    $('txtAgrupar').textContent = agrupar ? 'Ver em lista' : 'Ver agrupado por dia';
-    $('btAgrupar').style.color = agrupar ? '' : 'var(--l3)';
+    const B = base(), L = filtrados();
+    document.querySelectorAll('#abas a').forEach(a => { a.classList.toggle('on', a.dataset.a === aba); const n = B.filter(l => ABA[a.dataset.a].includes(l.situacao)).length; a.querySelector('small').textContent = n ? n : ''; });
+    $('tMeio').textContent = meio === 'mp' ? 'meio de recebimento: Mercado Pago' : 'por meio de recebimento';
+    $('cMeio').classList.toggle('ativo', !!meio);
+    document.querySelectorAll('#mMeio a').forEach(a => a.classList.toggle('sel', a.dataset.v === meio));
+    const filtrosOn = !!($('vMin').value || $('vMax').value || $('soMed').checked);
+    $('cFiltros').classList.toggle('ativo', filtrosOn);
+    $('btLimpar').disabled = !(filtrosOn || meio || $('busca').value || per !== 'u30p30');
+    $('opAgrupar').querySelector('span').textContent = agrupar ? 'Ver em lista' : 'Ver agrupado por dia';
+    $('opSel').style.opacity = sel.size ? 1 : .45;
+    $('opSel').querySelector('span').textContent = sel.size ? `Exportar selecionados (${sel.size})` : 'Exportar selecionados';
     const total = L.reduce((s, l) => s + l.valor, 0);
-    $('notaFiltro').innerHTML = `${L.length} liberações · <b style="color:var(--l1)">R$ ${brl(total)}</b> no período de ${dataBR(D.periodo.de)} até ${dataBR(D.periodo.ate || dia(30))}${$('sit').value || $('busca').value ? '' : ' · Nenhum filtro aplicado'}`;
-    const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
+    $('conta').innerHTML = L.length ? `${L.length} conta${L.length === 1 ? '' : 's'} · <b>R$ ${brl(total)}</b>${aba === 'canceladas' ? ' (fora dos totais)' : ''}` : '';
+    if (!L.length) { $('area').innerHTML = `<div class="vazio"><h3>Sua pesquisa não retornou resultados.</h3><p>Tente outras opções de pesquisa, situações ou remova os filtros.</p></div>`; $('pag').innerHTML = ''; return; }
+    const cab = `<thead><tr><th><input type="checkbox" class="chk" id="todos" onchange="marcarTodos(this.checked)" aria-label="Selecionar todos"></th>
+        <th>Cliente</th><th onclick="ordenar('pedido')">Histórico</th><th onclick="ordenar('dia')">Vencimento</th><th class="n" onclick="ordenar('valor')">Valor</th>
+        <th>Meio de recebimento</th><th onclick="ordenar('situacao')">Situação</th><th style="width:30px"></th></tr></thead>`;
+    const emGaveta = agrupar && ordem.k === 'dia';
+    const fatia = emGaveta ? L : L.slice((pagina - 1) * POR, pagina * POR);
     let html = '';
-    if (agrupar && ordem.k === 'dia') {
-        // gaveta por dia: todos os dias do filtro (sem paginar), so o dia aberto mostra as vendas; hoje comeca aberto
-        if (!abertos) abertos = new Set();   // como o Calendario do app do MP: todos os dias fechados
+    if (emGaveta) {
         for (const d of [...new Set(L.map(l => l.dia))]) {
             const doDia = L.filter(x => x.dia === d), x = new Date(d + 'T12:00:00Z'), ab = abertos.has(d);
-            html += `<tr class="grupo gaveta${ab ? ' aberta' : ''}${d === D.hoje ? ' hoje' : ''}" onclick="gaveta('${d}')"><td colspan="8"><span class="dia">${SEM[x.getUTCDay()].replace(/^./, c => c.toUpperCase())}, ${Number(d.slice(8))}${d.slice(0, 7) !== D.hoje.slice(0, 7) ? '/' + d.slice(5, 7) : ''}</span><span class="qtd">${doDia.length} venda${doDia.length === 1 ? '' : 's'}</span><span class="t">+ R$ ${brl(doDia.reduce((s, y) => s + y.valor, 0))}<i class="bi bi-chevron-down"></i></span></td></tr>`;
+            html += `<tr class="gaveta${ab ? ' aberta' : ''}${d === D.hoje ? ' hoje' : ''}" onclick="gaveta('${d}')"><td colspan="8"><span class="dia">${SEM[x.getUTCDay()].replace(/^./, c => c.toUpperCase())}, ${Number(d.slice(8))}${d.slice(0, 7) !== D.hoje.slice(0, 7) ? '/' + d.slice(5, 7) : ''}</span><span class="qtd">${doDia.length} venda${doDia.length === 1 ? '' : 's'}</span><span class="t">${aba === 'canceladas' ? '' : '+ '}R$ ${brl(doDia.reduce((s, y) => s + y.valor, 0))}<i class="bi bi-chevron-down"></i></span></td></tr>`;
             if (ab) html += doDia.map(linha).join('');
         }
     } else html = fatia.map(linha).join('');
-    $('tb').innerHTML = html || '<tr><td colspan="8" style="color:var(--l3)">Nenhuma liberação com esse filtro.</td></tr>';
-    const pags = agrupar && ordem.k === 'dia' ? 1 : Math.max(1, Math.ceil(L.length / POR));
+    $('area').innerHTML = `<div style="overflow-x:auto"><table class="lista">${cab}<tbody>${html}</tbody></table></div>`;
+    const pags = emGaveta ? 1 : Math.max(1, Math.ceil(L.length / POR));
     $('pag').innerHTML = pags > 1 ? `<button ${pagina <= 1 ? 'disabled' : ''} onclick="pagina--;desenhar()">‹</button> ${pagina} / ${pags} <button ${pagina >= pags ? 'disabled' : ''} onclick="pagina++;desenhar()">›</button>` : '';
     $('todos').checked = fatia.length > 0 && fatia.every(l => sel.has(l.pagamento));
-    $('acSel').classList.toggle('desligado', !sel.size);
-    $('acSel').querySelector('span').textContent = sel.size ? `Exportar selecionados (${sel.size})` : 'Exportar selecionados';
 }
 function marcar(id, v) { v ? sel.add(id) : sel.delete(id); desenhar(); }
-function gaveta(d) { if (!abertos) abertos = new Set(); abertos.has(d) ? abertos.delete(d) : abertos.add(d); desenhar(); }
-function marcarTodos(v) { const L = filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(l.pagamento) : sel.delete(l.pagamento); desenhar(); }
-function info() {
+function gaveta(d) { abertos.has(d) ? abertos.delete(d) : abertos.add(d); desenhar(); }
+function marcarTodos(v) { const L = agrupar && ordem.k === 'dia' ? filtrados() : filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(l.pagamento) : sel.delete(l.pagamento); desenhar(); }
+function limpar() { $('busca').value = ''; $('vMin').value = ''; $('vMax').value = ''; $('soMed').checked = false; meio = ''; if (per !== 'u30p30') periodo('u30p30'); else { pagina = 1; desenhar(); } }
+function resumo() {
     const R = D.resumo;
-    $('info').innerHTML = [
-        ['A liberar hoje', 'R$ ' + brl(R.hoje)], ['Amanhã', 'R$ ' + brl(R.amanha)], ['Próximos 7 dias', 'R$ ' + brl(R.sete_dias)],
-        ['Total a liberar', 'R$ ' + brl(R.total)], ['Vendas a liberar', R.pagamentos], ['Liberado hoje', 'R$ ' + brl(R.liberado_hoje)],
-        ['Data passou (conferir no MP)', `R$ ${brl(R.retido)} (${R.retidos})`, R.retidos ? 'alerta' : ''],
-    ].map(([a, b, c]) => `<div class="${c || ''}"><span>${a}</span><b>${b}</b></div>`).join('')
-        + (R.vencidos ? `<div style="color:var(--l3);font-size:12.5px;display:block">${R.vencidos} vendas passaram da data desde a última leitura. Clique em Atualizar do Mercado Pago.</div>` : '');
+    $('resumo').innerHTML = [['A liberar hoje', R.hoje], ['Amanhã', R.amanha], ['Próximos 7 dias', R.sete_dias], ['Total a liberar', R.total], ['Liberado hoje', R.liberado_hoje]]
+        .map(([a, b]) => `<span>${a}<b>R$ ${brl(b)}</b></span>`).join('');
 }
 function exportar(soSel) {
-    if (!D) return;
+    if (!D || (soSel && !sel.size)) return;
     const L = filtrados().filter(l => !soSel || sel.has(l.pagamento));
-    const csv = ['Liberação;Pedido;Produtos;Valor;Situação;Pagamento'].concat(L.map(l => [dataBR(l.dia), l.pedido, (l.produtos || '').replace(/;/g, ','), String(l.valor).replace('.', ','), SIT[l.situacao], l.pagamento].join(';'))).join('\n');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = `liberacoes_${$('de').value}_a_${$('ate').value}.csv`; a.click();
+    const csv = ['Vencimento;Pedido;Produtos;Valor;Situação;Pagamento'].concat(L.map(l => [dataBR(l.dia), l.pedido, (l.produtos || '').replace(/;/g, ','), String(l.valor).replace('.', ','), SIT[l.situacao], l.pagamento].join(';'))).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = `contas_a_receber_${aba}_${$('de').value}_a_${$('ate').value}.csv`; a.click();
 }
 async function atualizar() {
     const r = await fetch('/api/finance/liberacoes/atualizar', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
-    if (!r.ok) { $('notaFiltro').textContent = r.erro || 'Não foi possível atualizar.'; return; }
+    if (!r.ok) { $('conta').textContent = r.erro || 'Não foi possível atualizar.'; return; }
     acompanhar();
 }
 async function acompanhar() {
     const e = await fetch('/api/finance/liberacoes/estado').then(x => x.json()).catch(() => null);
     if (!e) return;
     const b = $('btAtualizar'); b.disabled = e.rodando; clearTimeout(timer);
-    if (e.rodando) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${e.total ? `${e.feito} de ${e.total}` : 'Atualizando…'}`; $('notaFiltro').textContent = e.etapa || ''; b.dataset.r = '1'; timer = setTimeout(acompanhar, 2000); }
-    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do Mercado Pago'; if (e.erro) $('notaFiltro').textContent = 'Erro ao atualizar: ' + e.erro; if (b.dataset.r) { delete b.dataset.r; carregar(); } }
+    if (e.rodando) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${e.total ? `${e.feito} de ${e.total}` : 'Atualizando…'}`; b.dataset.r = '1'; timer = setTimeout(acompanhar, 2000); }
+    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do Mercado Pago'; if (e.erro) $('conta').textContent = 'Erro ao atualizar: ' + e.erro; if (b.dataset.r) { delete b.dataset.r; carregar(); } }
     return e;
 }
 // busca rapida no MP (segundos): sozinha ao abrir se nunca rodou ou tem mais de 30 min
-(async () => { await carregar(); const e = await acompanhar(); if (D && (!D.rapido_em || Date.now() - Date.parse(D.rapido_em) > 30 * 60000) && e && !e.rodando) atualizar(); })();
+(async () => { const [a, b] = datasDo(per); $('de').value = a; $('ate').value = b; await carregar(); const e = await acompanhar(); if (D && (!D.rapido_em || Date.now() - Date.parse(D.rapido_em) > 30 * 60000) && e && !e.rodando) atualizar(); })();
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>

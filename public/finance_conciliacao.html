@@ -57,7 +57,7 @@
         <select class="sel" id="periodo" onchange="carregar()">
             <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option><option value="45" selected>Últimos 45 dias</option><option value="60">Últimos 60 dias</option><option value="mes">Esse mês</option><option value="mes_passado">Mês passado</option><option value="ontem">Ontem</option>
         </select>
-        <select class="sel" id="fSit" onchange="tabela()"><option value="">Todas as situações</option><option value="caiu">Já caiu no MP (bate ou diferença)</option><option value="dif">Com diferença</option><option value="ok">Batem</option><option value="exp">Diferença explicada</option><option value="ag">A liberar (não entregue)</option><option value="dev">Devolvidos</option></select>
+        <select class="sel" id="fSit" onchange="tabela()"><option value="">Todas as situações</option><option value="caiu">Já caiu no MP (bate ou diferença)</option><option value="dif">Com diferença</option><option value="ok">Batem</option><option value="exp">Diferença explicada</option><option value="fr">Frete ajustado pelo ML</option><option value="ag">A liberar (não entregue)</option><option value="dev">Devolvidos</option></select>
         <input class="in" id="busca" placeholder="Buscar pedido ou SKU…" oninput="tabela()" style="min-width:200px">
         <span style="margin-left:auto"></span>
         <button class="bt" onclick="exportar()"><i class="bi bi-download"></i> Exportar</button>
@@ -90,22 +90,22 @@ async function carregar() {
     if (r.erro) { $('conta').innerHTML = `<span style="color:#ff453a">${esc(r.erro)}</span>`; return; }
     D = r; desenhar(); acompanhar();
 }
-function situacao(l) { return l.status_pedido === 'Devolvido' ? 'dev' : !l.liberado ? 'ag' : Math.abs(l.diferenca) <= 0.1 ? 'ok' : l.explicado ? 'exp' : 'dif'; }
-const SIT = { ok: ['ok', 'bate'], exp: ['ag', 'explicada'], dif: ['dv', 'diferença'], ag: ['ag', 'a liberar'], dev: ['fo', 'devolvido'] };
+function situacao(l) { return l.status_pedido === 'Devolvido' ? 'dev' : !l.liberado ? 'ag' : Math.abs(l.diferenca) <= 0.1 ? 'ok' : l.explicado ? 'exp' : l.causa && l.causa.so_frete ? 'fr' : 'dif'; }
+const SIT = { ok: ['ok', 'bate'], exp: ['ag', 'explicada'], fr: ['ag', 'frete ajustado'], dif: ['dv', 'diferença'], ag: ['ag', 'a liberar'], dev: ['fo', 'devolvido'] };
 function tabela() {
     if (!D) return;
     const f = $('fSit').value, q = ($('busca').value || '').trim().toLowerCase();
-    const L = D.linhas.filter(l => (!f || (f === 'caiu' ? ['ok', 'exp', 'dif'].includes(situacao(l)) : situacao(l) === f)) && (!q || (l.id + ' ' + l.produtos).toLowerCase().includes(q)))
+    const L = D.linhas.filter(l => (!f || (f === 'caiu' ? ['ok', 'exp', 'fr', 'dif'].includes(situacao(l)) : situacao(l) === f)) && (!q || (l.id + ' ' + l.produtos).toLowerCase().includes(q)))
         .sort((a, b) => Math.abs(b.diferenca || 0) - Math.abs(a.diferenca || 0) || String(b.dia).localeCompare(String(a.dia)));
     const n = (k) => D.linhas.filter(l => situacao(l) === k).length;
     const soma = (k) => D.linhas.filter(l => situacao(l) === k).reduce((s, l) => s + (l.diferenca || 0), 0);
-    $('conta').innerHTML = `${D.linhas.length} pedidos · ${n('ok')} batem · ${n('exp')} com diferença explicada (${brl(soma('exp'))}) · <b style="color:#ff453a">${n('dif')} com diferença (${brl(soma('dif'))})</b> · ${n('ag')} a liberar (ainda não caiu no MP) · ${n('dev')} devolvidos${L.length !== D.linhas.length ? ` · mostrando ${L.length}` : ''}`;
+    $('conta').innerHTML = `${D.linhas.length} pedidos · ${n('ok')} batem · ${n('exp')} com diferença explicada (${brl(soma('exp'))}) · ${n('fr')} com frete ajustado (${brl(soma('fr'))}) · <b style="color:#ff453a">${n('dif')} com diferença (${brl(soma('dif'))})</b> · ${n('ag')} a liberar (ainda não caiu no MP) · ${n('dev')} devolvidos${L.length !== D.linhas.length ? ` · mostrando ${L.length}` : ''}`;
     $('tab').innerHTML = `<thead><tr><th>Pedido</th><th>Data</th><th>Envio</th><th style="text-align:right">Venda</th><th style="text-align:right">Recebido no ML</th><th style="text-align:right">Caiu no MP</th><th style="text-align:right">Diferença</th><th>Situação</th></tr></thead><tbody>`
         + L.slice(0, 600).map(l => { const s = situacao(l), m = l.trilhas && l.trilhas.mp;
             return `<tr><td><b>${l.id}</b><div class="f">${esc(l.produtos)}</div></td><td>${l.dia.split('-').reverse().join('/')}</td><td>${esc(l.envio || '—')}</td>
                 <td style="text-align:right">${brl(l.venda)}</td><td style="text-align:right">${brl(l.esperado)}</td><td style="text-align:right">${l.liberado ? brl(l.recebido) : `<span class="f">—</span>`}</td>
                 <td style="text-align:right;color:${s === 'dif' ? '#ff453a' : 'inherit'}">${l.diferenca == null ? '—' : brl(l.diferenca)}</td>
-                <td><span class="pill ${SIT[s][0]}">${SIT[s][1]}</span>${s === 'ag' && l.previsto != null ? `<div class="f">MP prevê ${brl(l.previsto)}${l.libera_em ? ' · libera em ' + l.libera_em.slice(0, 10).split('-').reverse().join('/') : ''}</div>` : ''}${s === 'exp' ? `<div class="f">${esc(l.explicado)}</div>` : s === 'dif' && l.comparativo ? `<div class="f">Tarifa: ML ${brl(l.comparativo.tarifa_ml)} × MP ${brl(l.comparativo.tarifa_mp)}<br>Frete: ML ${brl(l.comparativo.frete_ml)} × MP ${brl(l.comparativo.frete_mp)}${l.comparativo.cupom_mp ? ` · cupom no MP ${brl(l.comparativo.cupom_mp)}` : ''}</div>` : ''}</td></tr>`; }).join('')
+                <td><span class="pill ${SIT[s][0]}">${SIT[s][1]}</span>${s === 'ag' && l.previsto != null ? `<div class="f">MP prevê ${brl(l.previsto)}${l.libera_em ? ' · libera em ' + l.libera_em.slice(0, 10).split('-').reverse().join('/') : ''}</div>` : ''}${s === 'exp' ? `<div class="f">${esc(l.explicado)}</div>` : (s === 'fr' || s === 'dif') && l.causa && l.causa.partes.length ? `<div class="f">${l.causa.partes.map(x => esc(x.txt)).join('<br>')}${l.causa.sem_explicacao ? `<br>Sem explicação: ${brl(l.causa.sem_explicacao)}` : ''}</div>` : s === 'dif' && l.comparativo ? `<div class="f">Tarifa: ML ${brl(l.comparativo.tarifa_ml)} × MP ${brl(l.comparativo.tarifa_mp)}<br>Frete: ML ${brl(l.comparativo.frete_ml)} × MP ${brl(l.comparativo.frete_mp)}${l.comparativo.cupom_mp ? ` · cupom no MP ${brl(l.comparativo.cupom_mp)}` : ''}</div>` : ''}</td></tr>`; }).join('')
         + (L.length > 600 ? `<tr><td colspan="8" class="f">mostrando os 600 primeiros de ${L.length}</td></tr>` : '') + '</tbody>';
 }
 function desenhar() { tabela(); }

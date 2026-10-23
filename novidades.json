@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.114",
+    "data": "2026-10-23",
+    "titulo": "Finance alinhado",
+    "texto": "Finance alinhado: o DRE fecha com a Planilha avançada centavo a centavo; a Conciliação ML × MP mostra a causa de cada diferença; Contas a receber no visual do Olist (abas, filtros e gavetas por dia); o saldo do Mercado Pago desconta os boletos pagos com o saldo; Contas a pagar da Cordeiro lê o Olist dela."
+  },
+  {
     "versao": "1.9.113",
     "data": "2026-10-23",
     "titulo": "Contas a receber em gavetas e Conciliação em 45 dias",

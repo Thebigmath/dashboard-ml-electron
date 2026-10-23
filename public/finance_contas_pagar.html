@@ -93,7 +93,7 @@
             <option value="paga">Pagas</option>
             <option value="cancelada">Canceladas</option>
         </select>
-        <button class="bt-verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar do Bling</button>
+        <button class="bt-verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar contas</button>
     </div>
 
     <div class="cards-ia" id="cardsIA"></div>
@@ -129,7 +129,7 @@
             <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
             <h4>Informações</h4>
             <div class="info" id="info"></div>
-            <div class="rodape-nota">Contas lançadas no Bling (Financeiro › Contas a pagar), lidas pela API. Só leitura: baixar ou pagar continua no Bling.</div>
+            <div class="rodape-nota">Contas lançadas no ERP desta empresa (Bling na Flavia, Olist na Cordeiro), lidas pela API. Só leitura: baixar ou pagar continua no ERP.</div>
         </aside>
     </div>
 </div></main></div>
@@ -171,9 +171,9 @@ function linha(l) {
 }
 function desenhar() {
     if (!D) return;
-    if (!D.lido) { $('notaFiltro').innerHTML = 'Ainda não há contas lidas do Bling. Clique em <b>Atualizar do Bling</b>.'; $('tb').innerHTML = ''; return; }
+    if (!D.lido) { $('notaFiltro').innerHTML = 'Ainda não há contas lidas do Bling. Clique em <b>Atualizar contas</b>.'; $('tb').innerHTML = ''; return; }
     const L = filtrados(), total = L.reduce((s, l) => s + l.valor, 0);
-    $('notaFiltro').innerHTML = `${L.length} contas · <b style="color:var(--l1)">R$ ${brl(total)}</b> com vencimento de ${dataBR($('de').value)} até ${dataBR($('ate').value)} · lidas do Bling ${D.atualizado_em ? new Date(D.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}`;
+    $('notaFiltro').innerHTML = `${L.length} contas · <b style="color:var(--l1)">R$ ${brl(total)}</b> com vencimento de ${dataBR($('de').value)} até ${dataBR($('ate').value)} · lidas ${D.atualizado_em ? new Date(D.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}`;
     const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
     $('tb').innerHTML = fatia.map(linha).join('') || '<tr><td colspan="7" style="color:var(--l3)">Nenhuma conta com esse filtro.</td></tr>';
     const pags = Math.max(1, Math.ceil(L.length / POR));
@@ -221,7 +221,7 @@ async function acompanhar() {
     if (!e) return;
     const b = $('btAtualizar'); b.disabled = e.rodando; clearTimeout(timer);
     if (e.rodando) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${e.total ? `${e.feito} de ${e.total}` : 'Atualizando…'}`; $('notaFiltro').textContent = e.etapa || ''; b.dataset.r = '1'; timer = setTimeout(acompanhar, 2000); }
-    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do Bling'; if (b.dataset.r) { delete b.dataset.r; await carregar(); } if (e.erro) $('notaFiltro').innerHTML = `<span style="color:var(--verm-t)">${esc(e.erro)}</span>`; }
+    else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar contas'; if (b.dataset.r) { delete b.dataset.r; await carregar(); } if (e.erro) $('notaFiltro').innerHTML = `<span style="color:var(--verm-t)">${esc(e.erro)}</span>`; }
     return e;
 }
 carregar(); acompanhar();
