@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.123",
+    "data": "2026-10-26",
+    "titulo": "Notas de fornecedores: campos de pagamento no tema escuro",
+    "texto": "- Finance → Notas de fornecedores: os campos \"Conta de origem do pagamento\" e a data do pagamento, no rodapé da nota, apareciam brancos no tema escuro; agora seguem o mesmo estilo dos outros campos da tabela."
+  },
+  {
     "versao": "1.9.122",
     "data": "2026-10-26",
     "titulo": "Notas de fornecedores: marcar como paga (baixa no Olist)",
