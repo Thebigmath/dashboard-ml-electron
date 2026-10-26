@@ -1233,6 +1233,8 @@ router.post('/finance/saldo-mp/ancora', auth, (req, res) => res.json(require('..
 // contas a pagar (Bling, pelo motor Nexus) e os 3 cards da IA
 router.get('/finance/contas-pagar', auth, (req, res) => { try { const d = (k) => /^\d{4}-\d{2}-\d{2}$/.test(req.query[k] || '') ? req.query[k] : null; res.json(require('../lib/finance_contas_pagar').listar({ de: d('de'), ate: d('ate') })); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/contas-pagar/atualizar', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').atualizar(req.body || {})));
+router.post('/finance/contas-pagar/baixar', auth, (req, res) => { try { res.json(require('../lib/finance_contas_pagar').baixar(req.body || {})); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.get('/finance/contas-pagar/baixar/estado', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').estadoBaixa()));
 router.get('/finance/contas-pagar/estado', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').estado()));
 router.post('/finance/contas-pagar/ia', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').analisarIA()));
 router.get('/finance/contas-pagar/ia', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').cardsIA()));

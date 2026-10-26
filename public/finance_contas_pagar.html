@@ -76,6 +76,17 @@
         .pag { display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:10px; font-size:13px; color:var(--l3); }
         .pag button { border:1px solid var(--sep); background:var(--s1); color:var(--l1); border-radius:6px; padding:3px 10px; cursor:pointer; }
         @media (max-width: 1100px) { .grade { grid-template-columns:minmax(0,1fr); } .lateral { position:static; } .bt-verde { min-width:0; } }
+        .bt-baixa { border:1px solid var(--verde); background:transparent; color:var(--verde); border-radius:7px; padding:4px 10px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+        .bt-baixa:hover { background:var(--verde-f); }
+        .md { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:50; } .md[hidden] { display:none; }
+        .md-c { width:min(500px,92vw); max-height:90vh; overflow:auto; background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:20px 22px; color:var(--l1); }
+        .md-c h3 { font-size:20px; margin:0 0 10px; display:flex; align-items:center; gap:8px; } .md-c h3 i { color:var(--verde); }
+        .md-c label { display:block; font-size:13px; color:var(--l2); margin-top:12px; }
+        .md-c input { display:block; width:100%; margin-top:4px; background:var(--s2); border:1px solid var(--sep); border-radius:8px; color:var(--l1); padding:8px 10px; font-size:14px; box-sizing:border-box; }
+        .md-lista { margin-top:8px; font-size:12.5px; color:var(--l2); max-height:140px; overflow:auto; } .md .fraco, .md-info { color:var(--l3); font-size:12px; line-height:1.45; } .md-info { margin-top:12px; }
+        .md-b { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+        .md-b button { padding:9px 18px; border-radius:8px; border:1px solid var(--sep); background:var(--s2); color:var(--l1); cursor:pointer; font-size:14px; } .md-b button:disabled { opacity:.55; cursor:not-allowed; }
+        .md-b .ok { background:var(--verde); border-color:var(--verde); color:#fff; font-weight:700; }
     </style>
 <script src="/assets/js/shell.js"></script>
 </head>
@@ -117,6 +128,7 @@
                     <th onclick="ordenar('vencimento')">Vencimento</th>
                     <th class="n" onclick="ordenar('valor')">Valor</th>
                     <th onclick="ordenar('situacao')">Situação</th>
+                    <th></th>
                 </tr></thead>
                 <tbody id="tb"></tbody>
             </table>
@@ -125,12 +137,26 @@
         </div>
 
         <aside class="lateral">
+            <a id="acBaixa" class="desligado" onclick="baixaAbrir([...sel])"><i class="bi bi-cash-coin"></i><span>Marcar selecionados como pagos</span></a>
             <a id="acSel" class="desligado" onclick="exportar(true)"><i class="bi bi-check-circle-fill"></i><span>Exportar selecionados</span></a>
             <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
             <h4>Informações</h4>
             <div class="info" id="info"></div>
-            <div class="rodape-nota">Contas lançadas no Olist desta empresa (o sistema oficial), lidas pela API. As notas de fornecedores subidas na aba Notas entram aqui pela ponte. Só leitura: baixar ou pagar continua no Olist.</div>
+            <div class="rodape-nota">Contas lançadas no Olist desta empresa (o sistema oficial), lidas pela API. As notas de fornecedores subidas na aba Notas entram aqui pela ponte. Marcar como paga dá a baixa no Olist (só em conta aberta; o app confere antes e depois). Alterar ou cancelar contas continua no Olist.</div>
         </aside>
+    </div>
+    <div class="md" id="mdBaixa" hidden>
+        <div class="md-c">
+            <h3><i class="bi bi-cash-coin"></i> Marcar como paga no Olist</h3>
+            <div id="mdResumo"></div>
+            <div id="mdForm">
+                <label>Data do pagamento<input type="date" id="mdData"></label>
+                <label>Conta de origem do pagamento (opcional)<input id="mdOrigem" placeholder="padrão do Olist" autocomplete="off"></label>
+                <div class="md-info">O Olist dá a baixa na conta a pagar, como o botão Baixar do Olist. Só baixa conta em aberto e com o mesmo valor; o app confere antes e depois. A conta de origem precisa estar escrita igual à do Olist.</div>
+            </div>
+            <div id="mdMsg" style="margin-top:12px;font-size:13px"></div>
+            <div class="md-b"><button id="mdCancel" onclick="baixaFechar()">Cancelar</button><button class="ok" id="mdOk" onclick="baixaConfirmar()">Confirmar baixa</button></div>
+        </div>
     </div>
 </div></main></div>
 <script>
@@ -147,8 +173,8 @@ $('de').value = dia(-30); $('ate').value = dia(40);
 
 async function carregar() {
     try { D = await fetch(`/api/finance/contas-pagar?de=${$('de').value}&ate=${$('ate').value}`).then(x => x.json()); }
-    catch (e) { $('tb').innerHTML = `<tr><td colspan="7" style="color:#ff453a">${esc(e.message)}</td></tr>`; return; }
-    if (D.erro) { $('tb').innerHTML = `<tr><td colspan="7" style="color:#ff453a">${esc(D.erro)}</td></tr>`; return; }
+    catch (e) { $('tb').innerHTML = `<tr><td colspan="8" style="color:#ff453a">${esc(e.message)}</td></tr>`; return; }
+    if (D.erro) { $('tb').innerHTML = `<tr><td colspan="8" style="color:#ff453a">${esc(D.erro)}</td></tr>`; return; }
     sel.clear(); pagina = 1; desenhar(); info(); cards();
 }
 function filtrados() {
@@ -161,13 +187,14 @@ function filtrados() {
 }
 function ordenar(k) { ordem = { k, asc: ordem.k === k ? !ordem.asc : k !== 'valor' }; desenhar(); }
 function linha(l) {
-    return `<tr><td><input type="checkbox" class="chk" ${sel.has(l.id) ? 'checked' : ''} onchange="marcar(${l.id}, this.checked)" aria-label="Selecionar"></td>
+    return `<tr><td><input type="checkbox" class="chk" ${sel.has(String(l.id)) ? 'checked' : ''} onchange="marcar('${esc(String(l.id))}', this.checked)" aria-label="Selecionar"></td>
         <td>${esc(l.fornecedor)}</td>
         <td class="hist" title="${esc(l.historico)}">${esc(l.historico || l.documento || '—')}${l.categoria ? `<small>${esc(l.categoria)}</small>` : ''}</td>
         <td>${esc(l.forma)}</td>
         <td>${dataBR(l.vencimento)}</td>
         <td class="n">${brl(l.valor)}</td>
-        <td><span class="pill p-${l.situacao}">${SIT[l.situacao] || l.situacao}</span></td></tr>`;
+        <td><span class="pill p-${l.situacao}">${SIT[l.situacao] || l.situacao}</span></td>
+        <td class="n">${podeBaixar(l) ? `<button class="bt-baixa" title="Marcar como paga no Olist" onclick="baixaAbrir(['${esc(String(l.id))}'])"><i class="bi bi-cash-coin"></i> Marcar como paga</button>` : ''}</td></tr>`;
 }
 function desenhar() {
     if (!D) return;
@@ -175,15 +202,18 @@ function desenhar() {
     const L = filtrados(), total = L.reduce((s, l) => s + l.valor, 0);
     $('notaFiltro').innerHTML = `${L.length} contas · <b style="color:var(--l1)">R$ ${brl(total)}</b> com vencimento de ${dataBR($('de').value)} até ${dataBR($('ate').value)} · lidas ${D.atualizado_em ? new Date(D.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}`;
     const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
-    $('tb').innerHTML = fatia.map(linha).join('') || '<tr><td colspan="7" style="color:var(--l3)">Nenhuma conta com esse filtro.</td></tr>';
+    $('tb').innerHTML = fatia.map(linha).join('') || '<tr><td colspan="8" style="color:var(--l3)">Nenhuma conta com esse filtro.</td></tr>';
     const pags = Math.max(1, Math.ceil(L.length / POR));
     $('pag').innerHTML = pags > 1 ? `<button ${pagina <= 1 ? 'disabled' : ''} onclick="pagina--;desenhar()">‹</button> ${pagina} / ${pags} <button ${pagina >= pags ? 'disabled' : ''} onclick="pagina++;desenhar()">›</button>` : '';
-    $('todos').checked = fatia.length > 0 && fatia.every(l => sel.has(l.id));
+    $('todos').checked = fatia.length > 0 && fatia.every(l => sel.has(String(l.id)));
     $('acSel').classList.toggle('desligado', !sel.size);
     $('acSel').querySelector('span').textContent = sel.size ? `Exportar selecionados (${sel.size})` : 'Exportar selecionados';
+    const nBaixa = D.linhas.filter(l => sel.has(String(l.id)) && podeBaixar(l)).length;
+    $('acBaixa').style.display = ehOlist() ? '' : 'none'; $('acBaixa').classList.toggle('desligado', !nBaixa);
+    $('acBaixa').querySelector('span').textContent = nBaixa ? `Marcar selecionados como pagos (${nBaixa})` : 'Marcar selecionados como pagos';
 }
 function marcar(id, v) { v ? sel.add(id) : sel.delete(id); desenhar(); }
-function marcarTodos(v) { const L = filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(l.id) : sel.delete(l.id); desenhar(); }
+function marcarTodos(v) { const L = filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(String(l.id)) : sel.delete(String(l.id)); desenhar(); }
 function info() {
     const R = D.resumo;
     if (!R) { $('info').innerHTML = '<div><span>Quantidade de contas a pagar</span><b>—</b></div>'; return; }
@@ -207,7 +237,7 @@ async function cards() {
 async function pedirIA() { const r = await fetch('/api/finance/contas-pagar/ia', { method: 'POST' }).then(x => x.json()).catch(e => ({ erro: e.message })); if (!r.ok) { $('iaRod').textContent = r.erro || 'não deu'; return; } setTimeout(cards, 800); }
 function exportar(soSel) {
     if (!D || !D.lido) return;
-    const L = filtrados().filter(l => !soSel || sel.has(l.id));
+    const L = filtrados().filter(l => !soSel || sel.has(String(l.id)));
     const csv = ['Vencimento;Fornecedor;Histórico;Categoria;Forma de pagamento;Valor;Situação'].concat(L.map(l => [dataBR(l.vencimento), l.fornecedor, l.historico, l.categoria, l.forma, String(l.valor).replace('.', ','), SIT[l.situacao]].map(x => String(x || '').replace(/;/g, ',')).join(';'))).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); a.download = `contas_a_pagar_${$('de').value}_a_${$('ate').value}.csv`; a.click();
 }
@@ -224,6 +254,43 @@ async function acompanhar() {
     else { b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar contas'; if (b.dataset.r) { delete b.dataset.r; await carregar(); } if (e.erro) $('notaFiltro').innerHTML = `<span style="color:var(--verm-t)">${esc(e.erro)}</span>`; }
     return e;
 }
+// ---- marcar como paga no Olist (como o Baixar do Olist): uma conta pela linha ou varias pelas caixinhas
+const ELEG = ['aberta', 'vence_hoje', 'atrasada'];
+const ehOlist = () => !!D && /olist/i.test(D.fonte || '');
+const podeBaixar = (l) => ehOlist() && ELEG.includes(l.situacao);
+let baixaIds = [], baixaTimer = null;
+function baixaAbrir(ids) {
+    if (!D || !D.lido) return;
+    const L = D.linhas.filter(l => ids.includes(String(l.id)) && podeBaixar(l));
+    if (!L.length) { alert('Escolha contas em aberto.'); return; }
+    baixaIds = L.map(l => String(l.id)); const tot = L.reduce((s, l) => s + l.valor, 0), ign = ids.length - L.length;
+    $('mdResumo').innerHTML = `<b>${L.length}</b> conta(s) · <b>R$ ${brl(tot)}</b>${ign ? `<div class="fraco">${ign} selecionada(s) ignorada(s): só contas em aberto.</div>` : ''}<div class="md-lista">${L.slice(0, 8).map(l => `<div>${dataBR(l.vencimento)} · ${esc(l.fornecedor)} · R$ ${brl(l.valor)}</div>`).join('')}${L.length > 8 ? `<div>… e mais ${L.length - 8}</div>` : ''}</div>`;
+    $('mdData').value = dia(0); $('mdData').max = dia(0);
+    try { $('mdOrigem').value = localStorage.getItem('cp_origem') || ''; } catch { $('mdOrigem').value = ''; }
+    $('mdMsg').textContent = ''; $('mdOk').disabled = false; $('mdOk').style.display = ''; $('mdCancel').disabled = false; $('mdCancel').textContent = 'Cancelar'; $('mdForm').style.display = ''; $('mdBaixa').hidden = false;
+}
+function baixaFechar() { if (!baixaTimer) $('mdBaixa').hidden = true; }
+async function baixaConfirmar() {
+    const data = $('mdData').value, origem = $('mdOrigem').value.trim();
+    if (!data) { $('mdMsg').textContent = 'Informe a data do pagamento.'; return; }
+    try { localStorage.setItem('cp_origem', origem); } catch {}
+    $('mdOk').disabled = true; $('mdMsg').textContent = 'Enviando…';
+    const r = await fetch('/api/finance/contas-pagar/baixar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: baixaIds, data, conta_origem: origem }) }).then(x => x.json()).catch(e => ({ erro: e.message }));
+    if (!r.ok) { $('mdMsg').innerHTML = `<span style="color:var(--verm-t)">${esc(r.erro || 'não deu')}</span>`; $('mdOk').disabled = false; return; }
+    $('mdForm').style.display = 'none'; baixaAcompanhar();
+}
+async function baixaAcompanhar() {
+    const e = await fetch('/api/finance/contas-pagar/baixar/estado').then(x => x.json()).catch(() => null); if (!e) return;
+    clearTimeout(baixaTimer); baixaTimer = null;
+    if (e.rodando) { $('mdMsg').innerHTML = `<i class="bi bi-hourglass-split"></i> ${esc(e.etapa || 'Trabalhando…')} ${e.total ? `(${e.feito} de ${e.total})` : ''}`; $('mdOk').style.display = 'none'; $('mdCancel').disabled = true; baixaTimer = setTimeout(baixaAcompanhar, 1200); return; }
+    $('mdCancel').disabled = false; $('mdCancel').textContent = 'Fechar'; $('mdOk').style.display = 'none';
+    const R = e.resultados || [], cont = {}; for (const x of R) cont[x.status] = (cont[x.status] || 0) + 1;
+    const nome = { paga: 'paga(s)', ja_paga: 'já estava(m) paga(s)', baixa_sem_confirmacao: 'baixa(s) sem confirmação', erro: 'com problema' };
+    $('mdMsg').innerHTML = (e.erro ? `<div style="color:var(--verm-t)">${esc(e.erro)}</div>` : '') + `<div>${Object.entries(cont).map(([k, v]) => `<span class="pill p-${k === 'paga' || k === 'ja_paga' ? 'paga' : 'atrasada'}">${v} ${nome[k] || k}</span>`).join(' ')}</div>`
+        + R.filter(x => !['paga', 'ja_paga'].includes(x.status)).slice(0, 10).map(x => `<div class="fraco">${dataBR(x.vencimento)} · ${esc(x.fornecedor)} · R$ ${brl(x.valor)}: ${esc(x.motivo || x.status)}</div>`).join('');
+    await carregar();
+}
+fetch('/api/finance/contas-pagar/baixar/estado').then(x => x.json()).then(e => { if (e && e.rodando) { $('mdResumo').textContent = ''; $('mdForm').style.display = 'none'; $('mdBaixa').hidden = false; baixaAcompanhar(); } }).catch(() => {});
 carregar(); acompanhar();
 document.body.classList.add('page-ready');
 </script>

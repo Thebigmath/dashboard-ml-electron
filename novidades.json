@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.124",
+    "data": "2026-10-26",
+    "titulo": "Contas a pagar: marcar como paga (baixa no Olist)",
+    "texto": "- Finance → Contas a pagar: marcar como paga, como no Olist. Cada conta em aberto ganhou o botão \"Marcar como paga\", e as caixinhas de seleção ganharam \"Marcar selecionados como pagos\" (data do pagamento e conta de origem opcional). O app confere no Olist antes (a conta existe, está aberta e com o mesmo valor) e depois (situação \"paga\"), e só então atualiza a lista; conta cancelada, já paga ou paga em parte não é baixada. Também corrigi as caixinhas de seleção, que davam erro com as contas do Olist."
+  },
+  {
     "versao": "1.9.123",
     "data": "2026-10-26",
     "titulo": "Notas de fornecedores: campos de pagamento no tema escuro",
