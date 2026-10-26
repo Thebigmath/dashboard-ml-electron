@@ -24,6 +24,19 @@
         .ini-ola h1 b { font-weight:600; }
         .ini-ola .hora { margin-top:10px; font-size:clamp(17px, 1.6vw, 22px); color:var(--l2); font-variant-numeric:tabular-nums; }
         .ini-ola .conta { margin-top:6px; font-size:13px; color:var(--l3); }
+        /* faturamento de ontem: o numero principal do dia, no hub, ao lado da saudacao */
+        .ini-fat { min-width:290px; max-width:340px; border-radius:22px; padding:20px 26px; position:relative; overflow:hidden;
+            background:linear-gradient(135deg, color-mix(in srgb, #30D158 28%, var(--s1)) 0%, color-mix(in srgb, var(--s1) 72%, transparent) 100%);
+            border:1px solid color-mix(in srgb, #30D158 38%, transparent);
+            -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); box-shadow:0 12px 34px rgba(0,0,0,.16); }
+        .ini-fat .r { font-size:11px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase; color:var(--l2); display:flex; align-items:center; gap:7px; }
+        .ini-fat .r i { color:#30D158; font-size:14px; }
+        .ini-fat .v { font-size:clamp(30px, 3vw, 40px); font-weight:800; color:var(--l1); line-height:1.1; margin:8px 0 5px; letter-spacing:-.8px; font-variant-numeric:tabular-nums; }
+        .ini-fat .s { font-size:13px; color:var(--l2); }
+        .ini-fat .s b { color:var(--l1); }
+        .ini-fat .mais { margin-top:12px; padding-top:11px; border-top:1px solid color-mix(in srgb, var(--l1) 12%, transparent); display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--l3); }
+        .ini-fat .mais b { display:block; color:var(--l1); font-size:14.5px; font-variant-numeric:tabular-nums; margin-top:1px; }
+        .ini-fat .carregando { color:var(--l3); font-size:13px; padding:6px 0; }
         .ini-cols { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px; max-width:1300px; width:100%; margin:0 auto; }
         @media (max-width: 1000px) { .ini-cols { grid-template-columns:1fr; } }
         .ini-sec { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--l3); margin:0 0 10px; display:flex; align-items:center; gap:8px; }
@@ -119,6 +132,7 @@
                     <div class="hora" id="relogio">&nbsp;</div>
                     <div class="conta" id="conta">&nbsp;</div>
                 </div>
+                <div class="ini-fat" id="fat" title="Pedidos do Mercado Livre desta conta, sem cancelados"><div class="r"><i class="bi bi-cash-coin"></i> Faturado ontem</div><div class="carregando">Carregando…</div></div>
             </section>
 
             <div class="ini-cols">
@@ -186,6 +200,21 @@ function relogio() {
     document.getElementById('relogio').textContent = `${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${dia}`;
 }
 relogio(); setInterval(relogio, 15000);
+// faturamento de ontem / mes / ano (mesmo resumo de sempre: /api/inicio/faturamento)
+const reais = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+async function carregarFat() {
+    const el = document.getElementById('fat');
+    try {
+        const r = await fetch('/api/inicio/faturamento').then(x => x.json());
+        if (!r || !r.ontem) throw new Error(r && r.erro ? r.erro : 'sem dados');
+        const o = r.ontem, dia = o.dia ? o.dia.split('-').reverse().slice(0, 2).join('/') : '';
+        el.innerHTML = `<div class="r"><i class="bi bi-cash-coin"></i> Faturado ontem${dia ? ' · ' + dia : ''}</div>
+            <div class="v">${reais(o.valor)}</div>
+            <div class="s"><b>${o.pedidos}</b> pedido${o.pedidos === 1 ? '' : 's'}${o.pedidos ? ` · ticket médio <b>${reais(o.valor / o.pedidos)}</b>` : ''}</div>
+            <div class="mais"><div>${esc(r.mes.nome || 'Mês')} até dia ${r.mes.ate_dia}<b>${reais(r.mes.valor)}</b></div><div>Ano ${r.ano.ano}<b>${reais(r.ano.valor)}</b></div></div>`;
+    } catch (e) { el.innerHTML = `<div class="r"><i class="bi bi-cash-coin"></i> Faturado ontem</div><div class="carregando">Não consegui ler agora (${esc(e.message)}). Tento de novo sozinho.</div>`; }
+}
+carregarFat(); setInterval(carregarFat, 15 * 60 * 1000);
 fetch('/api/app_info').then(r => r.json()).then(i => { document.getElementById('conta').textContent = `${i.nome || ''} · SEVEN v${i.versao || ''}`; }).catch(() => {});
 
 async function carregarNoticias() {

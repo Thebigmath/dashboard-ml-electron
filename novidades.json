@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.117",
+    "data": "2026-10-26",
+    "titulo": "Faturamento de ontem no Início",
+    "texto": "- Início: o faturamento de ontem (valor, pedidos e ticket médio) agora aparece no hub, ao lado do Bom dia, com o total do mês até hoje e do ano. É o mesmo cálculo de sempre: pedidos desta conta, sem os cancelados. Atualiza sozinho a cada 15 minutos."
+  },
+  {
     "versao": "1.9.116",
     "data": "2026-10-26",
     "titulo": "Notícias urgentes em tela cheia (correção)",
