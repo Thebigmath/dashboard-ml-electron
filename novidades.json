@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.121",
+    "data": "2026-10-26",
+    "titulo": "Token do Olist cadastrado pela tela",
+    "texto": "- Finance → Notas de fornecedores: o token do Olist agora pode ser cadastrado direto na tela. O app testa o token no Olist antes de gravar, mostra de qual empresa/CNPJ ele é e só guarda se for da empresa deste app (ou se você confirmar que é de outra). O token nunca volta para a tela depois de salvo.\n- A leitura e a conferência das notas continuam funcionando mesmo sem token; o envio exige token cadastrado."
+  },
+  {
     "versao": "1.9.120",
     "data": "2026-10-26",
     "titulo": "Notas de fornecedores: sem nota de teste e sem o Hub de Pedidos",

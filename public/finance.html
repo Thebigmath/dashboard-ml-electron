@@ -32,6 +32,7 @@
         .nc-drop { border:2px dashed var(--sep); border-radius:14px; padding:22px; text-align:center; font-size:15px; color:var(--l2); margin:10px 0; transition:border-color .15s, background .15s; }
         .nc-drop.on { border-color:#30D158; background:rgba(48,209,88,.08); } .nc-drop i { font-size:24px; vertical-align:middle; margin-right:8px; color:#30D158; }
         .link-nc { color:var(--blue); cursor:pointer; text-decoration:underline; }
+        .nc-token { border:1px solid var(--sep); border-radius:12px; padding:10px 14px; margin:8px 0; background:var(--s2); font-size:13px; } .nc-token input { padding:8px 10px; border-radius:8px; border:1px solid var(--sep); background:var(--s1); color:inherit; }
         .nc-chips { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:12px 0 8px; } .nc-acoes { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
         .nc-res { background:var(--s2); border:1px solid var(--sep); border-radius:12px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
         .nc-nota { border:1px solid var(--sep); border-left:4px solid #30D158; border-radius:12px; padding:12px 14px; margin-bottom:10px; background:var(--s1); }
@@ -284,6 +285,12 @@ function ncDesenhar() {
       <div class="fraco" style="margin-bottom:10px">Suba os PDFs das notas (DANFE). A IA lê a <b>FATURA / DUPLICATA</b>, o motor confere com o texto do PDF e a ponte lança <b>uma conta por parcela</b> no Contas a pagar do Olist. <b>Nada vai ao Olist sem você conferir e clicar em enviar.</b></div>`;
     if (E.razao_social) h += `<div class="fraco" style="margin-bottom:8px"><i class="bi bi-plug"></i> Olist conectado: <b>${esc(E.razao_social)}</b>${E.fantasia ? ' (' + esc(E.fantasia) + ')' : ''} · CNPJ ${esc(E.cnpj)}. Só entram notas cujo destinatário é esta empresa.</div>`;
     if (!nc.olist_token) h += `<div class="aviso-nc">O token do Olist da ${esc(E.nome)} não está cadastrado neste PC: dá para ler e conferir as notas, mas não enviar.</div>`;
+    if (!nc.olist_token || ncTokenAberto) h += `<div class="nc-token"><b><i class="bi bi-key"></i> ${nc.olist_token ? 'Trocar' : 'Cadastrar'} o token do Olist da ${esc(E.nome)}</b>
+        <div class="fraco">No Olist: Configurações → Mais opções → Integrações → API (token da API v2). Cole aqui; o app testa no Olist, mostra de quem é e só então guarda neste PC.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><input type="password" id="ncTokenIn" autocomplete="off" spellcheck="false" placeholder="Cole o token aqui" style="flex:1;min-width:260px" onkeydown="if(event.key==='Enter')ncSalvarToken()">
+        <button class="btn-acao pri" onclick="ncSalvarToken()"><i class="bi bi-shield-check"></i> Testar e salvar</button>${nc.olist_token ? ' <button class="btn-acao" onclick="ncTokenAberto=false;ncDesenhar()">Cancelar</button>' : ''}</div>
+        <div class="fraco" id="ncTokenMsg" style="margin-top:6px"></div></div>`;
+    else h += `<div class="fraco" style="margin-bottom:6px"><i class="bi bi-check-circle"></i> Token do Olist cadastrado neste PC. <a class="link-nc" onclick="ncTokenAberto=true;ncDesenhar()">Trocar token</a></div>`;
     if (semCnpj) h += `<div class="aviso-nc">O CNPJ da empresa ${esc(E.nome)} ainda não está configurado, então não dá para saber se a nota é desta empresa. ${dest ? `Destinatário da última nota lida: <b>${esc(dest.nome)}</b> (${esc(dest.cnpj)}). <button class="btn-acao" onclick="ncCnpj('${esc(dest.cnpj)}')">É a empresa ${esc(E.nome)}: usar este CNPJ</button>` : 'Leia uma nota e confirme aqui.'}</div>`;
     h += `<div class="nc-drop" id="ncDrop" ondragover="event.preventDefault();this.classList.add('on')" ondragleave="this.classList.remove('on')" ondrop="event.preventDefault();this.classList.remove('on');ncEnviarArquivos(event.dataTransfer.files)">
         <i class="bi bi-file-earmark-pdf"></i> Arraste os PDFs aqui ou <label class="link-nc"><input type="file" id="ncArq" accept="application/pdf,.pdf" multiple style="display:none" onchange="ncEnviarArquivos(this.files)">escolha os arquivos</label>
@@ -350,6 +357,21 @@ async function ncEnviar(opc) {
 async function ncPar(id, n, campo) { try { await post('/api/finance/notas-contas/' + id, { parcelas: [{ n, ...campo }] }); } catch (e) { alert(e.message); } ncCarregar(true); }
 async function ncNotaCampo(id, campo) { try { await post('/api/finance/notas-contas/' + id, campo); } catch (e) { alert(e.message); } ncCarregar(true); }
 async function ncRemover(id) { if (!confirm('Tirar esta nota da lista? (o PDF guardado também sai)')) return; const r = await fetch('/api/finance/notas-contas/' + id, { method: 'DELETE' }).then(x => x.json()); if (r.erro) alert(r.erro); ncCarregar(true); }
+let ncTokenAberto = false;
+async function ncSalvarToken(confirmarOutra) {
+    const el = $('ncTokenIn'), msg = $('ncTokenMsg'); if (!el || !msg) return;
+    const token = el.value.trim(); if (!token) { msg.textContent = 'Cole o token primeiro.'; return; }
+    msg.textContent = 'Testando no Olist…';
+    try {
+        const r = await post('/api/finance/notas-contas/token', { token, confirmar_outra: !!confirmarOutra });
+        if (r.outra_empresa) {
+            if (confirm(r.erro + '\n\nSó guarde se você tem certeza de que é isso mesmo. Guardar este token mesmo assim?')) return ncSalvarToken(true);
+            msg.textContent = 'Nada foi gravado: o token é de outra empresa.'; return;
+        }
+        el.value = ''; ncTokenAberto = false; alert('Olist conectado: ' + r.razao_social);
+    } catch (e) { msg.textContent = e.message; return; }
+    ncCarregar(true);
+}
 async function ncCnpj(cnpj) { try { await post('/api/finance/notas-contas/empresa', { cnpj }); } catch (e) { alert(e.message); } ncCarregar(true); }
 
 function mostrarHub() { $('ntHub').innerHTML = `<iframe src="http://127.0.0.1:${nt.hub_porta}/" style="width:100%;height:72vh;border:1px solid var(--sep);border-radius:12px;background:#fff"></iframe>`; }
