@@ -247,9 +247,6 @@ async function desenharNotas() {
     const tag = (st) => /reserva/.test(st) ? '<span class="tag par">reserva</span>' : /simula/.test(st) ? '<span class="tag alib">simulação</span>' : '<span class="tag lib">organizada</span>';
     $('fnCorpo').innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">
       <div class="fn-box" id="ncBox">Carregando…</div>
-      <div class="fn-box"><h3><i class="bi bi-cloud-upload"></i> Subir notas (Hub de Pedidos)</h3>
-        <div class="fraco" style="margin-bottom:10px">Arraste o PDF do pedido: o hub lê, mostra o fornecedor, o CNPJ (Flavia ou Luan) e a pasta do Drive com o número certo, e só envia quando você confirmar.</div>
-        <div id="ntHub">${nt.hub_no_ar ? '' : `<button class="btn-acao pri" onclick="abrirHub()"><i class="bi bi-play-fill"></i> Abrir o Hub de Pedidos aqui</button> <span class="fraco" id="ntHubMsg"></span>`}</div></div>
       <div class="fn-box"><h3><i class="bi bi-folder-symlink"></i> Organizar a pasta do Drive</h3>
         <div class="fraco" style="margin-bottom:10px">Pega os PDFs soltos na pasta "fornecedores" do Drive, identifica fornecedor e CNPJ, renomeia com o próximo número e move para a pasta certa. O que não der para identificar vai para a Reserva. Primeiro simule: nada é mexido.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-acao" id="ntSim" onclick="organizarNotas(false)"><i class="bi bi-eye"></i> Simular</button>
@@ -260,7 +257,6 @@ async function desenharNotas() {
         ${hist.length ? `<div class="fn-rol"><table class="fn-tab"><tr><th>Quando</th><th>Arquivo</th><th>Fornecedor</th><th>CNPJ</th><th>Pasta</th><th>Situação</th></tr>
           ${hist.map(h => `<tr><td>${esc(h.data_hora)}</td><td class="t"><b>${esc(h.novo_nome)}</b>${h.arquivo_original !== h.novo_nome ? `<div class="fraco">era ${esc(h.arquivo_original)}</div>` : ''}</td><td>${esc(h.fornecedor || '—')}</td><td>${esc(h.destinatario || '—')}</td>
             <td class="fraco" style="text-align:left">${esc(h.pasta)}</td><td>${tag(h.status)}${h.motivo ? `<div class="fraco">${esc(h.motivo)}</div>` : ''}</td></tr>`).join('')}</table></div>` : '<div class="fraco">Nenhuma nota organizada ainda.</div>'}</div></div>`;
-    if (nt.hub_no_ar) mostrarHub();
     if (nt.rodando) acompanharNotas();
     ncCarregar(true);
 }
@@ -296,9 +292,7 @@ function ncDesenhar() {
         h += `<div class="nc-chips"><span class="tag lib">${R.ok} pronta(s)</span><span class="tag alib">${R.conferir} para conferir</span><span class="tag par">${R.bloqueadas} bloqueada(s)</span><span class="tag lib">${R.enviadas} já enviada(s)</span>
           <b style="margin-left:auto">A enviar: ${R.parcelas_a_enviar} parcela(s) · ${ncR(R.valor_a_enviar)}</b></div>
         <div class="nc-acoes"><button class="btn-acao" ${ocup ? 'disabled' : ''} onclick="ncEnviar({ simular: true })"><i class="bi bi-eye"></i> Simular (confere no Olist, não envia nada)</button>
-          <button class="btn-acao pri" ${ocup || !nc.olist_token ? 'disabled' : ''} onclick="ncEnviar({ teste: true })"><i class="bi bi-1-circle"></i> Enviar 1 nota de teste</button>
-          <button class="btn-acao pri" ${ocup || !nc.olist_token || !nc.teste_confirmado_em ? 'disabled' : ''} onclick="ncEnviar({ lote: true })" title="${nc.teste_confirmado_em ? '' : 'Libera depois que a nota de teste for enviada e confirmada no Olist'}"><i class="bi bi-send-check"></i> Enviar todas as prontas</button>
-          <span class="fraco" style="align-self:center">${nc.teste_confirmado_em ? '✓ Teste confirmado em ' + new Date(nc.teste_confirmado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'O envio em lote só abre depois da nota de teste confirmada.'}</span></div>`;
+          <button class="btn-acao pri" ${ocup || !nc.olist_token || !R.parcelas_a_enviar ? 'disabled' : ''} onclick="ncEnviar({ lote: true })"><i class="bi bi-send-check"></i> Enviar todas as prontas</button></div>`;
         h += ncResultados();
         h += nc.notas.map(ncNota).join('');
     }
@@ -346,7 +340,7 @@ async function ncEnviarArquivos(files) {
 }
 async function ncEnviar(opc) {
     if (!opc.simular) {
-        const R = nc.resumo, msg = opc.teste ? 'Enviar UMA nota de teste ao Contas a pagar do Olist?\n\nDepois confira no Olist: o lote só abre quando o teste for confirmado.' : `Enviar ${R.parcelas_a_enviar} parcela(s) (${ncR(R.valor_a_enviar)}) das notas prontas ao Contas a pagar do Olist?\n\nSó seguem as notas "prontas" ou que você confirmou. Cada parcela é conferida no Olist depois de enviada.`;
+        const R = nc.resumo, msg = `Enviar ${R.parcelas_a_enviar} parcela(s) (${ncR(R.valor_a_enviar)}) das notas prontas ao Contas a pagar do Olist ${nc.empresa.razao_social ? '(' + nc.empresa.razao_social + ')' : 'da ' + nc.empresa.nome}?\n\nSó seguem as notas "prontas" ou que você confirmou. Parcela que já existe no Olist não é criada de novo, e cada conta é conferida no Olist depois de enviada.`;
         if (!confirm(msg)) return;
     }
     const r = await post('/api/finance/notas-contas/enviar', opc).catch(e => ({ ok: false, erro: e.message }));

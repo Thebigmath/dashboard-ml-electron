@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.120",
+    "data": "2026-10-26",
+    "titulo": "Notas de fornecedores: sem nota de teste e sem o Hub de Pedidos",
+    "texto": "- Finance → Notas de fornecedores: saiu a caixa \"Subir notas (Hub de Pedidos)\". O bot de notas continua no topo da aba, junto com Organizar a pasta do Drive e o Histórico.\n- Finance → Notas de fornecedores: o envio de uma nota de teste foi desligado. O botão \"Enviar todas as prontas\" fica disponível direto, e a confirmação mostra em qual Olist as contas vão cair. O Simular continua, e as demais conferências também (duplicidade no Olist, notas com aviso só com a sua confirmação, conferência de cada conta depois de enviada)."
+  },
+  {
     "versao": "1.9.119",
     "data": "2026-10-26",
     "titulo": "Notas de fornecedores sem bloqueio por empresa",
