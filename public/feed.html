@@ -498,10 +498,11 @@ function abrirPalco(id = 'manha', origem = null) {
     requestAnimationFrame(() => {
         palco.classList.add('aberto');
         const m = EMBED ? 0 : Math.min(40, innerWidth * .04);   // no AD HEALTH a folha ocupa a area toda (a janela de cima abre espaco)
+        // vw/vh e nao px: o iframe cresce DEPOIS que a folha comeca a abrir, e a folha tem de acompanhar
         folha.style.top = m + 'px';
         folha.style.left = m + 'px';
-        folha.style.width = (innerWidth - m * 2) + 'px';
-        folha.style.height = (innerHeight - m * 2) + 'px';
+        folha.style.width = `calc(100vw - ${m * 2}px)`;
+        folha.style.height = `calc(100vh - ${m * 2}px)`;
         folha.style.borderRadius = EMBED ? '0' : '22px';
     });
     // transitionend nem sempre dispara (se o navegador agrupar os dois quadros,
@@ -538,8 +539,7 @@ function fecharPalco() {
     palco = null;
     document.removeEventListener('keydown', escFecha);
     document.body.style.overflow = '';
-    setTimeout(() => ir.remove(), 540);
-    if (EMBED) { try { window.parent.postMessage({ tipo: 'feed-palco', aberto: false }, '*'); } catch {} }
+    setTimeout(() => { ir.remove(); if (EMBED) { try { window.parent.postMessage({ tipo: 'feed-palco', aberto: false }, '*'); } catch {} } }, 540);
 }
 
 // Revelacao no scroll. Um observador so, recriado a cada render: o cartao entra

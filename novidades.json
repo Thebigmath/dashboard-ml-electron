@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.116",
+    "data": "2026-10-26",
+    "titulo": "Notícias urgentes em tela cheia (correção)",
+    "texto": "- Corrigido: a tela das Notícias urgentes (AD HEALTH) abria cortada, com só uns 450 px de largura. Agora, ao abrir os urgentes ou uma fila, ela ocupa toda a área ao lado da barra lateral e os cards aparecem inteiros, em colunas. Ao fechar, a tela volta ao normal."
+  },
+  {
     "versao": "1.9.115",
     "data": "2026-10-26",
     "titulo": "Reputação (Platinum) · Notícias urgentes com faturamento · Cris na lateral",

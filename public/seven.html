@@ -316,7 +316,7 @@
         .vm-mc { font-weight:800; } .vm-mc.ruim { color:#ff453a; } .vm-mc.baixo { color:#ff9f0a; } .vm-mc.bom { color:#30D158; }
         .vm-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
         /* Ata da IA: um card por anuncio, so o necessario para decidir */
-        #nvFrame.nv-cheio { position:fixed !important; top:0; bottom:0; right:0; left:var(--nv-esq, 0); width:auto !important; height:100vh !important; border-radius:0 !important; z-index:300; background:#0a0f1c; }
+        #nvFrame.nv-cheio { position:fixed !important; top:0; left:var(--nv-esq, 0px); width:calc(100vw - var(--nv-esq, 0px)) !important; height:100vh !important; max-width:none !important; border-radius:0 !important; z-index:300; background:#0a0f1c; }
         .ata { padding:14px; display:grid; gap:18px; }
         .ata-sec { display:grid; gap:10px; }
         .ata-sec > h4 { margin:0; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--l3); }
