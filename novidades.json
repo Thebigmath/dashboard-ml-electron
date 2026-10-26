@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.122",
+    "data": "2026-10-26",
+    "titulo": "Notas de fornecedores: marcar como paga (baixa no Olist)",
+    "texto": "- Finance → Notas de fornecedores: opção de marcar como paga, como no Olist. Cada parcela tem a caixa \"Já paga\" com a data do pagamento (e há \"Marcar todas como já pagas\"): ao enviar, o app cria a conta, confere no Olist e então dá a baixa. Parcelas que já foram enviadas ganham o botão \"Marcar como paga\" (com data) e \"Marcar as N enviadas como pagas\". Só baixa conta aberta e com o mesmo valor, confere a situação \"paga\" lendo o Olist de volta, e a Simulação nunca dá baixa. Campo opcional \"Conta de origem do pagamento\" (o nome precisa ser igual ao do Olist; vazio usa a padrão)."
+  },
+  {
     "versao": "1.9.121",
     "data": "2026-10-26",
     "titulo": "Token do Olist cadastrado pela tela",

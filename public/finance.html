@@ -309,12 +309,12 @@ function ncResultados() {
     const e = nc.estado, L = e.resultados || [], P = e.pulados || [];
     if (e.erro && !e.enviando && !e.rodando) return `<div class="aviso-nc"><i class="bi bi-x-octagon"></i> ${esc(e.erro)}</div>`;
     if (!L.length && !P.length) return '';
-    const cont = {}; for (const x of L) cont[x.status] = (cont[x.status] || 0) + 1;
-    const cor = { simulada: 'alib', enviada: 'lib', confirmada: 'lib', duplicada: 'par', erro: 'par', enviada_sem_confirmacao: 'par' };
+    const cont = {}; for (const x of L) { cont[x.status] = (cont[x.status] || 0) + 1; if (x.baixa === 'paga') cont['paga'] = (cont['paga'] || 0) + 1; if (['erro', 'baixa_sem_confirmacao'].includes(x.baixa)) cont['baixa com problema'] = (cont['baixa com problema'] || 0) + 1; }
+    const cor = { simulada: 'alib', enviada: 'lib', confirmada: 'lib', paga: 'lib', 'baixa com problema': 'par', duplicada: 'par', erro: 'par', enviada_sem_confirmacao: 'par' };
     return `<div class="nc-res"><b>Último resultado:</b> ${Object.entries(cont).map(([k, v]) => `<span class="tag ${cor[k] || 'alib'}">${v} ${k.replace(/_/g, ' ')}</span>`).join(' ')}
-      ${L.filter(x => !['confirmada', 'simulada'].includes(x.status)).slice(0, 12).map(x => `<div class="fraco">NF ${esc(x.nota)} · parcela ${esc(x.parcela)} · ${esc(x.fornecedor)}: ${esc(x.motivo || x.status)}</div>`).join('')}
+      ${L.filter(x => !['confirmada', 'simulada'].includes(x.status) || ['erro', 'baixa_sem_confirmacao'].includes(x.baixa)).slice(0, 12).map(x => `<div class="fraco">NF ${esc(x.nota)} · parcela ${esc(x.parcela)} · ${esc(x.fornecedor)}: ${esc(x.motivo || x.baixa_motivo || x.status)}</div>`).join('')}
       ${P.slice(0, 8).map(x => `<div class="fraco">NF ${esc(x.nota)} · ${esc(x.fornecedor)}: não enviada (${esc(x.motivo)})</div>`).join('')}
-      ${L.some(x => x.status === 'simulada') ? `<div class="fraco" style="margin-top:6px">Simulação: ${L.filter(x => x.status === 'simulada').length} parcela(s) seriam criadas, sem duplicidade no Olist.</div>` : ''}</div>`;
+      ${L.some(x => x.status === 'simulada') ? `<div class="fraco" style="margin-top:6px">Simulação: ${L.filter(x => x.status === 'simulada').length} parcela(s) seriam criadas, sem duplicidade no Olist${L.some(x => x.baixa) ? ` e ${L.filter(x => x.baixa).length} seriam marcadas como pagas` : ''}.</div>` : ''}</div>`;
 }
 function ncNota(n) {
     const [cls, rot] = NC_SIT[n.situacao] || NC_SIT.conferir, enviada = n.parcelas.some(p => ['enviada', 'confirmada', 'duplicada'].includes(p.status));
@@ -325,17 +325,55 @@ function ncNota(n) {
           <td><input type="date" value="${esc(p.vencimento || '')}" ${ed} onchange="ncPar('${n.id}', ${p.n}, { vencimento: this.value })"></td>
           <td><input type="number" step="0.01" value="${p.valor ?? ''}" style="width:120px" ${ed} onchange="ncPar('${n.id}', ${p.n}, { valor: this.value })"></td>
           <td><input placeholder="categoria (vai no histórico)" value="${esc(p.categoria || '')}" ${ed} onchange="ncPar('${n.id}', ${p.n}, { categoria: this.value })"></td>
+          ${ncPag(n, p)}
           <td><span class="tag ${pc}">${pr}</span>${p.olist_id ? `<div class="fraco">Olist #${esc(p.olist_id)}</div>` : ''}${p.erro ? `<div class="fraco" style="color:#ff453a">${esc(p.erro)}</div>` : ''}</td></tr>`; }).join('');
     return `<div class="nc-nota ${n.situacao}"><div class="nc-cab"><div><b>${esc(n.emitente.nome)}</b> · NF ${esc(n.nota.numero)}${n.nota.serie ? '/' + esc(n.nota.serie) : ''}
         <div class="fraco">${esc(n.emitente.cnpj)} · emitida em ${ncData(n.nota.emissao)} · total <b>${ncR(n.nota.valor_total)}</b> · destinatário ${esc(n.destinatario.nome || '—')}${n.verificacao ? (n.verificacao.texto ? ' · <span style="color:#30D158">conferida com o texto do PDF</span>' : ' · <span style="color:#ff9f0a">PDF sem texto: só a IA leu</span>') : ''}</div></div>
         <span class="tag ${cls}">${rot}</span></div>${avisos}
-      <table class="fn-tab nc-tab"><tr><th>Parcela</th><th>Duplicata</th><th>Vencimento</th><th>Valor</th><th>Categoria</th><th>Situação</th></tr>${linhas}
-        <tr><td colspan="3" class="fraco" style="text-align:right">Soma das parcelas</td><td ${dif ? 'style="color:#ff453a"' : ''}><b>${ncR(soma)}</b></td><td colspan="2" class="fraco">${dif ? 'diferente do total da nota' : 'igual ao total da nota'}</td></tr></table>
+      <table class="fn-tab nc-tab"><tr><th>Parcela</th><th>Duplicata</th><th>Vencimento</th><th>Valor</th><th>Categoria</th><th>Pagamento</th><th>Situação</th></tr>${linhas}
+        <tr><td colspan="3" class="fraco" style="text-align:right">Soma das parcelas</td><td ${dif ? 'style="color:#ff453a"' : ''}><b>${ncR(soma)}</b></td><td colspan="3" class="fraco">${dif ? 'diferente do total da nota' : 'igual ao total da nota'}</td></tr></table>
       <div class="nc-pe">${enviada ? '' : `${n.situacao === 'conferir' ? `<label><input type="checkbox" ${n.confirmo ? 'checked' : ''} onchange="ncNotaCampo('${n.id}', { confirmo: this.checked })"> Conferi esta nota no PDF e confirmo</label>` : ''}
         ${n.parcelas.some(p => p.status === 'duplicada') || n.forcar ? `<label><input type="checkbox" ${n.forcar ? 'checked' : ''} onchange="ncNotaCampo('${n.id}', { forcar: this.checked })"> Enviar mesmo que já exista no Olist</label>` : ''}
         <button class="btn-acao" onclick="ncRemover('${n.id}')"><i class="bi bi-trash"></i> Tirar da lista</button>`}
+        ${ncPagBloco(n)}
         <a class="btn-acao" href="/api/finance/notas-contas/${n.id}/pdf" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Abrir o PDF</a>
         ${!enviada && n.pode_enviar && !n.pode_enviar.ok ? `<span class="fraco">${esc(n.pode_enviar.motivo)}</span>` : ''}</div></div>`;
+}
+const ncHoje = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+const ncOrigem = {};
+const ncDM = (d) => d ? d.split('-').reverse().join('/') : '';
+// coluna "Pagamento" de cada parcela: ja paga (baixa), enviada e aberta (botao Marcar como paga) ou ainda por enviar (caixa "Já paga" + data)
+function ncPag(n, p) {
+    if (p.baixa) return `<td><span class="tag lib">Paga em ${ncDM(p.baixa.data)}</span>${p.baixa.confirmada ? '' : '<div class="fraco" style="color:#ff9f0a">baixa sem confirmação: confira no Olist</div>'}</td>`;
+    if (['enviada', 'confirmada'].includes(p.status)) return `<td><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start"><input type="date" id="pg_${n.id}_${p.n}" value="${ncHoje()}" style="width:132px"><button class="btn-acao" onclick="ncBaixar('${n.id}', [${p.n}])"><i class="bi bi-cash-coin"></i> Marcar como paga</button></div>${p.baixa_erro ? `<div class="fraco" style="color:#ff453a">${esc(p.baixa_erro)}</div>` : ''}</td>`;
+    if (['pendente', 'erro'].includes(p.status)) return `<td><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start"><label style="white-space:nowrap"><input type="checkbox" style="width:auto" ${p.pago ? 'checked' : ''} onchange="ncPar('${n.id}', ${p.n}, { marcar_pago: this.checked })"> Já paga</label>${p.pago ? `<input type="date" value="${esc(p.pago.data)}" style="width:132px" onchange="ncPar('${n.id}', ${p.n}, { data_pagamento: this.value })">` : ''}</div></td>`;
+    return '<td class="fraco">—</td>';
+}
+// rodape da nota: conta de origem do pagamento, marcar todas como ja pagas (por enviar) e baixar as enviadas
+function ncPagBloco(n) {
+    const pend = n.parcelas.filter(p => ['pendente', 'erro'].includes(p.status)), env = n.parcelas.filter(p => ['enviada', 'confirmada'].includes(p.status) && !p.baixa);
+    if (!pend.length && !env.length) return '';
+    const origem = ncOrigem[n.id] !== undefined ? ncOrigem[n.id] : (n.conta_origem || ''), falta = pend.some(p => !p.pago);
+    return `<label class="fraco">Conta de origem do pagamento <input placeholder="padrão do Olist" value="${esc(origem)}" style="width:170px" onchange="ncOrigemSet('${n.id}', this.value, ${pend.length ? 'true' : 'false'})"></label>
+        ${pend.length ? `<button class="btn-acao" onclick="ncTodasPagas('${n.id}', ${falta})"><i class="bi bi-cash-coin"></i> ${falta ? 'Marcar todas como já pagas' : 'Desmarcar as pagas'}</button>` : ''}
+        ${env.length ? `<input type="date" id="pg_${n.id}_t" value="${ncHoje()}" style="width:140px"> <button class="btn-acao" onclick="ncBaixar('${n.id}', [${env.map(p => p.n).join(',')}])"><i class="bi bi-cash-coin"></i> Marcar ${env.length > 1 ? 'as ' + env.length + ' enviadas' : 'a enviada'} como paga${env.length > 1 ? 's' : ''}</button>` : ''}`;
+}
+async function ncOrigemSet(id, v, editavel) { ncOrigem[id] = v; if (editavel) { try { await post('/api/finance/notas-contas/' + id, { conta_origem: v }); } catch (e) { alert(e.message); } } }
+async function ncTodasPagas(id, marcar) {
+    const n = nc.notas.find(x => x.id === id); if (!n) return;
+    try { await post('/api/finance/notas-contas/' + id, { parcelas: n.parcelas.filter(p => ['pendente', 'erro'].includes(p.status)).map(p => ({ n: p.n, marcar_pago: marcar })) }); } catch (e) { alert(e.message); }
+    ncCarregar(true);
+}
+// dá a baixa no Olist de parcelas JA enviadas (como o botão Baixar do Olist)
+async function ncBaixar(id, ns) {
+    const n = nc.notas.find(x => x.id === id); if (!n) return;
+    const el = $('pg_' + id + '_' + (ns.length === 1 && $('pg_' + id + '_' + ns[0]) ? ns[0] : 't')), data = (el && el.value) || ncHoje(), origem = ncOrigem[id] !== undefined ? ncOrigem[id] : (n.conta_origem || '');
+    const pcs = n.parcelas.filter(p => ns.includes(p.n)), tot = pcs.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+    if (!confirm(`Marcar como paga no Olist${nc.empresa.razao_social ? ' (' + nc.empresa.razao_social + ')' : ''}?\n\nNF ${n.nota.numero} · ${n.emitente.nome}\nParcela(s) ${pcs.map(p => p.n + '/' + p.total).join(', ')} · ${ncR(tot)}\nPagamento em ${ncDM(data)}${origem ? ' · conta de origem: ' + origem : ''}\n\nO Olist dá a baixa na conta a pagar e o app confere depois. Só baixa conta aberta e com o mesmo valor.`)) return;
+    const r = await post('/api/finance/notas-contas/' + id + '/baixar', { parcelas: ns, data, conta_origem: origem }).catch(e => ({ erro: e.message }));
+    if (r.erro) alert(r.erro);
+    else { const ruins = r.resultados.filter(x => x.status !== 'paga'); if (ruins.length) alert(ruins.map(x => `Parcela ${x.parcela}: ${x.motivo || x.status}`).join('\n')); }
+    ncCarregar(true);
 }
 async function ncEnviarArquivos(files) {
     const L = [...files].filter(f => /\.pdf$/i.test(f.name)); if (!L.length) return alert('Escolha arquivos PDF.');
@@ -348,7 +386,9 @@ async function ncEnviarArquivos(files) {
 async function ncEnviar(opc) {
     if (!opc.simular) {
         const R = nc.resumo, msg = `Enviar ${R.parcelas_a_enviar} parcela(s) (${ncR(R.valor_a_enviar)}) das notas prontas ao Contas a pagar do Olist ${nc.empresa.razao_social ? '(' + nc.empresa.razao_social + ')' : 'da ' + nc.empresa.nome}?\n\nSó seguem as notas "prontas" ou que você confirmou. Parcela que já existe no Olist não é criada de novo, e cada conta é conferida no Olist depois de enviada.`;
-        if (!confirm(msg)) return;
+        const pagas = nc.notas.filter(n => n.pode_enviar && n.pode_enviar.ok).flatMap(n => n.parcelas.filter(p => ['pendente', 'erro'].includes(p.status) && p.pago && p.pago.marcar));
+        const txtPagas = pagas.length ? `\n\n${pagas.length} parcela(s) (${ncR(pagas.reduce((s, p) => s + (Number(p.valor) || 0), 0))}) serão criadas JÁ PAGAS: depois de criar e conferir cada conta, o app dá a baixa no Olist na data de pagamento informada.` : '';
+        if (!confirm(msg + txtPagas)) return;
     }
     const r = await post('/api/finance/notas-contas/enviar', opc).catch(e => ({ ok: false, erro: e.message }));
     if (!r.ok) return alert(r.erro || 'não deu');
