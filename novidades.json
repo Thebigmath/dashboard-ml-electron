@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.119",
+    "data": "2026-10-26",
+    "titulo": "Notas de fornecedores sem bloqueio por empresa",
+    "texto": "- Notas de fornecedores: uma nota cujo destinatário é outra empresa deixou de ser bloqueada. Agora ela aparece com um aviso (de quem é a nota e em qual Olist o app vai lançar) e você libera com o \"Conferi esta nota e confirmo\". As demais conferências (chave de acesso, valores, soma das parcelas, duplicidade no Olist e nota de teste antes do lote) continuam valendo."
+  },
+  {
     "versao": "1.9.118",
     "data": "2026-10-26",
     "titulo": "Bot de notas de fornecedores → Contas a pagar do Olist",
