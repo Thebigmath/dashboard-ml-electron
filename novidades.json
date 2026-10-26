@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.118",
+    "data": "2026-10-26",
+    "titulo": "Bot de notas de fornecedores → Contas a pagar do Olist",
+    "texto": "- Finance → Notas de fornecedores (novo bot): suba os PDFs das notas (DANFE). A IA lê a FATURA / DUPLICATA, o sistema confere com o texto do próprio PDF (chave de acesso, CNPJ, valores, datas e a soma das parcelas) e a ponte lança uma conta por parcela no Contas a pagar do Olist da empresa. Nada vai ao Olist sem você conferir: notas com aviso pedem a sua confirmação, notas de outra empresa ficam bloqueadas, parcela que já existe no Olist não é criada de novo, cada conta enviada é conferida no Olist e o envio em lote só abre depois de uma nota de teste confirmada. Há um botão Simular que não envia nada.\n- Finance → Contas a pagar: agora lê o Olist (sistema oficial) nos dois apps. Na Flávia, o que foi pago no Bling depois de 23/10 não está lá."
+  },
+  {
     "versao": "1.9.117",
     "data": "2026-10-26",
     "titulo": "Faturamento de ontem no Início",

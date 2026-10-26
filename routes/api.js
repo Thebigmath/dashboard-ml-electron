@@ -1255,6 +1255,21 @@ router.get('/finance/meses', auth, (req, res) => res.json({ coletados: finance()
 router.get('/finance/mes', auth, (req, res) => { try { res.json(finance().analisar(String(req.query.mes || ''))); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/estado', auth, (req, res) => res.json(finance().estado));
 router.post('/finance/coletar', auth, (req, res) => { finance().coletar(String((req.body || {}).mes || ''), { forcar: !!(req.body || {}).forcar }).then(d => res.json(d)).catch(erroJson(res)); });
+// Notas de fornecedores -> Contas a pagar do Olist (le o PDF, confere, manda pela ponte)
+const notasContas = () => require('../lib/notas_contas');
+router.get('/finance/notas-contas', auth, (req, res) => { try { res.json(notasContas().listar()); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/notas-contas/ler', auth, upload.array('pdfs', 80), (req, res) => {
+    try {
+        const arqs = (req.files || []).map(f => ({ nome: Buffer.from(f.originalname, 'latin1').toString('utf8'), caminho: f.path }));
+        if (!arqs.length) return res.status(400).json({ ok: false, erro: 'Nenhum PDF enviado.' });
+        res.json(notasContas().ler(arqs));
+    } catch (e) { erroJson(res)(e); }
+});
+router.post('/finance/notas-contas/enviar', auth, (req, res) => { try { res.json(notasContas().enviar(req.body || {})); } catch (e) { erroJson(res)(e); } });
+router.post('/finance/notas-contas/empresa', auth, (req, res) => { try { res.json(notasContas().definirCnpj((req.body || {}).cnpj)); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.get('/finance/notas-contas/:id/pdf', auth, (req, res) => { const p = notasContas().caminhoPdf(req.params.id); if (!p) return res.status(404).json({ erro: 'PDF não encontrado.' }); res.type('application/pdf').sendFile(p); });
+router.post('/finance/notas-contas/:id', auth, (req, res) => { try { res.json(notasContas().atualizar(req.params.id, req.body || {})); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.delete('/finance/notas-contas/:id', auth, (req, res) => { try { res.json(notasContas().remover(req.params.id)); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
 // Notas de fornecedores (Hub de Pedidos + Organizar notas no Google Drive)
 const notas = () => require('../lib/notas');
 router.get('/finance/notas/info', auth, (req, res) => notas().info().then(d => res.json(d)).catch(erroJson(res)));

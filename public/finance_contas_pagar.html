@@ -129,7 +129,7 @@
             <a onclick="exportar()"><i class="bi bi-file-earmark-spreadsheet"></i><span>Exportar o período (CSV)</span></a>
             <h4>Informações</h4>
             <div class="info" id="info"></div>
-            <div class="rodape-nota">Contas lançadas no ERP desta empresa (Bling na Flavia, Olist na Cordeiro), lidas pela API. Só leitura: baixar ou pagar continua no ERP.</div>
+            <div class="rodape-nota">Contas lançadas no Olist desta empresa (o sistema oficial), lidas pela API. As notas de fornecedores subidas na aba Notas entram aqui pela ponte. Só leitura: baixar ou pagar continua no Olist.</div>
         </aside>
     </div>
 </div></main></div>
@@ -171,7 +171,7 @@ function linha(l) {
 }
 function desenhar() {
     if (!D) return;
-    if (!D.lido) { $('notaFiltro').innerHTML = 'Ainda não há contas lidas do Bling. Clique em <b>Atualizar contas</b>.'; $('tb').innerHTML = ''; return; }
+    if (!D.lido) { $('notaFiltro').innerHTML = 'Ainda não há contas lidas do Olist. Clique em <b>Atualizar contas</b>.'; $('tb').innerHTML = ''; return; }
     const L = filtrados(), total = L.reduce((s, l) => s + l.valor, 0);
     $('notaFiltro').innerHTML = `${L.length} contas · <b style="color:var(--l1)">R$ ${brl(total)}</b> com vencimento de ${dataBR($('de').value)} até ${dataBR($('ate').value)} · lidas ${D.atualizado_em ? new Date(D.atualizado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}`;
     const ini = (pagina - 1) * POR, fatia = L.slice(ini, ini + POR);
