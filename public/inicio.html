@@ -41,9 +41,6 @@
         .ini-erro { color:#ff453a; }
 
         /* ---- Hub da IA: clique no 7 ---- */
-        .ini-7 { cursor:pointer; transition:transform .25s ease, filter .25s ease; }
-        .ini-7:hover { transform:scale(1.05); filter:drop-shadow(0 0 22px rgba(63,227,255,.75)); }
-        .ini-7-dica { text-align:center; font-size:12px; color:var(--l3); margin-top:6px; }
         #hub { position:fixed; inset:0; z-index:5000; background:var(--bg, #0b0b0f); display:none; flex-direction:column; }
         #hub.aberto { display:flex; animation:hubEntra .28s cubic-bezier(.22,1,.36,1); }
         @keyframes hubEntra { from { opacity:0; transform:scale(.985); } to { opacity:1; transform:none; } }
@@ -112,11 +109,11 @@
             <div class="ini-topo">Início</div>
 
             <section class="ini-heroi">
-                <div><div class="ini-7" aria-label="Falar com o Cris" title="Falar com o Cris" role="button" tabindex="0" onclick="hubAbrir()" onkeydown="if(event.key==='Enter')hubAbrir()"><svg viewBox="0 0 200 200">
+                <div><div class="ini-7" aria-hidden="true"><svg viewBox="0 0 200 200">
                     <circle class="circ" cx="100" cy="100" r="88" fill="none" stroke="currentColor" stroke-width="7" transform="rotate(-90 100 100)"/>
                     <circle class="circ" cx="100" cy="100" r="75" fill="none" stroke="currentColor" stroke-width="3" transform="rotate(-90 100 100)"/>
                     <path class="sete" d="M66 58 H146 L100 152 H84 L124 74 H56 Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg></div>
-                    <div class="ini-7-dica"><i class="bi bi-stars"></i> clique para falar com o Cris</div></div>
+                    </div>
                 <div class="ini-ola">
                     <h1 id="saudacao">Olá</h1>
                     <div class="hora" id="relogio">&nbsp;</div>

@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.115",
+    "data": "2026-10-26",
+    "titulo": "Reputação (Platinum) · Notícias urgentes com faturamento · Cris na lateral",
+    "texto": "- AD HEALTH → Reputação (Platinum) (novo): previsão estatística da chance de a conta passar dos limites de reclamações, cancelamentos e atraso nos próximos 7, 14 e 30 dias. Mostra a folga (quantas reclamações ainda cabem), o gráfico da taxa, as reclamações abertas que ainda podem entrar na conta e o diagnóstico da IA (agente Atendimento do ADS Health). Atualiza sozinho a cada 6 horas e avisa no Windows quando o risco fica alto. Os limites (1% reclamações, 1% cancelamentos, 5% atraso) vieram do Harvey e precisam ser conferidos no painel de Reputação do Mercado Livre: dá para corrigir na própria tela.\n- Análise de vendas → Ata da IA: cada sugestão em \"Para decidir\" mostra as vendas do líder dos concorrentes em 7 e 30 dias, o ritmo dele e a soma dos rivais do grupo (Nubimetrics).\n- Corrigido: ao aprovar o preço de um lado (Esquerdo ou Direito) na Ata da IA, o outro lado agora recebe a mesma mudança em pontos de margem, como já acontecia no Precificar. O Premium continua acima do Clássico.\n- AD HEALTH → Notícias urgentes: o faturamento de ontem (valor, pedidos e ticket médio) aparece no canto do quadro; a lista \"Por fila\" saiu (as bolinhas continuam abrindo cada fila); a folha dos urgentes agora ocupa a área toda e mostra os cards inteiros, em grade, em vez de cortados pela metade.\n- Menu do AD HEALTH: saíram os botões Rankeamento e Defesa (continuam nos cards da Análise com IA).\n- Cris: agora fica na barra lateral, com o ícone de robô e o nome embaixo. No Início, o 7 voltou a ser só a marca."
+  },
+  {
     "versao": "1.9.114",
     "data": "2026-10-23",
     "titulo": "Finance alinhado",

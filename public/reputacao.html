@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reputação — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        /* previsao da reputacao (Platinum): veredito, 3 medidores, grafico da taxa dos proximos 30 dias, reclamacoes abertas e o diagnostico da IA */
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .rp { --verde:#2E9E5B; --amarelo:#E8A200; --laranja:#E8590C; --verm:#D92D20; --azul:#0a84ff; padding:22px 28px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        [data-theme="dark"] .rp { --verde:#34C77B; --amarelo:#FFC24A; --laranja:#FF8A4C; --verm:#FF6B60; }
+        .topo { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+        .topo h1 { font-size:28px; font-weight:700; color:var(--l1); margin:0; display:flex; align-items:center; gap:8px; }
+        .topo h1 .seta { color:var(--verde); font-size:22px; }
+        .topo .conta { color:var(--l3); font-size:13px; }
+        .bt { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:999px; border:0; background:var(--verde); color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
+        .bt:disabled { opacity:.6; cursor:not-allowed; }
+        .bt.sec { margin-left:0; background:transparent; color:var(--l1); border:1px solid var(--sep); }
+        .painel { border:1px solid var(--sep); border-radius:14px; background:var(--s1); padding:16px 18px; margin-bottom:14px; }
+        .painel h3 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--l3); margin:0 0 12px; font-weight:600; display:flex; align-items:center; gap:8px; }
+        .veredito { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:18px; align-items:center; border-left:6px solid var(--cor); }
+        .veredito .sel { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:var(--cor); border-radius:999px; padding:3px 12px; }
+        .veredito h2 { font-size:25px; color:var(--l1); margin:8px 0 4px; font-weight:700; }
+        .veredito p { color:var(--l2); margin:0; font-size:14.5px; line-height:1.5; }
+        .chances { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .chances div { background:var(--s2); border-radius:10px; padding:10px 12px; text-align:center; }
+        .chances small { display:block; color:var(--l3); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+        .chances b { font-size:26px; font-variant-numeric:tabular-nums; color:var(--l1); }
+        .cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
+        .cards .painel { margin:0; }
+        .med b { display:block; font-size:30px; color:var(--l1); font-variant-numeric:tabular-nums; margin:2px 0; }
+        .med span { color:var(--l2); font-size:13px; }
+        .barra { height:9px; border-radius:99px; background:var(--s2); margin:10px 0 6px; overflow:hidden; position:relative; }
+        .barra i { display:block; height:100%; border-radius:99px; background:var(--cor, var(--verde)); }
+        .duas { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:14px; }
+        .duas .painel { margin:0; }
+        table.t { width:100%; border-collapse:collapse; font-size:13.5px; }
+        .t th { font-weight:500; color:var(--l3); text-align:left; padding:6px 8px; font-size:12px; border-bottom:1px solid var(--sep); }
+        .t td { padding:7px 8px; border-bottom:1px solid var(--sep); color:var(--l1); font-variant-numeric:tabular-nums; }
+        .t td.n, .t th.n { text-align:right; }
+        .grafico svg { width:100%; height:auto; display:block; }
+        .leg { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--l3); margin-top:6px; }
+        .leg i { display:inline-block; width:14px; height:9px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+        .ia h4 { font-size:15px; color:var(--l1); margin:0 0 6px; font-weight:600; }
+        .ia p { color:var(--l2); font-size:14px; line-height:1.55; margin:0 0 10px; }
+        .ia ol { margin:0 0 10px; padding-left:20px; color:var(--l1); font-size:14px; }
+        .ia li { margin-bottom:6px; } .ia li small { display:block; color:var(--l3); font-size:12.5px; }
+        .fraco { color:var(--l3); font-size:12.5px; line-height:1.5; }
+        .lim { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:10px 0; }
+        .lim label { font-size:12px; color:var(--l3); display:block; }
+        .lim input { width:100%; border:1px solid var(--sep); border-radius:8px; background:var(--s2); color:var(--l1); padding:7px 9px; font-size:14px; }
+        .aviso { background:color-mix(in srgb, var(--amarelo) 14%, transparent); border:1px solid color-mix(in srgb, var(--amarelo) 45%, transparent); border-radius:10px; padding:9px 12px; font-size:13px; color:var(--l1); margin:10px 0; line-height:1.5; }
+        details summary { cursor:pointer; color:var(--l2); font-size:13.5px; margin:6px 0; }
+        @media (max-width: 1000px) { .veredito, .cards, .duas { grid-template-columns:1fr; } .lim { grid-template-columns:1fr 1fr; } .rp { padding:16px; } }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="rp">
+    <div class="topo">
+        <h1><span class="seta">›</span>Reputação · previsão do Platinum</h1>
+        <span class="conta" id="conta"></span>
+        <button class="bt" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar agora</button>
+    </div>
+    <div id="corpo"><div class="painel fraco">Carregando…</div></div>
+</div></main></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pct = (v, d = 2) => v == null ? '—' : (v * 100).toFixed(d).replace('.', ',') + '%';
+const pct0 = (v) => v == null ? '—' : Math.round(v * 100) + '%';
+const dataBR = (d) => d ? d.split('-').reverse().slice(0, 2).join('/') : '—';
+const STATUS = { seguro: ['Risco baixo', '#2E9E5B'], atencao: ['Atenção', '#E8A200'], alto: ['Risco alto', '#E8590C'], critico: ['Risco crítico', '#D92D20'] };
+const TIPO = { mediations: 'mediação', returns: 'devolução', cancel_purchase: 'cancelamento', cancel_sale: 'cancelamento' };
+const FASE = { dispute: 'disputa', claim: 'reclamação', recontact: 'recontato', none: '' };
+let D = null, timer = null;
+
+async function carregar() {
+    D = await fetch('/api/reputacao').then(x => x.json()).catch(e => ({ erro: e.message }));
+    desenhar(); acompanhar();
+}
+function medidor(nome, taxa, v, limite, dica) {
+    const uso = limite ? (taxa || 0) / limite : 0, cor = uso >= 1 ? '#D92D20' : uso >= 0.8 ? '#E8590C' : uso >= 0.6 ? '#E8A200' : '#2E9E5B';
+    return `<div class="painel med" style="--cor:${cor}"><h3>${nome}</h3><b>${pct(taxa)}</b><span>${v != null ? v + ' no período de 60 dias · ' : ''}limite ${pct(limite, 1)}</span>
+        <div class="barra"><i style="width:${Math.min(100, uso * 100)}%"></i></div><span>${Math.round(uso * 100)}% do limite${dica ? ' · ' + dica : ''}</span></div>`;
+}
+function grafico(P) {
+    const W = 760, H = 250, mL = 44, mR = 12, mT = 14, mB = 34, d = P.dias, n = d.length, lim = P.limites.reclamacoes;
+    const ymax = Math.max(lim * 1.35, ...d.map(x => x.taxa_p90)) * 1.05, ymin = Math.max(0, Math.min(...d.map(x => x.taxa_p10)) * 0.85);
+    const X = (i) => mL + (W - mL - mR) * i / (n - 1), Y = (v) => mT + (H - mT - mB) * (1 - (v - ymin) / (ymax - ymin));
+    const banda = d.map((x, i) => `${X(i).toFixed(1)},${Y(x.taxa_p90).toFixed(1)}`).concat(d.map((x, i) => `${X(n - 1 - i).toFixed(1)},${Y(d[n - 1 - i].taxa_p10).toFixed(1)}`)).join(' ');
+    const linha = d.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(x.taxa_p50).toFixed(1)}`).join(' ');
+    const passo = (ymax - ymin) > 0.006 ? 0.002 : 0.001; let grade = '';
+    for (let v = Math.ceil(ymin / passo) * passo; v <= ymax; v += passo) grade += `<line x1="${mL}" x2="${W - mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--sep)" stroke-width="1"/><text x="${mL - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--l3)">${(v * 100).toFixed(1).replace('.', ',')}%</text>`;
+    let eixo = ''; d.forEach((x, i) => { if (i % 5 === 0 || i === n - 1) eixo += `<text x="${X(i)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="var(--l3)">${dataBR(x.dia)}</text>`; });
+    // barras de chance de passar do limite em cada dia (fundo do grafico)
+    const barras = d.map((x, i) => `<rect x="${X(i) - 4}" y="${H - mB - x.p_qualquer * 46}" width="8" height="${x.p_qualquer * 46}" fill="#E8590C" opacity=".28"><title>${dataBR(x.dia)}: ${pct0(x.p_qualquer)} de chance de a taxa estar acima do limite nesse dia</title></rect>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Taxa de reclamações prevista">${grade}${barras}
+        <polygon points="${banda}" fill="#0a84ff" opacity=".16"/><path d="${linha}" fill="none" stroke="#0a84ff" stroke-width="2.4"/>
+        <line x1="${mL}" x2="${W - mR}" y1="${Y(lim)}" y2="${Y(lim)}" stroke="#D92D20" stroke-width="1.8" stroke-dasharray="6 4"/>
+        <text x="${W - mR}" y="${Y(lim) - 6}" text-anchor="end" font-size="11.5" fill="#D92D20" font-weight="600">limite ${pct(lim, 1)}</text>${eixo}</svg>`;
+}
+function desenhar() {
+    if (!D) return;
+    const P = D.previsao, E = D.estado || {};
+    $('conta').textContent = D.nickname ? `${D.nickname} · dados de ${D.coleta_em ? new Date(D.coleta_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}` : '';
+    if (!P) { $('corpo').innerHTML = `<div class="painel"><h3>Ainda sem previsão</h3><p class="fraco" style="font-size:14px">${E.rodando ? esc(E.etapa || 'Coletando…') : 'Clique em <b>Atualizar agora</b>. A primeira coleta lê as reclamações e os pedidos dos últimos 80 dias e leva alguns minutos; depois a previsão é atualizada sozinha a cada 6 horas.'}</p>${E.erro ? `<p style="color:#D92D20">${esc(E.erro)}</p>` : ''}</div>`; return; }
+    const [rotulo, cor] = STATUS[P.status] || STATUS.seguro, A = P.agora, R = P.resumo, ml = P.ml || {};
+    const folga = A.folga;
+    const frase = P.status === 'seguro' ? 'A taxa de reclamações deve ficar abaixo do limite nas próximas semanas.' :
+        `Chance de a taxa de reclamações passar de ${pct(P.limites.reclamacoes, 1)} em algum dia dos próximos 14 dias: <b>${pct0(R.p_14d)}</b>; em 30 dias: <b>${pct0(R.p_30d)}</b>.`;
+    const medalha = ml.medalha ? String(ml.medalha).toUpperCase() : '—';
+    let h = `<div class="painel veredito" style="--cor:${cor}"><div><span class="sel">${rotulo}</span><h2>${esc(D.nickname || 'Conta')} · ${medalha}</h2>
+        <p>${frase}<br>Hoje a conta tem <b>${A.contagem}</b> reclamação(ões) contando, de <b>${A.contagem + Math.max(0, folga)}</b> que cabem no limite: ${folga >= 0 ? `ainda cabem <b>${folga}</b>.` : `<b style="color:#D92D20">já passou do limite em ${-folga}.</b>`}
+        ${R.dia_de_maior_risco && P.status !== 'seguro' ? `<br>Pior dia previsto: <b>${dataBR(R.dia_de_maior_risco)}</b> (${pct0(R.maior_risco)} de chance de estar acima do limite).` : ''}</p></div>
+        <div class="chances"><div><small>7 dias</small><b>${pct0(R.p_7d)}</b></div><div><small>14 dias</small><b>${pct0(R.p_14d)}</b></div><div><small>30 dias</small><b>${pct0(R.p_30d)}</b></div></div></div>`;
+    // medidores (o que o ML informa hoje)
+    h += `<div class="cards">${medidor('Reclamações', ml.reclamacoes && ml.reclamacoes.r != null ? ml.reclamacoes.r : A.taxa_calculada, ml.reclamacoes ? ml.reclamacoes.v : A.contagem, P.limites.reclamacoes, `folga de ${folga}`)}
+        ${medidor('Cancelamentos (do vendedor)', ml.cancelamentos ? ml.cancelamentos.r : null, ml.cancelamentos ? ml.cancelamentos.v : null, P.limites.cancelamentos)}
+        ${medidor('Atrasos no envio', ml.atraso ? ml.atraso.r : null, ml.atraso ? ml.atraso.v : null, P.limites.atraso)}</div>`;
+    // diagnostico da IA
+    const I = D.ia || {};
+    h += `<div class="painel ia"><h3><i class="bi bi-stars"></i> Diagnóstico da IA${I.agente ? ` · ${esc(I.agente.area_nome)} · ${esc(I.agente.papel)}` : ''}
+        <button class="bt sec" style="margin-left:auto;padding:5px 14px;font-size:12.5px" id="btIA" onclick="rodarIA()" ${I.estado && I.estado.rodando ? 'disabled' : ''}>${I.estado && I.estado.rodando ? 'Analisando…' : '<i class="bi bi-arrow-repeat"></i> Gerar agora'}</button></h3>`;
+    if (I.diagnostico) h += `<p>${esc(I.diagnostico)}</p><h4>O que fazer</h4><ol>${(I.o_que_fazer || []).map(x => `<li><b>${esc(x.acao)}</b><small>${esc(x.porque)}</small></li>`).join('')}</ol>
+        ${I.atencao ? `<p class="fraco"><i class="bi bi-exclamation-circle"></i> ${esc(I.atencao)}</p>` : ''}<div class="fraco">Escrito por IA a partir dos números do modelo (nunca inventa valor) · ${new Date(I.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${I.risco !== P.status ? ' · <b>a previsão mudou desde então: gere de novo</b>' : ''}</div>`;
+    else h += `<p class="fraco" style="font-size:14px">${I.estado && I.estado.erro ? `<span style="color:#D92D20">${esc(I.estado.erro)}</span>` : 'Ainda não há diagnóstico. Ele é gerado sozinho depois da coleta quando o risco passa de "baixo", ou pelo botão.'}</p>`;
+    h += `</div>`;
+    h += `<div class="painel"><h3>Taxa de reclamações prevista · próximos ${P.horizonte} dias</h3><div class="grafico">${grafico(P)}</div>
+        <div class="leg"><span><i style="background:#0a84ff"></i>mais provável</span><span><i style="background:#0a84ff;opacity:.3"></i>faixa de 80% (p10 a p90)</span><span><i style="background:#D92D20"></i>limite</span><span><i style="background:#E8590C;opacity:.4"></i>chance de estar acima do limite no dia (barras)</span></div>
+        <div class="fraco" style="margin-top:8px">A taxa muda com a saída dos pedidos mais antigos da janela de 60 dias e com a entrada de reclamações novas. Hoje: ${A.pedidos_janela} pedidos na janela (${P.modelo.pedidos_dia_14d} por dia nas últimas 2 semanas).</div></div>`;
+    // abertas + horizonte
+    const linhas = P.ameacas.slice(0, 12).map(a => `<tr><td>${a.id}</td><td>${TIPO[a.tipo] || esc(a.tipo)}${FASE[a.estagio] ? ' · ' + FASE[a.estagio] : ''}</td><td class="n">${a.aberta_ha_dias} d</td><td>${dataBR(a.pedido_em)}</td><td class="n">${pct0(a.p_contar)}</td></tr>`).join('');
+    h += `<div class="duas"><div class="painel"><h3>Reclamações abertas que ainda podem entrar na conta (${A.abertas_que_podem_entrar})</h3>
+        <table class="t"><thead><tr><th>Reclamação</th><th>Tipo</th><th class="n">Aberta há</th><th>Pedido de</th><th class="n">Chance de contar</th></tr></thead><tbody>${linhas || '<tr><td colspan="5" class="fraco">Nenhuma.</td></tr>'}</tbody></table>
+        <div class="fraco" style="margin-top:8px">${A.abertas_marcadas} das ${A.abertas_total} reclamações abertas já estão contando. Resolver as mais antigas primeiro é o que mais reduz o risco: muitas saem da conta quando são resolvidas.</div></div>
+        <div class="painel"><h3>Chance por data</h3><table class="t"><thead><tr><th>Em</th><th class="n">Taxa provável</th><th class="n">Pior caso</th><th class="n">Contagem / cabe</th><th class="n">Chance</th></tr></thead><tbody>
+        ${[3, 7, 14, 21, 30].filter(x => x < P.dias.length).map(x => { const d = P.dias[x]; return `<tr><td>${dataBR(d.dia)} <span class="fraco">(${x} d)</span></td><td class="n">${pct(d.taxa_p50)}</td><td class="n">${pct(d.taxa_p90)}</td><td class="n">${d.contagem_p50} / ${d.limite_contagem}</td><td class="n"><b>${pct0(d.p_qualquer)}</b></td></tr>`; }).join('')}</tbody></table>
+        <div class="fraco" style="margin-top:8px">Chance = probabilidade de alguma taxa (reclamações, cancelamentos ou atraso) estar acima do limite naquele dia.</div></div></div>`;
+    // limites, como o modelo funciona e a confianca
+    const L = D.config || {};
+    h += `<div class="painel" style="margin-top:14px"><h3>Limites e confiança do modelo</h3>
+        <div class="aviso"><i class="bi bi-exclamation-triangle"></i> <b>Os limites abaixo não foram confirmados no painel do Mercado Livre.</b> Vieram do Harvey (definidos por você em 12/10). A documentação oficial não pôde ser lida automaticamente e os guias de terceiros divergem (reclamações: 1% ou 2%). Confira em <i>Reputação</i> no painel do vendedor e corrija aqui: a previsão é recalculada na hora.</div>
+        <div class="lim"><div><label>Reclamações (%)</label><input id="lRec" type="number" step="0.1" value="${(L.limite_reclamacoes * 100).toFixed(2)}"></div>
+        <div><label>Cancelamentos (%)</label><input id="lCan" type="number" step="0.1" value="${(L.limite_cancelamentos * 100).toFixed(2)}"></div>
+        <div><label>Atraso no envio (%)</label><input id="lAtr" type="number" step="0.1" value="${(L.limite_atraso * 100).toFixed(2)}"></div>
+        <div style="display:flex;align-items:flex-end"><button class="bt sec" onclick="salvarLimites()">Salvar e recalcular</button></div></div>
+        <details><summary>Como o modelo calcula</summary><div class="fraco">
+            • O Mercado Livre conta só as reclamações marcadas "afeta a reputação", pela <b>data do pedido</b>, numa janela de 60 dias, sobre o total de pedidos da janela (conferido: bateu 23 na Cordeiro e 30 na Flávia). O denominador do ML é ~${((P.modelo.kappa - 1) * 100).toFixed(0)}% maior que a contagem da API; o modelo se ajusta sozinho todos os dias.<br>
+            • A marca "afeta" é <b>provisória</b>: disputas novas aparecem marcadas (cerca de 30% das abertas há menos de 14 dias) e muitas saem da conta quando são resolvidas (cerca de 12 a 14% das antigas).<br>
+            • A simulação (${P.simulacoes} cenários) faz cada reclamação aberta envelhecer, cria as reclamações novas dos pedidos recentes (${pct(P.modelo.reclamacoes_por_pedido, 1)} dos pedidos, com a curva de atraso entre o pedido e a reclamação), tira os pedidos que saem da janela e põe os novos no ritmo das últimas 2 semanas.<br>
+            • Cancelamentos contam só os causados pelo vendedor. Atraso usa a taxa que o ML informa hoje (o histórico por envio não é lido), então a previsão de atraso é simples.<br>
+            • <b>O que o modelo não sabe:</b> se o Mercado Livre muda uma regra, se a conta tem outras exigências do Platinum (volume e faturamento mínimos) e quando ele recalcula o selo.</div></details>
+        <details><summary>Teste do modelo</summary><div class="fraco" id="teste">${testeHtml()}</div></details></div>`;
+    $('corpo').innerHTML = h;
+}
+function testeHtml() {
+    let s = '';
+    const T = D.teste;
+    if (T) s += `<b>Teste retroativo</b> (volta no tempo, esconde o que veio depois e prevê a contagem de ${dataBR(T.alvo)}; real: ${T.real}). O ML não guarda o estado antigo das reclamações, então o teste mostra dois cenários e a verdade fica entre eles:<table class="t" style="margin:6px 0"><thead><tr><th>Previsão feita</th><th>Cenário</th><th class="n">Previsto (p10 / p50 / p90)</th><th></th></tr></thead><tbody>${T.testes.map(x => Object.entries(x.cenarios).map(([c, v]) => `<tr><td>${x.dias_antes} dias antes</td><td>${c}</td><td class="n">${v.p10} / ${v.p50} / ${v.p90}</td><td>${v.dentro ? '✓ dentro' : 'fora'}</td></tr>`).join('')).join('')}</tbody></table>`;
+    else s += 'O teste retroativo ainda não foi rodado. ';
+    const ac = D.acompanhamento || [];
+    s += ac.length ? `<br><b>Previsto × real</b> (as previsões guardadas a cada coleta, comparadas com o que o ML mostrou depois):<table class="t" style="margin:6px 0"><thead><tr><th>Feita em</th><th>Para o dia</th><th class="n">Previsto</th><th class="n">Real</th></tr></thead><tbody>${ac.slice(-12).map(x => `<tr><td>${dataBR(x.feita_em)}</td><td>${dataBR(x.dia)} (${x.antecedencia} d)</td><td class="n">${x.previsto}</td><td class="n">${x.real}</td></tr>`).join('')}</tbody></table>` : '<br>O comparativo <b>previsto × real</b> começa amanhã: a partir de agora cada previsão é guardada e conferida com o que o Mercado Livre mostrar. É o teste honesto, e melhora com o tempo.';
+    return s + `<br><button class="bt sec" style="padding:5px 14px;font-size:12.5px" onclick="rodarTeste()">Rodar o teste retroativo</button>`;
+}
+async function atualizar() {
+    const r = await fetch('/api/reputacao/coletar', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
+    if (!r.ok) { alert(r.erro || 'não deu'); return; }
+    acompanhar();
+}
+async function rodarIA() { const r = await fetch('/api/reputacao/ia', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message })); if (!r.ok) alert(r.erro || 'não deu'); setTimeout(carregar, 1500); }
+async function rodarTeste() { const r = await fetch('/api/reputacao/teste', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message })); if (!r.ok) return alert(r.erro || 'não deu'); carregar(); }
+async function salvarLimites() {
+    const v = (id) => Number($(id).value) / 100;
+    const r = await fetch('/api/reputacao/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limite_reclamacoes: v('lRec'), limite_cancelamentos: v('lCan'), limite_atraso: v('lAtr') }) }).then(x => x.json()).catch(e => ({ erro: e.message }));
+    if (r.erro) return alert(r.erro); carregar();
+}
+async function acompanhar() {
+    clearTimeout(timer); const e = D && D.estado, b = $('btAtualizar');
+    if (e && e.rodando) { b.disabled = true; b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${esc(e.etapa || 'Atualizando…')}`; timer = setTimeout(async () => { D = await fetch('/api/reputacao').then(x => x.json()).catch(() => D); desenhar(); acompanhar(); }, 3000); }
+    else { b.disabled = false; b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar agora'; timer = setTimeout(carregar, 5 * 60 * 1000); }
+}
+carregar();
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

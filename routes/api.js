@@ -1237,6 +1237,12 @@ router.get('/finance/contas-pagar/estado', auth, (req, res) => res.json(require(
 router.post('/finance/contas-pagar/ia', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').analisarIA()));
 router.get('/finance/contas-pagar/ia', auth, (req, res) => res.json(require('../lib/finance_contas_pagar').cardsIA()));
 // calendario de liberacoes do Mercado Pago
+// Reputacao / previsao do Platinum (so le o ML): estado, coleta, limites e teste retroativo
+router.get('/reputacao', auth, (req, res) => { try { res.json(require('../lib/reputacao_previsao').resultado()); } catch (e) { erroJson(res)(e); } });
+router.post('/reputacao/coletar', auth, (req, res) => require('../lib/reputacao_previsao').coletar().then(d => res.json(d)).catch(erroJson(res)));
+router.post('/reputacao/config', auth, (req, res) => { try { res.json(require('../lib/reputacao_previsao').salvarConfig(req.body || {})); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.post('/reputacao/ia', auth, (req, res) => res.json(require('../lib/reputacao_previsao').analisarIA()));
+router.post('/reputacao/teste', auth, (req, res) => { try { res.json(require('../lib/reputacao_previsao').rodarTeste()); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/liberacoes', auth, (req, res) => { try { res.json(require('../lib/finance_liberacoes').calendario({ de: /^\d{4}-\d{2}-\d{2}$/.test(req.query.de || '') ? req.query.de : null, ate: /^\d{4}-\d{2}-\d{2}$/.test(req.query.ate || '') ? req.query.ate : null })); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/liberacoes/atualizar', auth, (req, res) => res.json(require('../lib/finance_liberacoes').atualizar()));
 router.get('/finance/liberacoes/estado', auth, (req, res) => res.json(require('../lib/finance_liberacoes').estado()));

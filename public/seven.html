@@ -316,6 +316,7 @@
         .vm-mc { font-weight:800; } .vm-mc.ruim { color:#ff453a; } .vm-mc.baixo { color:#ff9f0a; } .vm-mc.bom { color:#30D158; }
         .vm-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
         /* Ata da IA: um card por anuncio, so o necessario para decidir */
+        #nvFrame.nv-cheio { position:fixed !important; top:0; bottom:0; right:0; left:var(--nv-esq, 0); width:auto !important; height:100vh !important; border-radius:0 !important; z-index:300; background:#0a0f1c; }
         .ata { padding:14px; display:grid; gap:18px; }
         .ata-sec { display:grid; gap:10px; }
         .ata-sec > h4 { margin:0; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--l3); }
@@ -701,6 +702,12 @@ $('svMenuBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     const aberto = $('svNav').classList.toggle('aberto');
     $('svMenuBtn').setAttribute('aria-expanded', String(aberto));
+});
+// Noticias urgentes: quando a folha do feed abre, o iframe ocupa toda a area ao lado da barra lateral (os cards nao ficam cortados)
+window.addEventListener('message', (e) => {
+  const fr = $('nvFrame'); if (!fr || !e.data || e.data.tipo !== 'feed-palco' || e.source !== fr.contentWindow) return;
+  if (e.data.aberto) { const c = document.querySelector('main.content'), esq = c ? Math.max(0, Math.round(c.getBoundingClientRect().left)) : 0; fr.style.setProperty('--nv-esq', esq + 'px'); fr.classList.add('nv-cheio'); }
+  else fr.classList.remove('nv-cheio');
 });
 document.addEventListener('click', (e) => { if (!e.target.closest('#svNav')) fecharMenu(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharMenu(); });
@@ -1475,12 +1482,23 @@ function vmDesenharAta(d, q, alt) {
         return `<div class="ata-card decidir">
             <div><div class="tit">${esc(rtCurto(it.titulo, 80))}</div><div class="sub">${esc(it.sku || '—')} · ${esc(it.item_id)}${it.confianca ? ' · confiança ' + esc(it.confianca) : ''}</div></div>
             <div class="ata-nums"><div><small>Vendeu</small><b>${vendeu(it)}</b></div><div><small>MC% real</small><b style="color:${it.mc_pct != null && it.mc_pct < d.mc_alvo ? '#ff9f0a' : '#30D158'}">${pct(it.mc_pct)}</b></div><div><small>Margem</small><b>${pct(it.margem_atual)} → <span style="color:#30D158">${pct(it.margem_nova)}</span></b></div></div>
+            ${concCard(it.concorrencia)}
             <div class="ata-preco">Preço <span class="pia-fraco">${pcR$(it.preco_atual)}</span> → <b>${pcR$(it.preco_sugerido)}</b> <span class="pia-fraco">(+${dif.toFixed(1).replace('.', ',')}%)</span></div>
             <div class="ata-txt">${esc(it.motivo || '')}${extra.length ? `<div class="pia-fraco" style="margin-top:4px">${extra.map(esc).join(' · ')}</div>` : ''}</div>
             <div class="sub">${it.agente ? `<i class="bi bi-robot" style="color:#0a84ff"></i> Analisado por <b style="color:var(--l2)">${esc(it.agente.area_nome)} · ${esc(it.agente.papel)}</b>` : it.fonte === 'regra' ? '<i class="bi bi-calculator"></i> Só a conta das regras (a IA não respondeu)' : '<i class="bi bi-stars"></i> Analisado pela IA (chaves antigas)'}</div>
             <div class="ata-botoes"><button class="ep-btn" style="border-color:#30D158;color:#30D158" onclick="vmDecidir('${esc(it.item_id)}', true, this)"><i class="bi bi-check-lg"></i> Aprovar</button>
                 <button class="ep-btn" style="border-color:#ff453a;color:#ff453a" onclick="vmDecidir('${esc(it.item_id)}', false, this)"><i class="bi bi-x-lg"></i> Rejeitar</button></div>
         </div>`;
+    };
+    // vendas dos concorrentes (Nubimetrics): o lider do grupo em 7 e 30 dias e o ritmo dele (vendas por dia dos ultimos 7 dias x media dos 30)
+    const concCard = (k) => {
+        if (!k) return `<div class="pia-fraco" style="font-size:11.5px"><i class="bi bi-people"></i> Sem dado de concorrentes do Nubimetrics para este anúncio.</div>`;
+        const un = (v) => v == null ? '—' : `${v} un`;
+        const rit = k.ritmo_pct, corR = rit == null ? 'var(--l2)' : rit >= 30 ? '#ff9f0a' : rit <= -30 ? '#30D158' : 'var(--l1)';
+        const dt = (d) => d ? String(d).slice(0, 10).split('-').reverse().slice(0, 2).join('/') : null;
+        const tip = `Nubimetrics: vendas de 7 dias${k.dados_de ? ' (dado de ' + dt(k.dados_de) + ')' : ''} e de 30 dias${k.dados_30_de ? ' (dado de ' + dt(k.dados_30_de) + ')' : ''}. Ritmo = vendas por dia dos últimos 7 dias contra a média por dia dos 30: positivo = o líder está acelerando.`;
+        return `<div class="ata-nums" title="${esc(tip)}"><div><small>Líder · 7 dias</small><b>${un(k.lider_v7)}</b></div><div><small>Líder · 30 dias</small><b>${un(k.lider_v30)}</b></div><div><small>Ritmo do líder</small><b style="color:${corR}">${rit == null ? '—' : (rit > 0 ? '+' : '') + rit + '%'}</b></div></div>
+            <div class="sub" style="margin-top:-4px"><i class="bi bi-people"></i> ${k.lider ? `Líder: <b style="color:var(--l2)">${esc(k.lider)}</b> · ` : ''}${k.rivais ? `${k.rivais} rival${k.rivais === 1 ? '' : 'is'}: ${un(k.rivais_v7)} em 7 dias · ${un(k.rivais_v30)} em 30` : ''}${k.posicao ? ` · nossa posição ${k.posicao}º${k.grupo_anuncios ? ' de ' + k.grupo_anuncios : ''}` : ''}</div>`;
     };
     const mini = (titulo, texto, cor) => `<div><b>${esc(rtCurto(titulo, 70))}</b><div class="pia-fraco" style="margin-top:2px;${cor ? 'color:' + cor : ''}">${texto}</div></div>`;
     const sec = (t, n, html) => n ? `<div class="ata-sec"><h4>${t} (${n})</h4>${html}</div>` : '';

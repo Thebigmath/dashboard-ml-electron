@@ -13,7 +13,20 @@
         .envelope { width:100%; box-sizing:border-box; max-width:1800px; margin:0 auto; padding:26px 24px 60px; }
 
         /* Abertura: a frase que responde "o que eu faço agora" */
-        .manha { margin-bottom:22px; }
+        .manha { margin-bottom:22px; display:flex; align-items:flex-start; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+        .manha .texto { min-width:0; flex:1 1 420px; }
+        /* faturamento de ontem: o numero que o dono quer ver antes de tudo, no canto */
+        .fat { flex:0 0 auto; min-width:250px; border-radius:20px; padding:16px 22px; position:relative; overflow:hidden;
+            background:linear-gradient(135deg, color-mix(in srgb, #30D158 30%, var(--s1)) 0%, color-mix(in srgb, var(--s1) 70%, transparent) 100%);
+            border:1px solid color-mix(in srgb, #30D158 38%, transparent);
+            -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); box-shadow:0 10px 30px rgba(0,0,0,.14); }
+        .fat .r { font-size:11px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase; color:var(--l2); display:flex; align-items:center; gap:7px; }
+        .fat .r i { color:#30D158; }
+        .fat .v { font-size:34px; font-weight:800; color:var(--l1); line-height:1.1; margin:6px 0 4px; letter-spacing:-.6px; font-variant-numeric:tabular-nums; }
+        .fat .s { font-size:12.5px; color:var(--l2); }
+        .fat .s b { color:var(--l1); }
+        .fat .mes { margin-top:9px; padding-top:9px; border-top:1px solid color-mix(in srgb, var(--l1) 12%, transparent); font-size:12px; color:var(--l3); }
+        .fat .mes b { color:var(--l1); }
         .manha h2 { font-size:27px; font-weight:700; color:var(--l1); margin:0 0 6px; letter-spacing:-.3px; }
         .manha p { font-size:14px; color:var(--l2); margin:0; }
         .manha b { color:var(--l1); }
@@ -70,7 +83,7 @@
             transition:top .52s cubic-bezier(.22,1,.36,1), left .52s cubic-bezier(.22,1,.36,1),
                        width .52s cubic-bezier(.22,1,.36,1), height .52s cubic-bezier(.22,1,.36,1),
                        border-radius .52s cubic-bezier(.22,1,.36,1); }
-        .folha-cab { display:flex; align-items:center; gap:14px; padding:20px 26px 14px; flex:0 0 auto; }
+        .folha-cab { display:flex; align-items:center; gap:14px; padding:18px 26px 12px; flex:0 0 auto; }
         .voltar { width:38px; height:38px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
             background:rgba(255,255,255,.1); color:#fff; font-size:17px; cursor:pointer; display:flex;
             align-items:center; justify-content:center; transition:background .15s, transform .15s; }
@@ -83,27 +96,31 @@
         /* Dentro do palco e feed: UMA coluna, cartao grande ocupando boa parte da
            tela, com encaixe no scroll. O olho le um de cada vez em vez de varrer
            uma grade — e a leitura certa quando cada item pede uma decisao. */
-        .folha .folha-corpo { scroll-snap-type:y proximity; scroll-padding-top:8px; }
-        .folha-nota { max-width:680px; margin:0 auto 18px; font-size:13.5px; color:rgba(255,255,255,.62);
+        .folha .folha-corpo { scroll-padding-top:8px; }
+        .folha-nota { max-width:none; margin:0 0 18px; font-size:13.5px; color:rgba(255,255,255,.62);
             border-left:2px solid rgba(255,255,255,.2); padding-left:14px; line-height:1.5; }
-        .folha .lista { grid-template-columns:1fr; max-width:680px; margin:0 auto; gap:22px; }
-        .folha .item { aspect-ratio:auto; min-height:min(64vh, 440px); padding:30px 32px; border-radius:26px;
-            scroll-snap-align:start; }
+        /* grade de cards inteiros: da para ler varios de uma vez, sem cortar o texto */
+        .folha .lista { grid-template-columns:repeat(auto-fill, minmax(min(100%, 480px), 1fr)); max-width:none; margin:0; gap:18px; align-items:start; }
+        .folha .item { aspect-ratio:auto; min-height:0; padding:24px 26px; border-radius:22px; }
+        .folha .corpo { flex:1 0 auto; overflow:visible; justify-content:flex-start; }
         .folha .cab { margin-bottom:18px; }
         .folha .pos { width:38px; height:38px; border-radius:12px; font-size:16px; }
         .folha .marca-fila { font-size:11.5px; letter-spacing:.9px; }
-        .folha .acao { font-size:29px; margin-bottom:6px; }
-        .folha .acao-det { font-size:16px; margin-bottom:16px; }
-        .folha .motivo { font-size:15px; padding-left:14px; margin-bottom:18px; }
-        .folha .item h4 { font-size:14px; line-height:1.4; margin-bottom:14px; -webkit-line-clamp:2; }
-        .folha .nums { gap:26px; padding-top:18px; }
-        .folha .num .v { font-size:22px; }
+        .folha .acao { font-size:24px; margin-bottom:6px; }
+        .folha .acao-det { font-size:15px; margin-bottom:12px; }
+        .folha .motivo { font-size:14.5px; padding-left:14px; margin-bottom:14px; }
+        .folha .item h4 { font-size:14px; line-height:1.4; margin-bottom:12px; -webkit-line-clamp:3; }
+        .folha .nums { gap:24px; padding-top:14px; }
+        .folha .num .v { font-size:21px; }
         .folha .num .r { font-size:10.5px; }
         .folha .num .n { font-size:11px; }
         .folha .meta { font-size:12.5px; gap:9px; margin-top:18px; }
         .folha .meta .chip { padding:2px 10px; }
         .folha .rodape { padding-top:20px; }
-        .folha .valor .v { font-size:30px; }
+        .folha .valor .v { font-size:26px; }
+        .folha-cab .folha-fat { margin-left:auto; text-align:right; color:#fff; }
+        .folha-cab .folha-fat small { margin:0; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:rgba(255,255,255,.6); }
+        .folha-cab .folha-fat b { display:block; font-size:22px; font-variant-numeric:tabular-nums; }
         .folha .valor .r { font-size:10.5px; }
         .folha .valor a { font-size:13px; }
         @media (max-width:620px) { .folha .item { min-height:auto; padding:22px; } .folha .item h4 { font-size:19px; } }
@@ -267,8 +284,11 @@
 
         <div class="envelope">
             <div class="manha">
-                <h2 id="saudacao">Bom dia</h2>
-                <p id="frase">—</p>
+                <div class="texto">
+                    <h2 id="saudacao">Bom dia</h2>
+                    <p id="frase">—</p>
+                </div>
+                <div class="fat" id="fat" style="display:none"></div>
             </div>
             <div class="bolhas" id="bolhas"></div>
             <div id="conteudo"><div class="vazio">Carregando...</div></div>
@@ -281,6 +301,8 @@
 <script>
 let dados = null, vendo = 'manha', pendente = null, assinaturaAtual = '';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let fatOntem = null, fatMes = null;
+const brlC = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const brl = (v) => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const hora = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
@@ -302,8 +324,24 @@ function saudacao() {
     return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 }
 
+// canto do quadro: o faturamento de ontem (mesmo resumo do Inicio; so no AD HEALTH)
+function desenharFat() {
+    const el = document.getElementById('fat');
+    if (!el || !SEVEN || !fatOntem) return;
+    const dia = fatOntem.dia ? fatOntem.dia.split('-').reverse().slice(0, 2).join('/') : '';
+    el.innerHTML = `<div class="r"><i class="bi bi-cash-coin"></i> Faturado ontem${dia ? ' · ' + dia : ''}</div><div class="v">${brlC(fatOntem.valor)}</div>
+        <div class="s"><b>${fatOntem.pedidos}</b> pedido${fatOntem.pedidos === 1 ? '' : 's'}${fatOntem.pedidos ? ` · ticket médio <b>${brlC(fatOntem.valor / fatOntem.pedidos)}</b>` : ''}</div>
+        ${fatMes ? `<div class="mes">Mês até agora: <b>${brlC(fatMes.valor)}</b> · ${fatMes.pedidos} pedidos</div>` : ''}`;
+    el.style.display = '';
+}
+async function carregarFat() {
+    if (!SEVEN) return;
+    try { const r = await fetch('/api/inicio/faturamento').then(x => x.json()); if (r && r.ontem) { fatOntem = r.ontem; fatMes = r.mes || null; desenharFat(); } } catch {}
+}
+
 function render() {
     const f = dados.filas;
+    desenharFat();
     document.getElementById('estadoTexto').textContent = 'Coleta de ' + hora(dados.coletado_em);
     document.getElementById('saudacao').textContent = saudacao();
 
@@ -338,14 +376,7 @@ function render() {
             <h3>${dezena.length} decisões</h3>
             <p class="sub">Valem <b>${brl(dezena.reduce((s, p) => s + p.peso, 0))}</b> por mês. Começam por ${esc(top3)}.</p>
             <div class="fitas">${filasNaDezena(dezena).map(t => `<span class="fita">${esc(t)}</span>`).join('')}</div>
-        </div>
-        <div class="secao-tit" style="margin-top:26px"><i class="bi bi-collection"></i> Por fila — clique na bolinha acima para abrir</div>
-        <div class="atalhos">${f.map(x => `
-            <button class="atalho" style="--marca:${esc(x.cor)}" onclick="abrirDaBolha('${x.id}')">
-                <i class="bi ${esc(x.icone)}"></i>
-                <div><div class="a-tit">${esc(x.titulo)}</div><div class="a-sub">${x.total} anúncios · ${brl(x.dinheiro)}</div></div>
-                <i class="bi bi-chevron-right seta"></i>
-            </button>`).join('')}</div>`;
+        </div>`;
 }
 
 function item(p, pos, cor, filaTitulo, icone, rotulo) {
@@ -451,6 +482,7 @@ function abrirPalco(id = 'manha', origem = null) {
                     <h3>${esc(conf.titulo)}</h3>
                     <small>${esc(conf.sub)}</small>
                 </div>
+                ${fatOntem ? `<div class="folha-fat"><small>Faturado ontem</small><b>${brlC(fatOntem.valor)}</b></div>` : ''}
             </div>
             <div class="folha-corpo">
                 ${conf.nota ? `<div class="folha-nota">${esc(conf.nota)}</div>` : ''}
@@ -458,18 +490,19 @@ function abrirPalco(id = 'manha', origem = null) {
             </div>
         </div>`;
     document.body.appendChild(palco);
+    if (EMBED) { try { window.parent.postMessage({ tipo: 'feed-palco', aberto: true }, '*'); } catch {} }
     const folha = palco.querySelector('.folha');
 
     // um quadro depois: o navegador ja registrou o retangulo de origem e a
     // transicao tem de onde sair
     requestAnimationFrame(() => {
         palco.classList.add('aberto');
-        const m = Math.min(40, innerWidth * .04);
+        const m = EMBED ? 0 : Math.min(40, innerWidth * .04);   // no AD HEALTH a folha ocupa a area toda (a janela de cima abre espaco)
         folha.style.top = m + 'px';
         folha.style.left = m + 'px';
         folha.style.width = (innerWidth - m * 2) + 'px';
         folha.style.height = (innerHeight - m * 2) + 'px';
-        folha.style.borderRadius = '22px';
+        folha.style.borderRadius = EMBED ? '0' : '22px';
     });
     // transitionend nem sempre dispara (se o navegador agrupar os dois quadros,
     // nao ha transicao e nao ha evento). O relogio garante que o conteudo
@@ -506,6 +539,7 @@ function fecharPalco() {
     document.removeEventListener('keydown', escFecha);
     document.body.style.overflow = '';
     setTimeout(() => ir.remove(), 540);
+    if (EMBED) { try { window.parent.postMessage({ tipo: 'feed-palco', aberto: false }, '*'); } catch {} }
 }
 
 // Revelacao no scroll. Um observador so, recriado a cada render: o cartao entra
@@ -612,6 +646,7 @@ async function coletarAgora() {
     }
 }
 
+carregarFat();
 recarregar(false).then(() => {
     document.body.classList.add('page-ready');
     checar();
