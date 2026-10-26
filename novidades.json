@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.125",
+    "data": "2026-10-26",
+    "titulo": "Valor do Estoque correto: custos corrigidos e protegidos",
+    "texto": "- Valor do Estoque: a página agora usa a mesma regra de custo da precificação e das métricas (herda o custo base em rótulos como 013tb-virtus e acha os pares \"-par\"), e bate com o Valor do Full das Métricas. Mostra as unidades sem custo e põe fora do total, em vermelho, o custo suspeito (R$ 20 mil ou mais, ou mais de 10x o preço de venda).\n- Custos corrigidos: a planilha antiga de julho tinha sobrescrito custos com valores errados, alguns absurdos (901290836 = 132.036; 580061342 = 46.275). Ao abrir, o app troca pelos da planilha do Mercado Turbo só os custos que ainda eram iguais aos da planilha antiga, com backup e aviso na tela; o que você editou depois não é mexido.\n- Salvar Custos manda só o que você editou (uma tela velha não apaga mais custos corrigidos) e pede confirmação para valor 50x diferente. Sincronizar/Upload de planilha mostra a prévia (quantos mudam, data da planilha) e só grava ao confirmar; valores absurdos nunca são gravados por planilha. Todo salvamento faz backup (pasta custos_backups) e entra em custos_log.jsonl.\n- Métricas STOCK Ops: o Valor do Full e o Parado deixam o custo suspeito fora da soma e avisam."
+  },
+  {
     "versao": "1.9.124",
     "data": "2026-10-26",
     "titulo": "Contas a pagar: marcar como paga (baixa no Olist)",

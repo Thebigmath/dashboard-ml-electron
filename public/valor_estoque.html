@@ -105,6 +105,12 @@
                 <div class="stat-card">
                     <div class="stat-label">Sem Custo Informado</div>
                     <div class="stat-value" id="semCusto" style="color:#ff9500">—</div>
+                    <div id="semCustoDet" style="font-size:11px;color:var(--l3);margin-top:4px"></div>
+                </div>
+                <div class="stat-card" id="cardSusp" style="display:none;border-color:#ff453a">
+                    <div class="stat-label" style="color:#ff453a">Custo suspeito (fora do total)</div>
+                    <div class="stat-value" id="suspQtd" style="color:#ff453a">—</div>
+                    <div id="suspDet" style="font-size:11px;color:var(--l3);margin-top:4px"></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">SKUs no Full</div>
@@ -112,6 +118,8 @@
                     <div id="notaFull" style="font-size:11px;color:var(--l3);margin-top:4px"></div>
                 </div>
             </div>
+
+            <div id="avisoCorrecao" class="stat-card" style="display:none;margin-bottom:16px;border-color:#30d158;font-size:13px;line-height:1.5"></div>
 
             <!-- Tabela -->
             <div class="table-wrap">
@@ -143,25 +151,59 @@
 <script>
 let produtos = [];      // so os do Full (o valor de estoque e do galpao do ML)
 let todosProdutos = [];  // tudo que veio do motor, para o rotulo "N fora do Full"
-let custos = {};
+let custos = {};         // a tabela de custos como esta gravada (chave = SKU em minusculo)
+let resolvidos = {};     // o custo de cada SKU pela regra oficial (custoDoSku): inclui os rotulos que herdam o custo base
 let filtro = '';
 let ordemValor = null;   // null -> 'desc' -> 'asc' -> null
+const editados = new Set();   // SKUs que voce mexeu nesta tela: so eles vao no Salvar
 
 function fmt(v) {
     return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+// o custo gravado para o SKU exato vale primeiro (e o que voce acabou de digitar); senao, o resolvido pela regra oficial do app
+function custoDe(p) {
+    const k = (p.sku || '').toLowerCase();
+    if (Number(custos[k]) > 0) return Number(custos[k]);
+    return resolvidos[k] ? Number(resolvidos[k].valor) : 0;
+}
+async function carregarResolvidos() {
+    try { resolvidos = await (await fetch('/api/custos/resolvidos')).json(); } catch { resolvidos = {}; }
+}
+async function recarregarCustos() {
+    custos = await (await fetch('/api/custos')).json();
+    await carregarResolvidos();
+}
+
+// custo absurdo (virgula perdida na planilha: 181,44 virou 18144): nao entra na soma e aparece em separado
+function custoSuspeito(p, c) {
+    const preco = Number(p.preco || 0);
+    return c > 0 && (c >= 20000 || (preco > 0 && c > preco * 10));
+}
+
 function recalcularTotal() {
-    let total = 0, com = 0, sem = 0;
+    let total = 0, com = 0, sem = 0, semUn = 0, semVenda = 0;
+    const susp = [];
     produtos.forEach(p => {
-        const c = Number(custos[(p.sku||'').toLowerCase()] || 0);
-        total += c * Number(p.estoque || 0);
-        if (c > 0) com++; else sem++;
+        const c = custoDe(p), est = Number(p.estoque || 0);
+        if (est <= 0) return;   // sem estoque nao tem valor nem precisa de custo
+        if (custoSuspeito(p, c)) { susp.push({ p, c }); return; }
+        total += c * est;
+        if (c > 0) com++; else { sem++; semUn += est; semVenda += est * Number(p.preco || 0); }
     });
     document.getElementById('valorTotal').textContent = fmt(total);
     document.getElementById('comCusto').textContent = com;
     document.getElementById('semCusto').textContent = sem;
+    document.getElementById('semCustoDet').textContent = sem ? `${semUn.toLocaleString('pt-BR')} un · ${fmt(semVenda)} a preço de venda, fora do total` : '';
     document.getElementById('totalSkus').textContent = produtos.length;
+    const comEstoque = produtos.filter(p => Number(p.estoque || 0) > 0).length;
+    document.getElementById('comCusto').title = `${comEstoque} SKUs com estoque no Full (os sem estoque não entram)`;
+    const cs = document.getElementById('cardSusp');
+    cs.style.display = susp.length ? '' : 'none';
+    if (susp.length) {
+        document.getElementById('suspQtd').textContent = susp.length + (susp.length === 1 ? ' SKU' : ' SKUs');
+        document.getElementById('suspDet').textContent = susp.slice(0, 3).map(x => `${x.p.sku} (${fmt(x.c)})`).join(', ') + (susp.length > 3 ? '…' : '') + ' — confira o custo';
+    }
     const fora = todosProdutos.length - produtos.length;
     const nota = document.getElementById('notaFull');
     if (nota) nota.textContent = fora > 0 ? `${fora} produtos fora do Full não entram nesta conta` : '';
@@ -179,7 +221,8 @@ function toggleOrdemValor() {
 }
 
 function valorDe(p) {
-    return Number(custos[(p.sku||'').toLowerCase()] || 0) * Number(p.estoque || 0);
+    const c = custoDe(p);
+    return custoSuspeito(p, c) ? 0 : c * Number(p.estoque || 0);
 }
 
 function renderizar() {
@@ -199,21 +242,23 @@ function renderizar() {
     }
 
     document.getElementById('tbody').innerHTML = lista.map(p => {
-        const custo = Number(custos[(p.sku||'').toLowerCase()] || 0);
+        const custo = custoDe(p), chaveProp = (p.sku || '').toLowerCase();
+        const via = !(Number(custos[chaveProp]) > 0) && resolvidos[chaveProp] ? resolvidos[chaveProp].chave : '';   // custo herdado de outra chave
         const est = Number(p.estoque || 0);
-        const vt = custo * est;
+        const susp = custoSuspeito(p, custo), vt = susp ? 0 : custo * est;
         return `<tr>
             <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.titulo}">${p.titulo}</td>
             <td style="color:var(--l3);font-size:11px;font-family:monospace">${p.sku}</td>
             <td style="text-align:right;font-weight:600">${est.toLocaleString('pt-BR')}</td>
             <td style="text-align:right">
-                <input class="custo-input" type="number" min="0" step="0.01"
+                <input class="custo-input" type="number" min="0" step="0.01" style="${susp ? 'border-color:#ff453a;color:#ff453a' : ''}"
                     value="${custo > 0 ? custo.toFixed(2) : ''}"
                     placeholder="0,00"
                     oninput="atualizarCusto('${p.sku}', this.value)">
+                ${via ? `<div style="font-size:10px;color:var(--l3);margin-top:2px" title="Este SKU não tem custo próprio: usa o do SKU base">custo de ${via}</div>` : ''}
             </td>
             <td style="text-align:right;font-weight:600;color:${vt>0?'#00ff99':'var(--l3)'}">
-                ${vt > 0 ? fmt(vt) : '—'}
+                ${susp ? '<span style="color:#ff453a;font-size:11px;font-weight:500">suspeito: fora do total</span>' : (vt > 0 ? fmt(vt) : '—')}
             </td>
         </tr>`;
     }).join('');
@@ -221,23 +266,37 @@ function renderizar() {
 
 function atualizarCusto(sku, valor) {
     const key = (sku||'').toLowerCase();
+    editados.add(key);
     const v = parseFloat(valor);
     if (!isNaN(v) && v > 0) custos[key] = v;
     else delete custos[key];
     recalcularTotal();
 }
 
-async function salvarCustos() {
+// Manda SO os SKUs que voce editou: o servidor mescla com o que esta gravado, entao uma tela aberta ha tempo nao apaga mais custos corrigidos depois.
+async function salvarCustos(forcar) {
     const btn = document.querySelector('.btn-salvar');
+    const rotulo = '<i class="bi bi-floppy"></i> Salvar Custos';
+    if (!editados.size) { btn.innerHTML = '<i class="bi bi-check-circle"></i> Nada alterado'; setTimeout(() => { btn.innerHTML = rotulo; }, 1500); return; }
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
     btn.disabled = true;
-    await fetch('/api/custos', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(custos)
-    });
-    btn.innerHTML = '<i class="bi bi-check-circle"></i> Salvo!';
-    setTimeout(() => { btn.innerHTML = '<i class="bi bi-floppy"></i> Salvar Custos'; btn.disabled = false; }, 1500);
+    const alteracoes = {};
+    for (const k of editados) alteracoes[k] = custos[k] > 0 ? custos[k] : null;
+    try {
+        const r = await fetch('/api/custos', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ alteracoes, forcar: !!forcar }) }).then(x => x.json());
+        if (r.suspeitos && r.suspeitos.length) {
+            const L = r.suspeitos.slice(0, 10).map(s => `${s.sku}: ${s.antes ? fmt(s.antes) : '(novo)'} → ${fmt(s.depois)}`).join('\n');
+            btn.disabled = false; btn.innerHTML = rotulo;
+            if (confirm(`${r.erro}\n\n${L}\n\nGravar mesmo assim?`)) return salvarCustos(true);
+            return;
+        }
+        if (r.erro) throw new Error(r.erro);
+        editados.clear();
+        await recarregarCustos();   // volta a ler: o servidor mesclou com o que mudou fora desta tela
+        recalcularTotal(); renderizar();
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Salvo!';
+    } catch (e) { alert('Erro ao salvar: ' + e.message); btn.innerHTML = rotulo; btn.disabled = false; return; }
+    setTimeout(() => { btn.innerHTML = rotulo; btn.disabled = false; }, 1500);
 }
 
 function filtrar() {
@@ -246,41 +305,42 @@ function filtrar() {
 }
 
 function resumoImportacao(d) {
-    let s = `${d.importados} SKUs atualizados`;
-    if (d.semProduto) s += ` · ${d.semProduto} sem produto`;
+    const r = d.resumo || {};
+    let s = `${r.mudam || 0} custos atualizados`;
+    if (r.novos) s += ` · ${r.novos} novos`;
+    if (r.bloqueados) s += ` · ${r.bloqueados} bloqueados`;
     return s;
 }
 
-// Custo que mudou 50x ou mais quase sempre é vírgula perdida na planilha
-// (181,44 gravado como 18144). Mostra pra conferir antes de confiar no total.
-function avisarSuspeitos(d) {
-    if (!d.suspeitos || !d.suspeitos.length) return;
-    const linhas = d.suspeitos.slice(0, 15).map(s => `${s.sku}: ${fmt(s.antes)} → ${fmt(s.depois)}`);
-    if (d.suspeitos.length > 15) linhas.push(`… e mais ${d.suspeitos.length - 15}`);
-    alert(`Atenção: ${d.suspeitos.length} custo(s) mudaram mais de 50× em relação ao valor anterior. Confira na planilha se a vírgula decimal foi perdida:\n\n` + linhas.join('\n'));
+// Mostra a PREVIA da planilha e pede confirmacao antes de gravar (a planilha tem prioridade sobre os custos atuais).
+function confirmarImportacao(d) {
+    const r = d.resumo || {};
+    if (!r.mudam && !r.novos) { alert(`Nada para atualizar: ${r.iguais || 0} custos já são iguais aos da planilha${r.bloqueados ? ` (${r.bloqueados} bloqueados por parecerem errados)` : ''}.`); return false; }
+    const ex = (d.amostra || []).map(s => `${s.sku}: ${fmt(s.antes)} → ${fmt(s.depois)}`).join('\n');
+    const bl = (d.bloqueados || []).slice(0, 8).map(s => `${s.sku}: ${s.antes ? fmt(s.antes) : '(novo)'} → ${fmt(s.depois)}`).join('\n');
+    const idade = d.data_arquivo ? Math.floor((Date.now() - Date.parse(d.data_arquivo)) / 86400000) : null;
+    return confirm(`Planilha: ${d.arquivo || ''}${idade != null ? ` (salva há ${idade} dias${idade > 30 ? ' — ANTIGA!' : ''})` : ''}\n\n${r.mudam} custos vão MUDAR · ${r.novos} novos · ${r.iguais} iguais${r.bloqueados ? ` · ${r.bloqueados} bloqueados (parecem errados e NÃO serão gravados)` : ''}\n\nOs que mais mudam:\n${ex || '—'}${bl ? `\n\nBloqueados:\n${bl}` : ''}\n\nA planilha tem prioridade sobre os custos atuais. Gravar? (o app faz um backup antes)`);
 }
 
 async function sincronizar() {
     const btn = document.getElementById('btnSync');
+    const rotulo = '<i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha';
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split" style="color:#0a84ff"></i> Sincronizando...';
+    btn.innerHTML = '<i class="bi bi-hourglass-split" style="color:#0a84ff"></i> Lendo a planilha...';
     try {
-        const r = await fetch('/api/importar_custos');
-        const d = await r.json();
+        let d = await (await fetch('/api/importar_custos')).json();
         if (!d.ok) throw new Error(d.erro);
-        const rc = await fetch('/api/custos');
-        custos = await rc.json();
+        if (!confirmarImportacao(d)) { btn.innerHTML = rotulo; btn.disabled = false; return; }
+        d = await (await fetch('/api/importar_custos?aplicar=1')).json();
+        if (!d.ok) throw new Error(d.erro);
+        await recarregarCustos();
         recalcularTotal();
         renderizar();
         btn.innerHTML = `<i class="bi bi-check-circle" style="color:#00ff99"></i> ${resumoImportacao(d)}`;
-        avisarSuspeitos(d);
-        setTimeout(() => {
-            btn.innerHTML = '<i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha';
-            btn.disabled = false;
-        }, 2500);
+        setTimeout(() => { btn.innerHTML = rotulo; btn.disabled = false; }, 2500);
     } catch (e) {
         alert('Erro ao sincronizar: ' + e.message);
-        btn.innerHTML = '<i class="bi bi-arrow-repeat" style="color:#0a84ff"></i> Sincronizar Planilha';
+        btn.innerHTML = rotulo;
         btn.disabled = false;
     }
 }
@@ -289,48 +349,62 @@ async function importarPlanilha(input) {
     const file = input.files[0];
     if (!file) return;
     const btn = document.getElementById('btnImportar');
-    btn.style.opacity = '0.6';
-    btn.style.pointerEvents = 'none';
-    btn.querySelector('i').className = 'bi bi-hourglass-split';
-    document.getElementById('btnImportarRotulo').textContent = 'Importando...';
-
-    try {
-        const fd = new FormData();
-        fd.append('planilha', file);
-        const r = await fetch('/api/importar_custos', { method: 'POST', body: fd });
-        const d = await r.json();
-        if (!d.ok) throw new Error(d.erro);
-
-        // Recarrega custos atualizados do servidor
-        const rc = await fetch('/api/custos');
-        custos = await rc.json();
-        recalcularTotal();
-        renderizar();
-
-        btn.querySelector('i').className = 'bi bi-check-circle';
-        document.getElementById('btnImportarRotulo').textContent = resumoImportacao(d);
-        avisarSuspeitos(d);
-        setTimeout(() => {
-            btn.querySelector('i').className = 'bi bi-upload';
-            document.getElementById('btnImportarRotulo').textContent = 'Upload Manual';
-            btn.style.opacity = '';
-            btn.style.pointerEvents = '';
-            input.value = '';
-        }, 2500);
-    } catch (e) {
-        alert('Erro ao importar: ' + e.message);
+    const volta = () => {
         btn.querySelector('i').className = 'bi bi-upload';
         document.getElementById('btnImportarRotulo').textContent = 'Upload Manual';
         btn.style.opacity = '';
         btn.style.pointerEvents = '';
         input.value = '';
+    };
+    btn.style.opacity = '0.6';
+    btn.style.pointerEvents = 'none';
+    btn.querySelector('i').className = 'bi bi-hourglass-split';
+    document.getElementById('btnImportarRotulo').textContent = 'Lendo...';
+
+    try {
+        const envia = async (aplicar) => {
+            const fd = new FormData();
+            fd.append('planilha', file);
+            if (aplicar) fd.append('aplicar', '1');
+            const d = await (await fetch('/api/importar_custos', { method: 'POST', body: fd })).json();
+            if (!d.ok) throw new Error(d.erro);
+            return d;
+        };
+        let d = await envia(false);
+        if (!confirmarImportacao(d)) { volta(); return; }
+        d = await envia(true);
+
+        // Recarrega custos atualizados do servidor
+        await recarregarCustos();
+        recalcularTotal();
+        renderizar();
+
+        btn.querySelector('i').className = 'bi bi-check-circle';
+        document.getElementById('btnImportarRotulo').textContent = resumoImportacao(d);
+        setTimeout(volta, 2500);
+    } catch (e) {
+        alert('Erro ao importar: ' + e.message);
+        volta();
     }
+}
+
+// Aviso (uma vez) da correcao automatica de 26/10: o app trocou os custos que a planilha antiga tinha sobrescrito
+function mostrarAvisoCorrecao(a) {
+    const el = document.getElementById('avisoCorrecao');
+    if (!el || !a || !a.n) return;
+    try { if (localStorage.getItem('custos_aviso') === a.id) return; } catch {}
+    const ex = (a.itens || []).slice(0, 6).map(i => `${i.sku}: ${fmt(i.de)} → ${fmt(i.para)}`).join(' · ');
+    el.innerHTML = `<b style="color:#30d158"><i class="bi bi-shield-check"></i> ${a.n} custos corrigidos em ${new Date(a.em).toLocaleDateString('pt-BR')}</b>
+        <div style="color:var(--l2);margin-top:4px">A planilha antiga de julho tinha sobrescrito custos com valores errados, alguns absurdos. O app trocou pelos da planilha do Mercado Turbo (${a.fonte}) só onde o custo ainda era o da planilha antiga: o que você editou depois não foi mexido. Maiores mudanças: ${ex}. Backup: ${a.backup || '—'} (na pasta custos_backups).</div>
+        <button class="btn-salvar" style="margin-top:8px;padding:5px 14px" onclick="try{localStorage.setItem('custos_aviso','${a.id}')}catch(e){};this.parentNode.style.display='none'">Ok, entendi</button>`;
+    el.style.display = '';
 }
 
 async function init() {
     const [rd, rc] = await Promise.all([fetch('/api/dados'), fetch('/api/custos')]);
     const d = await rd.json();
     custos = await rc.json();
+    await carregarResolvidos();
     todosProdutos = d.produtos || [];
     // O valor de estoque e o do galpao do Full: fora do Full o "estoque" e a
     // quantidade declarada no anuncio, que nao representa mercadoria nossa parada.
@@ -338,6 +412,7 @@ async function init() {
     recalcularTotal();
     renderizar();
     document.body.classList.add('page-ready');
+    fetch('/api/custos/aviso').then(r => r.json()).then(mostrarAvisoCorrecao).catch(() => {});
 }
 
 init().catch(e => {

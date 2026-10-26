@@ -986,11 +986,28 @@ router.post('/salvar_envio', auth, (req, res) => {
 });
 
 // ── Custos ──────────────────────────────────────────────────────────────────
+// correcao unica (26/10/2026): troca pelo custo do Mercado Turbo so o que hoje e IGUAL ao da planilha antiga de julho; com backup e aviso na tela
+try { require('../lib/custos_guard').corrigirUmaVez(); } catch (e) { console.error('[custos] correção:', e.message); }
 router.get('/custos', auth, (req, res) => res.json(lerJson('custos.json', {})));
 router.post('/custos', auth, (req, res) => {
-    salvarJson('custos.json', req.body);
-    res.json({ ok: true });
+    const G = require('../lib/custos_guard');
+    try {
+        // "Salvar Custos" manda so os SKUs editados (alteracoes) e o servidor mescla: uma tela velha nao apaga mais o que mudou depois
+        if (req.body && req.body.alteracoes) return res.json(G.aplicarAlteracoes(req.body.alteracoes, { forcar: !!req.body.forcar, origem: 'tela' }));
+        // formato antigo (a tabela inteira): continua aceito, mas agora com backup antes
+        G.backup('tela-inteira'); salvarJson('custos.json', req.body); res.json({ ok: true });
+    } catch (e) { res.status(400).json({ erro: String(e.message || e) }); }
 });
+router.get('/custos/resolvidos', auth, (req, res) => {
+    // o custo de cada SKU do Full pela MESMA regra da precificacao e das metricas (custoDoSku): ignora maiuscula/minuscula e herda o custo base nos rotulos
+    // do SEVEN (013tb-virtus -> 013TB). A tela "Valor do Estoque" so achava a chave exata e deixava 39 SKUs sem custo.
+    try {
+        const P = require('../lib/precificador'), out = {};
+        for (const p of lerJson('reposicao.json', [])) { const s = String(p.sku || ''); if (!s) continue; const c = P.custoDoSku(s); if (c) out[s.toLowerCase()] = { valor: c.valor, chave: c.chave }; }
+        res.json(out);
+    } catch (e) { res.status(500).json({ erro: String(e.message || e) }); }
+});
+router.get('/custos/aviso', auth, (req, res) => res.json(require('../lib/custos_guard').aviso() || {}));
 
 // ── Produtos estrela ─────────────────────────────────────────────────
 // Marcação manual do usuário. Fica em arquivo próprio porque o motor reescreve
@@ -1052,19 +1069,14 @@ function lerPlanilhaCustos(caminho) {
 
 // Mescla com os custos existentes (planilha tem prioridade) e conta quantos
 // SKUs da planilha batem com produto da reposição.
-function importarCustos(caminho) {
+function importarCustos(caminho, aplicar) {
+    const G = require('../lib/custos_guard');
     const { custos, ignoradas } = lerPlanilhaCustos(caminho);
-    const existentes = lerJson('custos.json', {});
-    const merged = { ...existentes, ...custos };
-    salvarJson('custos.json', merged);
     const skusProd = new Set(lerJson('reposicao.json', []).map(p => String(p.sku || '').toLowerCase()));
     const semProduto = Object.keys(custos).filter(k => !skusProd.has(k)).length;
-    // Um custo que muda 50x ou mais quase sempre é vírgula perdida (181,44 -> 18144)
-    // numa célula que o Excel já gravou como número; a tela mostra pra conferir.
-    const suspeitos = Object.keys(custos)
-        .filter(k => existentes[k] > 0 && (custos[k] / existentes[k] >= 50 || existentes[k] / custos[k] >= 50))
-        .map(k => ({ sku: k, antes: existentes[k], depois: custos[k] }));
-    return { ok: true, importados: Object.keys(custos).length, semProduto, ignoradas, suspeitos, total: Object.keys(merged).length };
+    // sem "aplicar" so mostra a previa (nada e gravado); custo suspeito (virgula perdida) nunca e gravado
+    const r = aplicar ? G.aplicarImportacao(custos, 'planilha') : G.previaImportacao(custos);
+    return { ok: true, previa: !aplicar, aplicado: !!r.aplicado, importados: Object.keys(custos).length, semProduto, ignoradas, resumo: r.resumo, amostra: r.amostra, bloqueados: r.bloqueados };
 }
 
 // ── Importar custos do caminho configurado (GET) ────────────────────────────
@@ -1075,7 +1087,7 @@ router.get('/importar_custos', auth, (req, res) => {
         const dica = 'Use o botão de enviar planilha para importar o arquivo .xlsx.';
         if (!filePath) return res.status(400).json({ erro: `Nenhuma planilha fixa configurada. ${dica}` });
         if (!fs.existsSync(filePath)) return res.status(404).json({ erro: `A planilha configurada não existe mais neste computador. ${dica}` });
-        res.json({ ...importarCustos(filePath), arquivo: path.basename(filePath) });
+        res.json({ ...importarCustos(filePath, req.query.aplicar === '1'), arquivo: path.basename(filePath), data_arquivo: fs.statSync(filePath).mtime.toISOString() });
     } catch (e) {
         res.status(400).json({ erro: e.message });
     }
@@ -1085,7 +1097,7 @@ router.get('/importar_custos', auth, (req, res) => {
 router.post('/importar_custos', auth, upload.single('planilha'), (req, res) => {
     if (!req.file) return res.status(400).json({ erro: 'Nenhum arquivo enviado' });
     try {
-        res.json(importarCustos(req.file.path));
+        res.json({ ...importarCustos(req.file.path, !!(req.body && req.body.aplicar === '1')), arquivo: req.file.originalname });
     } catch (e) {
         res.status(400).json({ erro: e.message });
     } finally {
