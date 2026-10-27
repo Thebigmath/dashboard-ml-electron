@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.126",
+    "data": "2026-10-26",
+    "titulo": "Notas escaneadas deixam de ser barradas; erros de leitura visíveis; chave do Gemini pela tela",
+    "texto": "- Notas de fornecedores escaneadas ou fotografadas (PDF de imagem): o app deixava de barrar quase todas. A IA lia a chave de acesso errada e, quando o erro passava no dígito verificador, o app sobrescrevia o CNPJ certo e barrava a nota. Agora a chave só vale se bater com o CNPJ, o número e o mês da nota; se não bater, a IA relê a chave (até 6 leituras) e vale a que bater; se nenhuma bater, a nota NÃO é barrada: segue para a sua conferência, sem chave, com aviso para conferir a chave no PDF. Num teste com 15 notas escaneadas, as barradas caíram de 10 para 0. Como a leitura de imagem pode errar, confira sempre valor, vencimento e total de cada nota antes de enviar (o app avisa quando a soma das parcelas não bate com o total).\n- CNPJ lido com erro numa foto: se o mesmo fornecedor já aparece em outra nota com um CNPJ válido que difere em até 2 dígitos, o app corrige e avisa.\n- Leitura que falha agora aparece na tela (antes ficava em silêncio): a nota some da lista e a tela mostra o arquivo e o motivo, por exemplo \"Chave do Gemini não cadastrada neste PC\".\n- Chave do Gemini pode ser cadastrada direto na tela das notas (testada no Google antes de guardar), útil em PC novo."
+  },
+  {
     "versao": "1.9.125",
     "data": "2026-10-26",
     "titulo": "Valor do Estoque correto: custos corrigidos e protegidos",

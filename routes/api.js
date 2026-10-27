@@ -1281,6 +1281,7 @@ router.post('/finance/notas-contas/ler', auth, upload.array('pdfs', 80), (req, r
 });
 router.post('/finance/notas-contas/enviar', auth, (req, res) => { try { res.json(notasContas().enviar(req.body || {})); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/notas-contas/empresa', auth, (req, res) => { try { res.json(notasContas().definirCnpj((req.body || {}).cnpj)); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.post('/finance/notas-contas/gemini', auth, async (req, res) => { try { res.json(await notasContas().salvarChaveGemini((req.body || {}).chave)); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
 router.post('/finance/notas-contas/token', auth, async (req, res) => { try { res.json(await notasContas().salvarToken((req.body || {}).token, { confirmar_outra: !!(req.body || {}).confirmar_outra })); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
 router.post('/finance/notas-contas/:id/baixar', auth, async (req, res) => { try { res.json(await notasContas().baixar(req.params.id, req.body || {})); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
 router.get('/finance/notas-contas/:id/pdf', auth, (req, res) => { const p = notasContas().caminhoPdf(req.params.id); if (!p) return res.status(404).json({ erro: 'PDF não encontrado.' }); res.type('application/pdf').sendFile(p); });

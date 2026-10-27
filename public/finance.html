@@ -291,6 +291,12 @@ function ncDesenhar() {
         <button class="btn-acao pri" onclick="ncSalvarToken()"><i class="bi bi-shield-check"></i> Testar e salvar</button>${nc.olist_token ? ' <button class="btn-acao" onclick="ncTokenAberto=false;ncDesenhar()">Cancelar</button>' : ''}</div>
         <div class="fraco" id="ncTokenMsg" style="margin-top:6px"></div></div>`;
     else h += `<div class="fraco" style="margin-bottom:6px"><i class="bi bi-check-circle"></i> Token do Olist cadastrado neste PC. <a class="link-nc" onclick="ncTokenAberto=true;ncDesenhar()">Trocar token</a></div>`;
+    if (!nc.gemini_chave || ncGeminiAberto) h += `<div class="${nc.gemini_chave ? 'nc-token' : 'aviso-nc'}"><b><i class="bi bi-stars"></i> ${nc.gemini_chave ? 'Trocar' : 'Cadastrar'} a chave do Gemini (leitura das notas)</b>
+        <div class="fraco">${nc.gemini_chave ? '' : '<b>Este PC não tem a chave do Gemini: sem ela o app não consegue ler os PDFs e as notas não entram na lista.</b> '}A IA do Google lê a fatura/duplicata de cada nota. Gere a chave em aistudio.google.com/apikey e cole aqui; o app testa no Google e só então guarda neste PC (ela não aparece de novo).</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><input type="password" id="ncGeminiIn" autocomplete="off" spellcheck="false" placeholder="Cole a chave do Gemini aqui" style="flex:1;min-width:260px;padding:8px 10px;border-radius:8px;border:1px solid var(--sep);background:var(--s1);color:inherit" onkeydown="if(event.key==='Enter')ncSalvarGemini()">
+        <button class="btn-acao pri" onclick="ncSalvarGemini()"><i class="bi bi-shield-check"></i> Testar e salvar</button>${nc.gemini_chave ? ' <button class="btn-acao" onclick="ncGeminiAberto=false;ncDesenhar()">Cancelar</button>' : ''}</div>
+        <div class="fraco" id="ncGeminiMsg" style="margin-top:6px"></div></div>`;
+    else h += `<div class="fraco" style="margin-bottom:6px"><i class="bi bi-check-circle"></i> Chave do Gemini cadastrada neste PC. <a class="link-nc" onclick="ncGeminiAberto=true;ncDesenhar()">Trocar chave</a></div>`;
     if (semCnpj) h += `<div class="aviso-nc">O CNPJ da empresa ${esc(E.nome)} ainda não está configurado, então não dá para saber se a nota é desta empresa. ${dest ? `Destinatário da última nota lida: <b>${esc(dest.nome)}</b> (${esc(dest.cnpj)}). <button class="btn-acao" onclick="ncCnpj('${esc(dest.cnpj)}')">É a empresa ${esc(E.nome)}: usar este CNPJ</button>` : 'Leia uma nota e confirme aqui.'}</div>`;
     h += `<div class="nc-drop" id="ncDrop" ondragover="event.preventDefault();this.classList.add('on')" ondragleave="this.classList.remove('on')" ondrop="event.preventDefault();this.classList.remove('on');ncEnviarArquivos(event.dataTransfer.files)">
         <i class="bi bi-file-earmark-pdf"></i> Arraste os PDFs aqui ou <label class="link-nc"><input type="file" id="ncArq" accept="application/pdf,.pdf" multiple style="display:none" onchange="ncEnviarArquivos(this.files)">escolha os arquivos</label>
@@ -303,15 +309,21 @@ function ncDesenhar() {
         h += ncResultados();
         h += nc.notas.map(ncNota).join('');
     }
+    if (!nc.notas.length) h += ncResultados();   // leitura que falhou (ex.: sem chave do Gemini) deixa a lista vazia: o motivo precisa aparecer mesmo assim
     box.innerHTML = h;
 }
 function ncResultados() {
-    const e = nc.estado, L = e.resultados || [], P = e.pulados || [];
+    const e = nc.estado, T = e.resultados || [], P = e.pulados || [], LER = T.filter(x => x.parcela === undefined), L = T.filter(x => x.parcela !== undefined);   // leitura dos PDFs x envio ao Olist
     if (e.erro && !e.enviando && !e.rodando) return `<div class="aviso-nc"><i class="bi bi-x-octagon"></i> ${esc(e.erro)}</div>`;
-    if (!L.length && !P.length) return '';
+    if (!T.length && !P.length) return '';
+    const lidas = LER.filter(x => !x.erro && !x.ja).length, jas = LER.filter(x => x.ja).length, falhas = LER.filter(x => x.erro);
+    const lerHtml = LER.length ? `<div class="nc-res"><b>Última leitura dos PDFs:</b> <span class="tag lib">${lidas} lida(s)</span>${jas ? ` <span class="tag alib">${jas} já enviada(s)</span>` : ''}${falhas.length ? ` <span class="tag par">${falhas.length} com problema</span>` : ''}
+      ${LER.filter(x => x.erro || x.ja).slice(0, 12).map(x => `<div class="fraco" style="${x.erro ? 'color:#ff453a' : ''}">${esc(x.arquivo)}: ${esc(x.erro || x.aviso)}</div>`).join('')}
+      ${falhas.some(x => /Chave do Gemini/i.test(x.erro)) ? '<div class="fraco" style="margin-top:6px"><b>Cadastre a chave do Gemini no quadro acima e suba os PDFs de novo.</b></div>' : ''}</div>` : '';
+    if (!L.length && !P.length) return lerHtml;
     const cont = {}; for (const x of L) { cont[x.status] = (cont[x.status] || 0) + 1; if (x.baixa === 'paga') cont['paga'] = (cont['paga'] || 0) + 1; if (['erro', 'baixa_sem_confirmacao'].includes(x.baixa)) cont['baixa com problema'] = (cont['baixa com problema'] || 0) + 1; }
     const cor = { simulada: 'alib', enviada: 'lib', confirmada: 'lib', paga: 'lib', 'baixa com problema': 'par', duplicada: 'par', erro: 'par', enviada_sem_confirmacao: 'par' };
-    return `<div class="nc-res"><b>Último resultado:</b> ${Object.entries(cont).map(([k, v]) => `<span class="tag ${cor[k] || 'alib'}">${v} ${k.replace(/_/g, ' ')}</span>`).join(' ')}
+    return lerHtml + `<div class="nc-res"><b>Último resultado:</b> ${Object.entries(cont).map(([k, v]) => `<span class="tag ${cor[k] || 'alib'}">${v} ${k.replace(/_/g, ' ')}</span>`).join(' ')}
       ${L.filter(x => !['confirmada', 'simulada'].includes(x.status) || ['erro', 'baixa_sem_confirmacao'].includes(x.baixa)).slice(0, 12).map(x => `<div class="fraco">NF ${esc(x.nota)} · parcela ${esc(x.parcela)} · ${esc(x.fornecedor)}: ${esc(x.motivo || x.baixa_motivo || x.status)}</div>`).join('')}
       ${P.slice(0, 8).map(x => `<div class="fraco">NF ${esc(x.nota)} · ${esc(x.fornecedor)}: não enviada (${esc(x.motivo)})</div>`).join('')}
       ${L.some(x => x.status === 'simulada') ? `<div class="fraco" style="margin-top:6px">Simulação: ${L.filter(x => x.status === 'simulada').length} parcela(s) seriam criadas, sem duplicidade no Olist${L.some(x => x.baixa) ? ` e ${L.filter(x => x.baixa).length} seriam marcadas como pagas` : ''}.</div>` : ''}</div>`;
@@ -410,6 +422,15 @@ async function ncSalvarToken(confirmarOutra) {
         }
         el.value = ''; ncTokenAberto = false; alert('Olist conectado: ' + r.razao_social);
     } catch (e) { msg.textContent = e.message; return; }
+    ncCarregar(true);
+}
+let ncGeminiAberto = false;
+async function ncSalvarGemini() {
+    const el = $('ncGeminiIn'), msg = $('ncGeminiMsg'); if (!el || !msg) return;
+    const chave = el.value.trim(); if (!chave) { msg.textContent = 'Cole a chave primeiro.'; return; }
+    msg.textContent = 'Testando no Google…';
+    try { await post('/api/finance/notas-contas/gemini', { chave }); el.value = ''; ncGeminiAberto = false; alert('Chave do Gemini cadastrada: o app já pode ler as notas. Suba os PDFs de novo.'); }
+    catch (e) { msg.textContent = e.message; return; }
     ncCarregar(true);
 }
 async function ncCnpj(cnpj) { try { await post('/api/finance/notas-contas/empresa', { cnpj }); } catch (e) { alert(e.message); } ncCarregar(true); }
