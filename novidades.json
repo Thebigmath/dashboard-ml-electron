@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.127",
+    "data": "2026-10-27",
+    "titulo": "Leitor de notas de foto bem mais preciso",
+    "texto": "- Leitor de notas (PDF de foto ou escaneado) bem mais preciso: agora usa o modelo gemini-3-flash e uma instrução nova, que diz onde está cada campo na DANFE: total da nota (não o dos produtos), data da emissão (não a do protocolo), todas as duplicatas, CNPJ do emitente e do destinatário. Num teste com 15 notas escaneadas conferidas uma a uma contra a imagem, o leitor antigo acertava a nota inteira em 7; o novo, com as correções abaixo, em 15.\n- Correções automáticas, sempre com aviso na nota: CNPJ do fornecedor que saía igual ao desta empresa (a IA trocava com o do destinatário); CNPJ do destinatário lido com erro quando o nome é o desta empresa; ano da emissão e dos vencimentos lido errado na foto (2026 virava 2022/2024).\n- A leitura demora um pouco mais por nota (cerca de 25 s). Atenção: no plano gratuito do Gemini o modelo principal lê só cerca de 20 notas por dia; depois disso (ou se ele estiver fora do ar) o app usa o modelo reserva, que erra mais, e avisa na nota para conferir com atenção. Com o faturamento ativado no projeto do Google, o limite sobe.\n- Continue conferindo cada nota de foto contra o PDF antes de enviar ao Olist."
+  },
+  {
     "versao": "1.9.126",
     "data": "2026-10-26",
     "titulo": "Notas escaneadas deixam de ser barradas; erros de leitura visíveis; chave do Gemini pela tela",
