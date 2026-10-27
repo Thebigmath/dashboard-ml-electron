@@ -76,7 +76,7 @@
                 <div class="dv-abas">
                     <button class="dv-aba ativa" data-aba="saude" onclick="aba('saude')"><i class="bi bi-heart-pulse"></i> Saúde do projeto</button>
                     <button class="dv-aba" data-aba="cotas" onclick="aba('cotas')"><i class="bi bi-speedometer2"></i> Cotas das APIs</button>
-                    <button class="dv-aba" data-aba="complexo" onclick="aba('complexo')"><i class="bi bi-diagram-3"></i> Complexo de IA</button>
+                    <button class="dv-aba" data-aba="ia" onclick="aba('ia')"><i class="bi bi-stars"></i> IA (Gemini)</button>
                 </div>
 
                 <section id="abaSaude" style="margin-top:16px">
@@ -95,22 +95,24 @@
                     <div id="svLista" style="margin-top:6px"></div>
                 </section>
 
-                <section id="abaComplexo" style="margin-top:16px" hidden>
-                    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-                        <div><b>Complexo de IA</b><br><small class="text-secondary">Cada área do SEVEN tem os seus agentes de IA, cada um com uma chave da API do Gemini. O agente 1 de cada área é o orquestrador; abaixo deles ficam os bots que executam. <span id="cxQuando">—</span></small></div>
+                <section id="abaIa" style="margin-top:16px" hidden>
+                    <div class="dv-card" style="padding:16px">
+                        <b>Chave do Gemini deste PC</b>
+                        <small class="text-secondary" style="display:block;margin:4px 0 10px">Gere a chave em aistudio.google.com/apikey (de preferência de um projeto do Google só deste PC) e cole aqui. O app testa no Google antes de guardar e a chave nunca volta para a tela (só os 4 últimos caracteres). Sem chave, o app não lê notas nem gera resumos com IA.</small>
                         <div style="display:flex;gap:8px;flex-wrap:wrap">
-                            <button class="btn-acao" onclick="cxTestar(false)"><i class="bi bi-plug"></i> Testar as chaves</button>
-                            <button class="btn-acao" onclick="cxTestar(true)" title="Pede uma resposta curta a cada modelo (gasta um pouco de cota)"><i class="bi bi-lightning"></i> Teste completo</button>
-                            <button class="btn-acao" onclick="cxExportar()" title="Baixa o arquivo com as chaves para levar a outro PC (pen drive)"><i class="bi bi-download"></i> Exportar chaves</button>
-                            <label class="btn-acao" style="cursor:pointer;margin:0" title="Instala o arquivo de chaves trazido de outro PC"><i class="bi bi-upload"></i> Importar chaves<input type="file" accept=".json" hidden onchange="cxImportar(this)"></label>
+                            <input type="password" class="dv-input" id="iaChaveNova" placeholder="Cole a chave do Gemini aqui" autocomplete="off" spellcheck="false" style="flex:1;min-width:260px" onkeydown="if(event.key==='Enter')iaSalvar()">
+                            <button class="btn-acao" onclick="iaSalvar()"><i class="bi bi-shield-check"></i> Testar e salvar</button>
+                            <button class="btn-acao" onclick="iaTestar()" title="Pede a lista de modelos a cada chave cadastrada (não gasta cota)"><i class="bi bi-plug"></i> Testar as chaves</button>
                         </div>
+                        <div id="iaMsg" class="text-secondary" style="margin-top:8px;font-size:13px"></div>
                     </div>
-                    <div class="dv-res" id="cxCards" style="margin-top:12px"></div>
-                    <div id="cxAreas"></div>
-                    <div class="dv-grupo" style="display:flex;justify-content:space-between;align-items:center">Atividade dos agentes <button class="btn-acao" onclick="cxAtividade()"><i class="bi bi-arrow-clockwise"></i> Atualizar</button></div>
-                    <div id="cxHoje" class="dv-res" style="margin-bottom:10px"></div>
-                    <div class="dv-lista"><table class="dv-tab"><thead><tr><th>Quando</th><th>Agente</th><th>Tarefa</th><th class="num">Tempo</th><th>Resultado</th></tr></thead><tbody id="cxAtiv"><tr><td colspan="5">—</td></tr></tbody></table></div>
-                    <small class="text-secondary" style="display:block;margin-top:10px">As chaves ficam em <code id="cxArq">~/.seven/complexo_ia.json</code> (o mesmo arquivo do projeto Python "Complexo de IA" da Área de Trabalho), fora do git. O arquivo exportado leva as chaves: só pen drive ou rede local, nunca e-mail, WhatsApp ou nuvem.</small>
+                    <div class="dv-grupo">Chaves cadastradas neste PC</div>
+                    <div class="dv-lista" id="iaChaves"></div>
+                    <div class="dv-grupo">Modelos: quem é usado em cada tarefa e como está a cota hoje</div>
+                    <div class="dv-lista"><table class="dv-tab"><thead><tr><th>Modelo</th><th>Usado em</th><th class="num">Respostas hoje</th><th class="num">Sem cota hoje</th><th class="num">Erros hoje</th><th>Situação</th></tr></thead><tbody id="iaModelos"></tbody></table></div>
+                    <small class="text-secondary" style="display:block;margin:8px 0 14px"><b>preciso</b> = leitura de notas (modelo bom primeiro). <b>rapido</b> = resumos e cards (modelo leve primeiro). Quando um modelo estoura a cota, o app o pula até a hora em que o Google diz que volta e usa o próximo. A ordem pode ser trocada em <code id="iaArq">~/.seven/gemini.json</code> (campo "perfis").</small>
+                    <div class="dv-grupo">Últimas chamadas</div>
+                    <div class="dv-lista"><table class="dv-tab"><thead><tr><th>Quando</th><th>Tarefa</th><th>Modelo</th><th class="num">Tempo</th><th>Resultado</th></tr></thead><tbody id="iaUltimas"><tr><td colspan="5">—</td></tr></tbody></table></div>
                 </section>
 
                 <section id="abaCotas" style="margin-top:16px" hidden>
@@ -169,9 +171,9 @@ async function sair() { try { await api('/api/dev/sair', { method: 'POST' }); } 
 
 function aba(a) {
     document.querySelectorAll('.dv-aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === a));
-    $('abaSaude').hidden = a !== 'saude'; $('abaCotas').hidden = a !== 'cotas'; $('abaComplexo').hidden = a !== 'complexo';
+    $('abaSaude').hidden = a !== 'saude'; $('abaCotas').hidden = a !== 'cotas'; $('abaIa').hidden = a !== 'ia';
     if (a === 'cotas') cotas();
-    if (a === 'complexo') cxCarregar();
+    if (a === 'ia') iaCarregar();
 }
 
 const ICONE = { ok: 'bi-check-circle-fill ok', atencao: 'bi-exclamation-triangle-fill atencao', falha: 'bi-x-circle-fill falha' };
@@ -187,54 +189,35 @@ async function saude(gemini) {
     } catch (e) { $('svQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
 }
 
-// ---- Complexo de IA ----
-const CX_COR = { 'conectada': 'ok', 'sem chave': '', 'não testada': '', 'cota esgotada': 'atencao', 'modelo indisponivel': 'atencao' };
-const CX_ICO = { 'conectada': 'bi-check-circle-fill ok', 'sem chave': 'bi-dash-circle', 'não testada': 'bi-question-circle', 'cota esgotada': 'bi-exclamation-triangle-fill atencao', 'modelo indisponivel': 'bi-exclamation-triangle-fill atencao' };
-function cxDesenhar(d) {
-    $('cxArq').textContent = d.arquivo;
-    $('cxQuando').textContent = d.testado_em ? `Último teste: ${new Date(d.testado_em).toLocaleString('pt-BR')}${d.completo ? ' (completo)' : ''}.` : 'Ainda não testado.';
-    $('cxCards').innerHTML = d.areas.map(a => `<div class="dv-card"><small>${esc(a.nome)}</small><b class="${a.conectadas === a.total ? 'ok' : a.conectadas ? 'atencao' : 'falha'}">${a.conectadas} / ${a.total}</b><small>agentes conectados</small></div>`).join('');
-    $('cxAreas').innerHTML = d.areas.map(a => `<div class="dv-grupo">${esc(a.nome)} · ${a.total} agentes</div><div class="dv-lista">${a.agentes.map(g => `
-        <div class="dv-lin cx">
-            <i class="bi ${CX_ICO[g.status] || 'bi-x-circle-fill falha'}"></i>
-            <span class="n">${g.n}. ${esc(g.papel)}</span>
-            <span class="d">${esc(g.descricao)}<br><b class="${CX_COR[g.status] ?? 'falha'}">${esc(g.status)}</b> · ${esc(g.chave)} · ${esc(g.modelo)}${g.detalhe ? ' · ' + esc(g.detalhe) : ''}</span>
-            <span style="display:flex;gap:6px;align-items:center">
-                <input type="password" class="dv-input" id="cx_${g.id}" placeholder="${g.tem_chave ? 'trocar a chave' : 'colar a chave'}" style="width:190px;padding:5px 8px;font-size:12px" autocomplete="off">
-                <button class="btn-acao" onclick="cxSalvar('${a.id}','${g.id}')">Salvar</button>
-                ${g.tem_chave ? `<button class="btn-acao" onclick="cxApagar('${a.id}','${g.id}')" title="Apagar a chave deste agente"><i class="bi bi-trash"></i></button>` : ''}
-            </span>
-        </div>`).join('')}</div>`).join('');
+// ---- IA (Gemini): chave, modelos e cota (lib/gemini_seletor.js) ----
+const iaHora = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+function iaDesenhar(d) {
+    $('iaArq').textContent = d.arquivo;
+    $('iaChaves').innerHTML = d.chaves.length ? d.chaves.map(c => `<div class="dv-lin"><i class="bi ${c.recusada ? 'bi-x-circle-fill falha' : 'bi-key-fill ok'}"></i><span class="n">••••${esc(c.final)}</span><span class="d">${c.recusada ? '<b class="falha">recusada pelo Google (fica de lado por 10 min)</b> · ' : ''}${esc(c.origem || '')}${c.adicionada_em ? ' · ' + new Date(c.adicionada_em).toLocaleDateString('pt-BR') : ''}</span><button class="btn-acao" onclick="iaRemover('${esc(c.final)}')" title="Tirar esta chave do PC"><i class="bi bi-trash"></i></button></div>`).join('')
+        : '<div class="dv-lin"><i class="bi bi-exclamation-triangle-fill atencao"></i><span class="n">Nenhuma chave</span><span class="d">Cole a chave acima. Sem ela o app não lê notas nem gera resumos com IA.</span></div>';
+    $('iaModelos').innerHTML = d.modelos.map(m => `<tr><td><b>${esc(m.modelo)}</b></td><td>${esc(m.perfis.join(', '))}</td><td class="num">${num(m.hoje.ok)}</td><td class="num ${m.hoje.cota ? 'atencao' : ''}">${num(m.hoje.cota)}</td><td class="num ${m.hoje.erro ? 'falha' : ''}">${num(m.hoje.erro)}</td>
+        <td>${m.esgotado_ate ? `<b class="atencao">sem cota até ${iaHora(m.esgotado_ate)}</b> (${esc(m.motivo || '')})` : '<span class="ok">disponível</span>'}</td></tr>`).join('');
+    $('iaUltimas').innerHTML = d.ultimas.length ? d.ultimas.map(e => `<tr><td>${new Date(e.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td><td>${esc(e.tarefa || '—')}</td><td>${esc(e.modelo)}</td><td class="num">${e.ms != null ? e.ms + ' ms' : ''}</td><td>${e.ok ? '<span class="ok">ok</span>' : `<span class="${e.status === 429 ? 'atencao' : 'falha'}">${e.status === 429 ? 'sem cota' : 'erro ' + esc(e.status)}</span>`}</td></tr>`).join('')
+        : '<tr><td colspan="5">Nenhuma chamada ainda neste PC.</td></tr>';
 }
-async function cxCarregar() { try { cxDesenhar(await api('/api/dev/complexo')); } catch (e) { $('cxQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; } cxAtividade(); }
-async function cxAtividade() {
-    let d; try { d = await api('/api/dev/complexo/atividade'); } catch (e) { $('cxAtiv').innerHTML = `<tr><td colspan="5" class="falha">${esc(e.message)}</td></tr>`; return; }
-    $('cxHoje').innerHTML = d.hoje.length ? d.hoje.map(x => `<div class="dv-card"><small>${esc(x.area_nome)} · ${esc(x.papel)} (hoje)</small><b>${num(x.tarefas)}</b><small>tarefa(s) · ${x.falhas ? `<span class="falha">${x.falhas} falha(s)</span>` : 'sem falha'} · média ${x.ms_medio != null ? (x.ms_medio / 1000).toFixed(1).replace('.', ',') + ' s' : '—'}</small></div>`).join('') : '';
-    $('cxAtiv').innerHTML = d.itens.length ? d.itens.map(e => `<tr><td>${new Date(e.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td><td>${esc(e.area_nome)} · <b>${esc(e.papel)}</b></td><td>${esc(e.tarefa || '')}</td><td class="num">${e.ms != null ? (e.ms / 1000).toFixed(1).replace('.', ',') + ' s' : '—'}</td><td class="${e.ok ? 'ok' : 'falha'}">${e.ok ? 'ok' : esc(e.erro || 'falhou')}</td></tr>`).join('')
-        : '<tr><td colspan="5">Nenhum agente trabalhou ainda neste Dashboard.</td></tr>';
+async function iaCarregar() { try { iaDesenhar(await api('/api/ia/gemini')); } catch (e) { $('iaMsg').innerHTML = `<span class="falha">${esc(e.message)}</span>`; } }
+async function iaSalvar() {
+    const el = $('iaChaveNova'), chave = (el.value || '').trim(); if (!chave) return el.focus();
+    $('iaMsg').textContent = 'Testando no Google…';
+    try {
+        const r = await api('/api/ia/gemini/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave }) });
+        el.value = '';
+        const t = r.teste || {};
+        $('iaMsg').innerHTML = `<span class="ok">Chave ••••${esc(r.final)} ${r.ja_existia ? 'já estava cadastrada' : 'guardada'}.</span>${t.modelos_ausentes && t.modelos_ausentes.length ? ` <span class="atencao">Esta chave não enxerga: ${esc(t.modelos_ausentes.join(', '))}.</span>` : ''}`;
+        iaCarregar();
+    } catch (e) { $('iaMsg').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
 }
-async function cxSalvar(area, agente, apagar) {
-    const el = $('cx_' + agente), chave = apagar ? '' : (el.value || '').trim();
-    if (!apagar && !chave) return el.focus();
-    try { await api('/api/dev/complexo/chave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area, agente, chave }) }); cxCarregar(); }
-    catch (e) { alert(e.message); }
-}
-function cxApagar(area, agente) { if (confirm('Apagar a chave deste agente?')) cxSalvar(area, agente, true); }
-async function cxTestar(completo) {
-    $('cxQuando').textContent = completo ? 'Testando cada modelo…' : 'Testando as chaves…';
-    try { cxDesenhar(await api('/api/dev/complexo/testar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completo }) })); }
-    catch (e) { $('cxQuando').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
-}
-async function cxExportar() {
-    if (!confirm('O arquivo exportado leva TODAS as chaves do Complexo de IA.\nLeve só por pen drive ou rede local (nunca e-mail, WhatsApp ou nuvem). Continuar?')) return;
-    const d = await api('/api/dev/complexo/exportar');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' })); a.download = 'complexo_ia.json'; a.click();
-}
-async function cxImportar(inp) {
-    const f = inp.files[0]; inp.value = ''; if (!f) return;
-    if (!confirm(`Instalar as chaves do arquivo "${f.name}" neste PC? As chaves atuais ficam guardadas numa cópia.`)) return;
-    try { const d = JSON.parse(await f.text()); cxDesenhar(await api('/api/dev/complexo/importar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) })); alert('Chaves instaladas. Clique em "Testar as chaves".'); }
-    catch (e) { alert('Não deu: ' + e.message); }
+async function iaRemover(final) { if (!confirm('Tirar a chave ••••' + final + ' deste PC?')) return; try { await api('/api/ia/gemini/remover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ final }) }); iaCarregar(); } catch (e) { alert(e.message); } }
+async function iaTestar() {
+    $('iaMsg').textContent = 'Testando as chaves…';
+    try { const d = await api('/api/ia/gemini/testar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        $('iaMsg').innerHTML = d.resultados.length ? d.resultados.map(x => `••••${esc(x.final)}: <b class="${x.ok ? 'ok' : 'falha'}">${esc(x.status)}</b>${x.ok ? ` · ${x.modelos_disponiveis.length} dos modelos do app disponíveis${x.modelos_ausentes.length ? ' (falta ' + esc(x.modelos_ausentes.join(', ')) + ')' : ''}` : ' · ' + esc(x.detalhe || '')}`).join('<br>') : 'Nenhuma chave cadastrada.'; }
+    catch (e) { $('iaMsg').innerHTML = `<span class="falha">${esc(e.message)}</span>`; }
 }
 
 function barras(alvoB, alvoE, horas) {

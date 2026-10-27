@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.128",
+    "data": "2026-10-27",
+    "titulo": "Seletor de modelos da IA e chave do Gemini por PC",
+    "texto": "- Seletor de modelos da IA: a chave do Gemini agora é só uma, e o app escolhe sozinho o modelo de cada tarefa. A leitura de notas usa o modelo mais preciso primeiro; resumos e cards usam o mais leve. Quando um modelo estoura a cota do dia, o app lembra, pula direto para o próximo e avisa quando ele volta (a cota é por projeto e por modelo).\n- O Complexo de IA (chaves por área e agente) foi retirado do SEVEN. Em Desenvolvedor → IA (Gemini) há só um campo para colar a chave deste PC (ela é testada no Google, fica guardada só neste PC e a tela mostra apenas os 4 últimos caracteres), a lista de modelos com o uso de hoje e as últimas chamadas. A caixa de colar a chave na tela de notas continua funcionando e usa a mesma lista.\n- Chaves que já estavam no Complexo de IA ou no config.json são aproveitadas automaticamente. Cada PC deve ter a chave do projeto do Google da sua empresa: depois desta atualização, cole a chave em Desenvolvedor → IA (Gemini) e apague o arquivo .txt em que ela veio."
+  },
+  {
     "versao": "1.9.127",
     "data": "2026-10-27",
     "titulo": "Leitor de notas de foto bem mais preciso",

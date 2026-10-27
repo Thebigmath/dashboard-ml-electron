@@ -1194,13 +1194,11 @@ const soDev = (req, res, next) => next();
 router.post('/dev/entrar', (req, res) => { const r = senhaDev.entrar((req.body || {}).senha); res.status(r.ok ? 200 : 401).json(r); });
 router.post('/dev/sair', (req, res) => { senhaDev.sair(req.get('x-dev-token')); res.json({ ok: true }); });
 router.get('/dev/cotas', soDev, (req, res) => res.json(require('../lib/cotas').resumo()));
-// Complexo de IA: chaves do Gemini por area/agente (as chaves nunca voltam inteiras para a tela, so no exportar)
-router.get('/dev/complexo', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').status()); } catch (e) { erroJson(res)(e); } });
-router.post('/dev/complexo/chave', soDev, (req, res) => { try { const b = req.body || {}; res.json(require('../lib/complexo_ia').definirChave(b.area, b.agente, b.chave, b.modelo)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); } });
-router.post('/dev/complexo/testar', soDev, (req, res) => { require('../lib/complexo_ia').testar(!!(req.body && req.body.completo)).then(d => res.json(d)).catch(erroJson(res)); });
-router.get('/dev/complexo/exportar', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').exportar()); } catch (e) { erroJson(res)(e); } });
-router.get('/dev/complexo/atividade', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').atividade(200)); } catch (e) { erroJson(res)(e); } });
-router.post('/dev/complexo/importar', soDev, (req, res) => { try { res.json(require('../lib/complexo_ia').importar(req.body)); } catch (e) { res.status(400).json({ ok: false, erro: e.message }); } });
+// IA (Gemini): chaves deste PC, modelos e cota (as chaves nunca voltam inteiras para a tela, so os 4 ultimos caracteres)
+router.get('/ia/gemini', auth, (req, res) => { try { res.json(require('../lib/gemini_seletor').resumo()); } catch (e) { erroJson(res)(e); } });
+router.post('/ia/gemini/chave', auth, async (req, res) => { try { res.json(await require('../lib/gemini_seletor').salvarChave((req.body || {}).chave)); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.post('/ia/gemini/remover', auth, (req, res) => { try { res.json(require('../lib/gemini_seletor').removerChave((req.body || {}).final)); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
+router.post('/ia/gemini/testar', auth, async (req, res) => { try { const S = require('../lib/gemini_seletor'), out = []; for (const k of S.chaves()) out.push({ final: k.slice(-4), ...(await S.testarChave(k)) }); res.json({ resultados: out }); } catch (e) { erroJson(res)(e); } });
 router.get('/dev/saude', soDev, (req, res) => { require('../lib/dev_saude').verificar({ testarGemini: req.query.gemini === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
 // Regras de preco (motor_preco): avaliar e so leitura; aplicar so com confirmacao e preco conferido
 router.get('/seven/regras_preco', auth, (req, res) => { require('../lib/motor_preco').avaliar({ forcar: req.query.forcar === '1' }).then(d => res.json(d)).catch(erroJson(res)); });
