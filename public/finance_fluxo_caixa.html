@@ -20,6 +20,8 @@
         .topo .dir { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
         .sel, .bt { height:42px; border-radius:999px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); padding:0 16px; font-size:14.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
         .bt:hover, .sel:hover { background:var(--s2); }
+        .dt { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--l2); }
+        .dt input { height:42px; border:1px solid var(--sep); border-radius:999px; background:var(--s1); color:var(--l1); padding:0 12px; font-size:14px; }
         .bt.verde { background:var(--verde); border-color:var(--verde); color:#fff; font-weight:600; } .bt.verde:hover { background:var(--verde-2); } .bt:disabled { opacity:.6; cursor:not-allowed; }
         .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-bottom:14px; }
         .card { background:var(--caixa); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
@@ -78,14 +80,19 @@
     <div class="topo">
         <h1>Fluxo de caixa</h1>
         <div class="dir">
-            <select class="sel" id="selDias" onchange="dias=Number(this.value);carregar()">
-                <option value="30">Próximos 30 dias</option><option value="60" selected>Próximos 60 dias</option><option value="90">Próximos 90 dias</option>
+            <select class="sel" id="selDias" onchange="preset(this.value)">
+                <option value="30">Próximos 30 dias</option><option value="60" selected>Próximos 60 dias</option><option value="90">Próximos 90 dias</option><option value="180">Próximos 180 dias</option><option value="x">Datas escolhidas</option>
             </select>
+            <label class="dt">De <input type="date" id="inDe" onchange="mudouDe()" title="Começo do período (de hoje em diante)"></label>
+            <label class="dt">Até <input type="date" id="inAte" onchange="mudouAte()" title="Fim do período (até 1 ano)"></label>
+            <label class="dt">Ver o dia <input type="date" id="inDia" onchange="verDia()" title="Pula para uma data e abre o detalhe do dia"></label>
+            <button class="bt" onclick="abrirBelvo()"><i class="bi bi-bank"></i> Banco (Belvo)</button>
             <button class="bt" onclick="abrirSaldo()"><i class="bi bi-pencil-square"></i> Informar saldo</button>
             <button class="bt verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar dados</button>
         </div>
     </div>
     <div class="cards" id="cards"></div>
+    <div id="belvoBox"></div>
     <div id="avisos"></div>
     <div class="cal-topo">
         <button class="bt" onclick="mudarMes(-1)" aria-label="Mês anterior"><i class="bi bi-chevron-left"></i></button>
@@ -100,6 +107,13 @@
     <div class="nota" id="nota"></div>
 </div></main></div>
 
+<div class="modal-f" id="mBelvo" onclick="if(event.target===this)fecharBelvo()">
+    <div class="modal-c" style="width:min(520px,94vw)">
+        <h3><i class="bi bi-bank"></i> Banco (Belvo · Open Finance)</h3>
+        <div id="belvoCorpo" style="font-size:14px;color:var(--l2);line-height:1.5"></div>
+        <div class="bts" style="margin-top:12px"><button class="bt" onclick="fecharBelvo()">Fechar</button></div>
+    </div>
+</div>
 <div class="modal-f" id="mSaldo" onclick="if(event.target===this)fecharSaldo()">
     <div class="modal-c">
         <h3>Saldo da conta do Mercado Pago</h3>
@@ -119,34 +133,64 @@ const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 const SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const dataBR = (d) => d.split('-').reverse().join('/');
 const quando = (iso) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
-let D = null, dias = 60, mes = null, escolhido = null, timer = null;
+let D = null, de = null, ateSel = null, mes = null, escolhido = null, timer = null;
 const PD = {};   // dia -> registro
 
 async function carregar() {
     $('cards').innerHTML = '<div class="card"><small>Carregando…</small></div>';
-    try { D = await fetch('/api/finance/fluxo-caixa?dias=' + dias).then(x => x.json()); } catch (e) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(e.message)}</div>`; return; }
+    try { D = await fetch('/api/finance/fluxo-caixa?ate=' + ateSel).then(x => x.json()); } catch (e) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(e.message)}</div>`; return; }
     if (D.erro) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(D.erro)}</div>`; return; }
     for (const k in PD) delete PD[k]; D.dias.forEach(x => PD[x.dia] = x);
-    if (!mes) mes = D.hoje.slice(0, 7);
+    if (!mes) mes = (de || D.hoje).slice(0, 7);
+    ateSel = D.ate; $('inAte').value = D.ate; $('inAte').min = D.hoje; $('inAte').max = somaDias(365); $('inDe').min = D.hoje; $('inDe').max = D.ate; $('inDia').min = D.hoje; $('inDia').max = somaDias(365);
+    if (de && de > D.ate) { de = null; $('inDe').value = ''; }
     desenhar();
 }
-function desenhar() { cartoes(); avisos(); calendario(); grafico(); detalhe(); $('nota').innerHTML = 'O que entra = vendas do Mercado Livre que o Mercado Pago ainda vai liberar (valor líquido, já sem tarifa e frete), no dia da liberação. O que sai = contas a pagar em aberto do Olist, no vencimento; as atrasadas entram no dia de hoje. '
+// ----- periodo: atalhos, datas De/Ate e "Ver o dia"
+const faixa = () => D.dias.filter(x => x.dia >= (de || D.hoje) && x.dia <= D.ate);
+function preset(v) { if (v === 'x') return; ateSel = somaDias(Number(v)); de = null; $('inDe').value = ''; mes = null; carregar(); }
+function mudouDe() {
+    const v = $('inDe').value, hoje = D ? D.hoje : somaDias(0);
+    if (v && v < hoje) { alert('O fluxo começa hoje: escolha uma data de hoje em diante.'); $('inDe').value = de || ''; return; }
+    de = v || null; $('selDias').value = 'x';
+    if (de && de > ateSel) { ateSel = de; $('inAte').value = ateSel; mes = de.slice(0, 7); carregar(); return; }
+    mes = (de || hoje).slice(0, 7); escolhido = de || hoje; desenhar();
+}
+function mudouAte() {
+    const v = $('inAte').value, hoje = D ? D.hoje : somaDias(0);
+    if (!v || v < hoje) { $('inAte').value = ateSel; return; }
+    ateSel = v > somaDias(365) ? somaDias(365) : v; $('selDias').value = 'x';
+    if (de && de > ateSel) { de = null; $('inDe').value = ''; }
+    carregar();
+}
+async function verDia() {
+    const v = $('inDia').value; if (!v) return;
+    if (v < D.hoje) { alert('O fluxo começa hoje: escolha uma data de hoje em diante.'); $('inDia').value = ''; return; }
+    if (v > D.ate) { ateSel = v; $('selDias').value = 'x'; await carregar(); }
+    else if (de && v < de) { de = null; $('inDe').value = ''; $('selDias').value = 'x'; }
+    mes = v.slice(0, 7); escolhido = v; desenhar();
+    const el = $('det'); if (el.style.display !== 'none') el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function desenhar() { cartoes(); belvoBox(); avisos(); calendario(); grafico(); detalhe(); $('nota').innerHTML = 'O que entra = vendas do Mercado Livre que o Mercado Pago ainda vai liberar (valor líquido, já sem tarifa e frete), no dia da liberação. O que sai = contas a pagar em aberto do Olist, no vencimento; as atrasadas entram no dia de hoje. '
     + 'Saldo projetado do dia = saldo de hoje + tudo que entra − tudo que sai até o fim do dia. Não entram: saques, impostos fora do Olist, despesas que não estão no Olist, antecipações e cobranças avulsas que o Mercado Pago desconta no dia.'; }
 
 function cartoes() {
-    const R = D.resumo, S = D.saldo_hoje, sem = S.valor == null;
+    const S = D.saldo_hoje, sem = S.valor == null, F = faixa(), ini = de || D.hoje;
+    let rec = 0, pag = 0, menor = null; F.forEach(x => { rec += x.receber; pag += x.pagar; if (x.saldo != null && (!menor || x.saldo < menor.saldo)) menor = { dia: x.dia, saldo: x.saldo }; });
+    const R = { a_receber: Math.round(rec * 100) / 100, a_pagar: Math.round(pag * 100) / 100, diferenca: Math.round((rec - pag) * 100) / 100, saldo_final: F.length ? F[F.length - 1].saldo : null, menor_saldo: menor };
+    const periodo = ini === D.hoje ? 'até ' + dataBR(D.ate) : 'de ' + dataBR(ini) + ' a ' + dataBR(D.ate), antes = ini > D.hoje ? PD[new Date(Date.parse(ini + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10)] : null;
     const c = [];
     c.push(`<div class="card ${sem ? '' : S.valor < 0 ? 'neg' : ''}"><small>Saldo na conta do Mercado Pago hoje</small><b>${sem ? '—' : R$(S.valor)}</b><em>${sem ? 'não lido: clique em "Informar saldo"' : esc(S.fonte) + (S.em ? ' · ' + quando(S.em) : '')}</em></div>`);
-    c.push(`<div class="card pos"><small>A receber até ${dataBR(D.ate)}</small><b>${R$(R.a_receber)}</b><em>liberações do Mercado Pago</em></div>`);
-    c.push(`<div class="card neg"><small>A pagar até ${dataBR(D.ate)}</small><b>${R$(R.a_pagar)}</b><em>${D.avisos.pagar_nao_lido ? 'contas ainda não lidas' : 'contas em aberto no Olist'}</em></div>`);
+    c.push(`<div class="card pos"><small>A receber ${periodo}</small><b>${R$(R.a_receber)}</b><em>liberações do Mercado Pago</em></div>`);
+    c.push(`<div class="card neg"><small>A pagar ${periodo}</small><b>${R$(R.a_pagar)}</b><em>${D.avisos.pagar_nao_lido ? 'contas ainda não lidas' : 'contas em aberto no Olist'}</em></div>`);
     c.push(`<div class="card ${R.diferenca >= 0 ? 'pos' : 'neg'}"><small>Diferença (receber − pagar)</small><b>${R$(R.diferenca)}</b><em>${R.diferenca >= 0 ? 'entra mais do que sai' : 'sai mais do que entra'}</em></div>`);
     const fim = R.saldo_final;
-    c.push(`<div class="card ${fim == null ? '' : fim >= 0 ? 'pos' : 'neg'}"><small>Saldo projetado em ${dataBR(D.ate)}</small><b>${fim == null ? '—' : R$(fim)}</b><em>${fim == null ? 'precisa do saldo de hoje' : (R.menor_saldo ? 'menor saldo: ' + R$(R.menor_saldo.saldo) + ' em ' + dataBR(R.menor_saldo.dia) : '')}</em></div>`);
+    c.push(`<div class="card ${fim == null ? '' : fim >= 0 ? 'pos' : 'neg'}"><small>Saldo projetado em ${dataBR(D.ate)}</small><b>${fim == null ? '—' : R$(fim)}</b><em>${fim == null ? 'precisa do saldo de hoje' : (antes && antes.saldo != null ? 'no início do período: ' + R$(antes.saldo) + ' · ' : '') + (R.menor_saldo ? 'menor saldo: ' + R$(R.menor_saldo.saldo) + ' em ' + dataBR(R.menor_saldo.dia) : '')}</em></div>`);
     $('cards').innerHTML = c.join('');
 }
 function avisos() {
-    const A = D.avisos, R = D.resumo, out = [];
-    if (R.primeiro_dia_negativo) out.push(`<div class="aviso verm"><i class="bi bi-exclamation-triangle-fill"></i> O saldo projetado fica <b>negativo em ${dataBR(R.primeiro_dia_negativo)}</b> (${R.dias_negativos} dia(s) no período). O menor saldo é ${R$(R.menor_saldo.saldo)} em ${dataBR(R.menor_saldo.dia)}.</div>`);
+    const A = D.avisos, R = D.resumo, out = [], F = faixa(), neg = F.filter(x => x.saldo != null && x.saldo < 0);
+    if (neg.length) { const m = neg.reduce((a, b) => b.saldo < a.saldo ? b : a); out.push(`<div class="aviso verm"><i class="bi bi-exclamation-triangle-fill"></i> O saldo projetado fica <b>negativo em ${dataBR(neg[0].dia)}</b> (${neg.length} dia(s) no período). O menor saldo é ${R$(m.saldo)} em ${dataBR(m.dia)}.</div>`); }
     if (A.saldo_sem_leitura) out.push(`<div class="aviso"><i class="bi bi-wallet2"></i> O app não conseguiu ler o saldo do Mercado Pago${D.saldo_hoje.erro ? ' (' + esc(D.saldo_hoje.erro) + ')' : ''}. Informe o saldo para ver o saldo projetado. <a onclick="abrirSaldo()">Informar saldo</a></div>`);
     if (A.pagar_nao_lido) out.push(`<div class="aviso"><i class="bi bi-receipt"></i> As contas a pagar do Olist ainda não foram lidas: o fluxo mostra só o que entra. <a onclick="atualizar()">Atualizar dados</a></div>`);
     else if (A.pagar_incompleto) out.push(`<div class="aviso"><i class="bi bi-receipt"></i> As contas a pagar lidas vão só até ${dataBR(A.pagar_ate)}; depois disso o fluxo não mostra o que sai. <a onclick="atualizar()">Atualizar dados</a></div>`);
@@ -158,7 +202,7 @@ function avisos() {
     $('avisos').innerHTML = out.join('');
 }
 function mudarMes(n) { const [a, m] = mes.split('-').map(Number); const d = new Date(Date.UTC(a, m - 1 + n, 1)); mes = d.toISOString().slice(0, 7); calendario(); }
-function irHoje() { mes = D.hoje.slice(0, 7); escolhido = D.hoje; calendario(); detalhe(); }
+function irHoje() { mes = D.hoje.slice(0, 7); escolhido = de && de > D.hoje ? de : D.hoje; calendario(); detalhe(); }
 function calendario() {
     const [a, m] = mes.split('-').map(Number), ini = new Date(Date.UTC(a, m - 1, 1)), ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate();
     $('mesTit').textContent = MESES[m - 1].charAt(0).toUpperCase() + MESES[m - 1].slice(1) + ' de ' + a;
@@ -166,7 +210,7 @@ function calendario() {
     for (let i = 0; i < ini.getUTCDay(); i++) h += '<div class="dia vazio"></div>';
     for (let n = 1; n <= ultimo; n++) {
         const d = `${mes}-${String(n).padStart(2, '0')}`, x = PD[d];
-        if (!x) { h += `<div class="dia fora"><div class="n"><span>${n}</span></div></div>`; continue; }
+        if (!x || d < (de || D.hoje) || d > D.ate) { h += `<div class="dia fora"><div class="n"><span>${n}</span></div></div>`; continue; }
         const cls = ['dia', x.liquido > 0 ? 'p' : x.liquido < 0 ? 'm' : '', d === D.hoje ? 'hoje' : '', D.avisos.receber_ate && d > D.avisos.receber_ate ? 'alem' : '', x.saldo != null && x.saldo < 0 ? 'neg' : '', d === escolhido ? 'sel' : ''].filter(Boolean).join(' ');
         h += `<div class="${cls}" onclick="escolher('${d}')"><div class="n"><span>${n}</span></div>`
             + (x.receber ? `<div class="rec">+ ${curto(x.receber)}</div>` : '') + (x.pagar ? `<div class="pag">− ${curto(x.pagar)}</div>` : '')
@@ -191,7 +235,7 @@ function detalhe() {
     el.innerHTML = h; el.style.display = '';
 }
 function grafico() {
-    const L = D.dias.filter(x => x.saldo != null);
+    const L = faixa().filter(x => x.saldo != null);
     if (!L.length) { $('graf').innerHTML = '<div style="font-size:13px;color:var(--l3);padding:20px 0">Informe o saldo do Mercado Pago para ver o saldo projetado.</div>'; return; }
     const W = 1000, H = 190, pad = 8, v = L.map(x => x.saldo), mn = Math.min(0, ...v), mx = Math.max(0, ...v), esp = (mx - mn) || 1;
     const X = (i) => pad + i * (W - 2 * pad) / Math.max(1, L.length - 1), Y = (s) => pad + (mx - s) * (H - 2 * pad - 14) / esp;
@@ -219,7 +263,7 @@ async function atualizar() {
     const b = $('btAtualizar'); b.disabled = true; const erros = [];
     try {
         b.innerHTML = '<i class="bi bi-hourglass-split"></i> Contas a pagar…';
-        const p = await fetch('/api/finance/contas-pagar/atualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: somaDias(-30), ate: somaDias(dias + 30) }) }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
+        const p = await fetch('/api/finance/contas-pagar/atualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: somaDias(-30), ate: somaDias(Math.round((Date.parse(D ? D.ate : ateSel) - Date.parse(somaDias(0))) / 864e5) + 30) }) }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
         if (p.ok === false) erros.push('Contas a pagar: ' + (p.erro || 'não foi possível atualizar')); else { const e = await esperar('/api/finance/contas-pagar/estado', 'Contas a pagar'); if (e.erro) erros.push('Contas a pagar: ' + e.erro); }
         b.innerHTML = '<i class="bi bi-hourglass-split"></i> Liberações do MP…';
         const l = await fetch('/api/finance/liberacoes/atualizar', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
@@ -228,6 +272,47 @@ async function atualizar() {
     await carregar();
     if (erros.length) $('avisos').insertAdjacentHTML('afterbegin', `<div class="aviso verm"><i class="bi bi-exclamation-octagon"></i> ${erros.map(esc).join(' · ')}</div>`);
 }
+// ----- banco (Belvo): saldo e cartao do Mercado Pago PJ lidos pelo proprio app
+function belvoBox() {
+    const B = D.belvo, el = $('belvoBox'); if (!B || !B.conta) { el.innerHTML = ''; return; }
+    const c = B.conta, k = B.cartao, forte = (t) => `<b style="display:inline;font-size:14px;letter-spacing:0;color:var(--l1);margin-left:4px;font-variant-numeric:tabular-nums">${t}</b>`;
+    el.innerHTML = `<div class="card" style="margin-bottom:12px"><small><i class="bi bi-bank"></i> Banco (Belvo · Open Finance) — ${esc((B.conexao && B.conexao.instituicao) || 'Mercado Pago')} · lido ${quando(c.coletado_em || B.coletado_em)}</small>`
+        + `<div style="display:flex;gap:6px 26px;flex-wrap:wrap;font-size:14px;color:var(--l2);margin-top:6px"><span>Disponível${forte(R$(c.disponivel))}</span><span>Bloqueado${forte(R$(c.bloqueado))}</span>`
+        + (c.total_reservas ? `<span>Reservas "Emergência" (${c.reservas.length})${forte(R$(c.total_reservas))}</span>` : '')
+        + (k ? `<span>Cartão: usado${forte(R$(k.usado))} de ${R$(k.limite)} · disponível${forte(R$(k.disponivel))}${k.pagamento_minimo != null ? ' · mínimo' + forte(R$(k.pagamento_minimo)) : ''}</span>` : '') + `</div></div>`;
+}
+let tBelvo = null, belvoVisto = null;
+async function abrirBelvo() { $('mBelvo').classList.add('on'); await atualizaBelvo(); }
+function fecharBelvo() { $('mBelvo').classList.remove('on'); clearTimeout(tBelvo); }
+async function atualizaBelvo() {
+    clearTimeout(tBelvo);
+    const e = await fetch('/api/finance/belvo').then(x => x.json()).catch(() => null), el = $('belvoCorpo');
+    if (!e) { el.innerHTML = '<div class="aviso verm">Não consegui falar com o app.</div>'; return; }
+    let h = '';
+    if (!e.conectada) {
+        if (e.login && e.login.link && !e.login.erro) {
+            h = `<p>1. Clique para abrir o login da Belvo e entre com a sua conta:</p><p style="text-align:center"><a class="bt verde" href="${esc(e.login.link)}" target="_blank" rel="noopener" style="text-decoration:none"><i class="bi bi-box-arrow-up-right"></i> Abrir o login da Belvo</a></p>`
+              + `<p style="font-size:12.5px">2. Autorize o acesso <b>somente leitura</b>. A Belvo volta para o SEVEN sozinha (neste PC) e esta janela continua assim que você autorizar. O pedido vale até ${new Date(e.login.expira_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.</p>`;
+        } else {
+            h = '<p>O SEVEN lê o saldo, as reservas e o cartão da conta do Mercado Pago PJ direto da Belvo (Open Finance), em modo <b>somente leitura</b>. Você autoriza uma vez; depois o app atualiza sozinho a cada 30 minutos.</p>'
+              + (e.login && e.login.erro ? `<div class="aviso verm">${esc(e.login.erro)}</div>` : '') + (e.erro ? `<div class="aviso verm">${esc(e.erro)}</div>` : '')
+              + '<p><button class="bt verde" onclick="conectarBelvo()"><i class="bi bi-plug"></i> Conectar Belvo</button></p>';
+        }
+    } else {
+        const d = e.dados;
+        h = `<div class="aviso" style="background:var(--verde-f);color:var(--verde-t)"><i class="bi bi-check-circle"></i> Belvo conectada${d ? ' · ' + esc(d.conexao.instituicao) : ''}.</div>`
+          + (d ? `<p>Última leitura: <b>${quando(d.coletado_em)}</b> · saldo disponível <b>${R$(d.conta.disponivel)}</b>${d.conexao.sincronizada_em ? '<br>O banco sincronizou com a Belvo em ' + quando(d.conexao.sincronizada_em) : ''}</p>` : '<p>Ainda não leu nada.</p>')
+          + (e.rodando ? `<p><i class="bi bi-hourglass-split"></i> ${esc(e.etapa || 'Lendo…')}</p>` : '') + (e.erro ? `<div class="aviso verm">${esc(e.erro)}</div>` : '')
+          + `<p><button class="bt verde" onclick="atualizarBelvo()" ${e.rodando ? 'disabled' : ''}><i class="bi bi-arrow-repeat"></i> Atualizar agora</button> <button class="bt" onclick="desconectarBelvo()">Desconectar</button></p>`;
+        if (d && belvoVisto !== d.coletado_em) { belvoVisto = d.coletado_em; carregar(); }
+    }
+    el.innerHTML = h;
+    if ((!e.conectada && e.login && e.login.link && !e.login.erro) || e.rodando) tBelvo = setTimeout(atualizaBelvo, 3000);
+}
+async function conectarBelvo() { const r = await fetch('/api/finance/belvo/conectar', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message })); if (!r.ok) alert(r.erro || 'Não foi possível iniciar o login.'); atualizaBelvo(); }
+async function atualizarBelvo() { await fetch('/api/finance/belvo/atualizar', { method: 'POST' }).catch(() => {}); setTimeout(atualizaBelvo, 600); }
+async function desconectarBelvo() { if (!confirm('Desconectar a Belvo? O app deixa de ler o saldo do banco até você conectar de novo.')) return; await fetch('/api/finance/belvo/desconectar', { method: 'POST' }).catch(() => {}); belvoVisto = null; await atualizaBelvo(); carregar(); }
+
 // ----- saldo informado
 function abrirSaldo() {
     const S = D && D.saldo_hoje; $('inSaldo').value = S && S.valor != null && !S.automatico ? brl(S.valor) : '';
@@ -243,7 +328,7 @@ async function salvarSaldo() {
 }
 async function usarAuto() { await fetch('/api/finance/fluxo-caixa/saldo', { method: 'DELETE' }).catch(() => {}); fecharSaldo(); carregar(); }
 
-(async () => { await carregar(); escolhido = D && D.hoje; if (D && !D.erro) { calendario(); detalhe(); } })();
+(async () => { ateSel = somaDias(60); await carregar(); escolhido = D && D.hoje; if (D && !D.erro) { calendario(); detalhe(); } })();
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>

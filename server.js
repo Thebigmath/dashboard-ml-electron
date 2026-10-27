@@ -113,6 +113,7 @@ module.exports = {
         require('./lib/motor_preco').iniciarAgendador();
         require('./lib/flex_auto').iniciarAgendador();
         require('./lib/reputacao_previsao').iniciarAgendador();   // reputacao: coleta e previsao do Platinum a cada 6 h (a partir das 7h)
+        require('./lib/belvo').iniciarAgendador();   // Belvo (Open Finance): saldo e cartao do Mercado Pago PJ, so se ja conectou (a cada 30 min)
         require('./lib/finance_saldo_mp').iniciarAgendador();   // saldo do Mercado Pago: ancora diaria (7h) + bots a cada 3 min
         require('./lib/simulacao_precos').iniciarAgendador();   // simulacao de precos da IA (vendas de ontem), todo dia a partir das 8h    // Flex automatico pelo estoque do Olist (so no Dashboard da Flavia, so se ligado)
         require('./lib/central_ml').iniciarAgendador();   // vigias da Agenda do Full (so se houver vigia ativa)   // modo automatico das regras de preco (so se ligado)
@@ -128,6 +129,7 @@ module.exports = {
         require('./lib/motor_preco').pararAgendador();
         require('./lib/flex_auto').pararAgendador();
         require('./lib/reputacao_previsao').pararAgendador();
+        require('./lib/belvo').pararAgendador();
         require('./lib/finance_saldo_mp').pararAgendador();
         require('./lib/simulacao_precos').pararAgendador();
         if (httpServer) httpServer.close();

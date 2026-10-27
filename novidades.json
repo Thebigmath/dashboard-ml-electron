@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.131",
+    "data": "2026-10-27",
+    "titulo": "Fluxo de caixa por datas e banco pela Belvo",
+    "texto": "- Fluxo de caixa: agora dá para escolher as datas. Os campos De e Até (até 1 ano à frente) mudam os cartões, o calendário e o gráfico para o período escolhido, e o campo Ver o dia pula direto para uma data e abre o detalhe dela.\n- Banco (Belvo): novo botão no Fluxo de caixa que conecta o SEVEN ao Open Finance pela Belvo, só leitura. Você autoriza uma vez (abre o login da Belvo e confirma); depois o app lê sozinho, a cada 30 minutos, o saldo disponível, o bloqueado, as reservas e o cartão de crédito da conta do Mercado Pago PJ. O Fluxo de caixa passa a usar como saldo inicial o mais recente entre o Mercado Pago, a Belvo e o saldo informado.\n- A credencial da Belvo fica só neste PC. O app só aceita a conexão cuja conta do Mercado Pago é a mesma conta do app (a Cordeiro não se mistura com a Flavia)."
+  },
+  {
     "versao": "1.9.130",
     "data": "2026-10-27",
     "titulo": "Fluxo de caixa no Finance",
