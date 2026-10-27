@@ -193,7 +193,7 @@ function linha(l) {
         <td>${esc(l.forma)}</td>
         <td>${dataBR(l.vencimento)}</td>
         <td class="n">${brl(l.valor)}</td>
-        <td><span class="pill p-${l.situacao}">${SIT[l.situacao] || l.situacao}</span></td>
+        <td><span class="pill p-${l.situacao}">${SIT[l.situacao] || l.situacao}</span>${l.banco ? `<div class="pill" style="margin-top:4px;background:var(--verde-f,#DDF3E6);color:var(--verde-t,#1E7A45)" title="Boleto de R$ ${brl(l.banco.valor)} pago no banco em ${dataBR(l.banco.dia)} (${esc(l.banco.desc)}). Falta dar a baixa no Olist."><i class="bi bi-bank"></i> pago no banco ${dataBR(l.banco.dia).slice(0, 5)}</div>` : ''}${l.sem_banco ? `<div class="pill" style="margin-top:4px;background:var(--amarelo-f,#FCE9B8);color:var(--amarelo-t,#8A5A00)" title="Marcada como paga no Olist, mas não achei um boleto com esse valor no extrato do banco (pode ter sido pago por outro banco ou por Pix)."><i class="bi bi-question-circle"></i> sem pagamento no banco</div>` : ''}</td>
         <td class="n">${podeBaixar(l) ? `<button class="bt-baixa" title="Marcar como paga no Olist" onclick="baixaAbrir(['${esc(String(l.id))}'])"><i class="bi bi-cash-coin"></i> Marcar como paga</button>` : ''}</td></tr>`;
 }
 function desenhar() {
@@ -214,12 +214,17 @@ function desenhar() {
 }
 function marcar(id, v) { v ? sel.add(id) : sel.delete(id); desenhar(); }
 function marcarTodos(v) { const L = filtrados().slice((pagina - 1) * POR, pagina * POR); for (const l of L) v ? sel.add(String(l.id)) : sel.delete(String(l.id)); desenhar(); }
+let SALDO = null;
+fetch('/api/finance/saldo-atual').then(r => r.json()).then(x => { SALDO = x; if (typeof D !== 'undefined' && D && D.resumo) info(); }).catch(() => {});
 function info() {
     const R = D.resumo;
     if (!R) { $('info').innerHTML = '<div><span>Quantidade de contas a pagar</span><b>—</b></div>'; return; }
     $('info').innerHTML = [
         ['Quantidade de contas a pagar', R.qtd], ['Valor total', 'R$ ' + brl(R.total)], ['Vence hoje', 'R$ ' + brl(R.hoje)], ['Próximos 7 dias', 'R$ ' + brl(R.sete_dias)],
         ['Atrasadas', `R$ ${brl(R.valor_atrasadas)} (${R.atrasadas})`, R.atrasadas ? 'alerta' : ''], ['Pagas no período', 'R$ ' + brl(R.pagas_periodo)],
+        ...(R.abertas_pagas_no_banco ? [['Em aberto, mas já pagas no banco', `R$ ${brl(R.valor_abertas_pagas_no_banco)} (${R.abertas_pagas_no_banco}) — dar baixa`, 'alerta']] : []),
+        ...(R.pagas_sem_banco ? [['Pagas aqui sem boleto no banco', `${R.pagas_sem_banco} conta(s)`, '']] : []),
+        ...(SALDO && SALDO.valor != null ? [['Saldo no banco (Belvo)', 'R$ ' + brl(SALDO.valor) + (R.sete_dias ? ` · cobre os próximos 7 dias: ${SALDO.valor >= R.sete_dias ? 'sim' : 'não'}` : ''), SALDO.valor < R.sete_dias ? 'alerta' : '']] : []),
     ].map(([a, b, c]) => `<div class="${c || ''}"><span>${a}</span><b>${b}</b></div>`).join('');
 }
 // 3 cards discretos: o texto vem da IA (agente Fluxo de caixa); sem analise ainda, mostram os numeros do motor

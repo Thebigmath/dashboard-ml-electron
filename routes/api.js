@@ -1240,7 +1240,8 @@ router.post('/finance/base-tributaria', auth, upload.single('planilha'), async (
 // saldo do Mercado Pago: ancora (relatorio de liberacoes) + bots (pagamentos a cada 3 min)
 router.get('/finance/saldo-mp', auth, (req, res) => { try { res.json(require('../lib/finance_saldo_mp').resultado()); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/saldo-mp/ancora', auth, (req, res) => res.json(require('../lib/finance_saldo_mp').gerarAncora()));
-router.get('/finance/fluxo-caixa', auth, (req, res) => { try { res.json(require('../lib/finance_fluxo_caixa').fluxo({ dias: req.query.dias, ate: req.query.ate })); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/saldo-atual', auth, async (req, res) => { try { res.json(await require('../lib/finance_fluxo_caixa').saldoAtual()); } catch (e) { erroJson(res)(e); } });
+router.get('/finance/fluxo-caixa', auth, (req, res) => { try { res.json(require('../lib/finance_fluxo_caixa').fluxo({ dias: req.query.dias, ate: req.query.ate, de: req.query.de })); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/fluxo-caixa/saldo', auth, (req, res) => { try { res.json(require('../lib/finance_fluxo_caixa').salvarSaldo(req.body || {})); } catch (e) { res.status(400).json({ erro: String(e.message || e) }); } });
 router.delete('/finance/fluxo-caixa/saldo', auth, (req, res) => { try { res.json(require('../lib/finance_fluxo_caixa').limparSaldo()); } catch (e) { erroJson(res)(e); } });
 router.get('/finance/belvo', auth, async (req, res) => { try { res.json(await require('../lib/belvo').estado()); } catch (e) { erroJson(res)(e); } });
@@ -1251,6 +1252,7 @@ router.get('/finance/belvo/callback', async (req, res) => {
     const esc = (x) => String(x || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     res.set('Content-Type', 'text/html; charset=utf-8').send(`<!doctype html><meta charset="utf-8"><title>Belvo</title><body style="font-family:system-ui;text-align:center;padding:60px"><h2>${r.ok ? 'Belvo conectada ✔' : 'Não foi possível conectar'}</h2><p>${r.ok ? 'Pode fechar esta aba e voltar ao SEVEN.' : esc(r.erro)}</p></body>`);
 });
+router.get('/finance/belvo/extrato', auth, (req, res) => { try { const d = (k) => /^\d{4}-\d{2}-\d{2}$/.test(req.query[k] || '') ? req.query[k] : null; res.json(require('../lib/belvo').extrato({ de: d('de'), ate: d('ate'), tipo: ['INFLOW', 'OUTFLOW'].includes(req.query.tipo) ? req.query.tipo : null, grupo: req.query.grupo || null, q: req.query.q || null })); } catch (e) { erroJson(res)(e); } });
 router.post('/finance/belvo/atualizar', auth, (req, res) => { require('../lib/belvo').coletar({ atualizar: true }).catch(() => {}); res.json({ ok: true }); });
 router.post('/finance/belvo/desconectar', auth, async (req, res) => { try { res.json(await require('../lib/belvo').desconectar()); } catch (e) { erroJson(res)(e); } });
 // contas a pagar (Bling, pelo motor Nexus) e os 3 cards da IA

@@ -261,7 +261,7 @@ function marcarTodos(v) { const L = agrupar && ordem.k === 'dia' ? filtrados() :
 function limpar() { $('busca').value = ''; $('vMin').value = ''; $('vMax').value = ''; $('soMed').checked = false; meio = ''; if (per !== 'u30p30') periodo('u30p30'); else { pagina = 1; desenhar(); } }
 function resumo() {
     const R = D.resumo;
-    $('resumo').innerHTML = [['A liberar hoje', R.hoje], ['Amanhã', R.amanha], ['Próximos 7 dias', R.sete_dias], ['Total a liberar', R.total], ['Liberado hoje', R.liberado_hoje]]
+    $('resumo').innerHTML = [['A liberar hoje', R.hoje], ['Amanhã', R.amanha], ['Próximos 7 dias', R.sete_dias], ['Total a liberar', R.total], ['Liberado hoje', R.liberado_hoje], ...(R.banco_hoje ? [['Recebido no banco hoje (Belvo)', R.banco_hoje.liberado]] : [])]
         .map(([a, b]) => `<span>${a}<b>R$ ${brl(b)}</b></span>`).join('');
 }
 function exportar(soSel) {

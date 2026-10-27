@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.132",
+    "data": "2026-10-27",
+    "titulo": "Banco (Belvo) em todo o Finance: saldo, extrato e conferência de boletos",
+    "texto": "- Saldo do banco (Belvo) em todo o Finance: o saldo passa a ser o da Belvo, disponível + reservas, e aparece numa faixa no canto de baixo de todas as telas do Finance. O Mercado Pago estimado fica só como comparação.\n- Fluxo de caixa: novo filtro de período no molde do Olist (últimos 30 dias, próximos 30 e 60, sem filtro, no dia, na semana, no mês, intervalo, com aplicar e cancelar). Os dias passados mostram os movimentos reais do banco (entrou, saiu e a diferença).\n- Extrato do banco: página nova com os movimentos da conta corrente do Mercado Pago lidos pela Belvo (vendas liberadas, boletos pagos, retenções, débitos), com filtro por período, tipo e busca, e resumo por tipo.\n- Contas a pagar: marca \"pago no banco\" nas contas em aberto cujo boleto já foi pago (para dar a baixa) e \"sem pagamento no banco\" nas marcadas como pagas sem boleto no extrato; mostra também o saldo do banco e se ele cobre os próximos 7 dias. Contas a receber mostra o recebido no banco hoje. Saldo Mercado Pago mostra o saldo real do banco e o cartão.\n- Depois de atualizar, abra Extrato do banco e clique em Atualizar do banco para a primeira leitura (pode levar alguns minutos)."
+  },
+  {
     "versao": "1.9.131",
     "data": "2026-10-27",
     "titulo": "Fluxo de caixa por datas e banco pela Belvo",

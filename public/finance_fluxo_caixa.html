@@ -20,6 +20,20 @@
         .topo .dir { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
         .sel, .bt { height:42px; border-radius:999px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); padding:0 16px; font-size:14.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
         .bt:hover, .sel:hover { background:var(--s2); }
+        .chipf { position:relative; }
+        .pop { display:none; position:absolute; top:calc(100% + 8px); left:0; z-index:40; width:min(380px,92vw); background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:16px 18px; box-shadow:0 14px 40px rgba(0,0,0,.28); }
+        .pop.on { display:block; }
+        .pf-l { font-size:14px; color:var(--l2); margin:2px 0 6px; }
+        .pf-sel { width:100%; height:46px; border:1px solid var(--sep); border-radius:12px; background:var(--s2); color:var(--l1); padding:0 12px; font-size:15px; margin-bottom:14px; }
+        .pf-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+        .pf-chips button { border:1px solid var(--sep); background:transparent; color:var(--l1); border-radius:999px; padding:7px 14px; font-size:14px; cursor:pointer; }
+        .pf-chips button.on { border-color:var(--azul); color:var(--azul); box-shadow:0 0 0 2px rgba(31,95,209,.18); }
+        #pfCampos { display:grid; gap:8px; margin-bottom:12px; }
+        #pfCampos label { display:flex; align-items:center; gap:10px; border:1px solid var(--sep); border-radius:12px; background:var(--s2); padding:0 12px; height:46px; color:var(--l2); font-size:14px; }
+        #pfCampos input { flex:1; border:0; outline:0; background:transparent; color:var(--l1); font-size:15px; min-width:0; }
+        .pf-nota { font-size:11.5px; color:var(--l3); margin-bottom:12px; }
+        .pf-bts { display:flex; align-items:center; gap:14px; } .pf-cancel { border:0; background:transparent; color:var(--l1); font-size:15px; cursor:pointer; }
+        .dia.real { border-style:solid; background:var(--s2); }
         .dt { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--l2); }
         .dt input { height:42px; border:1px solid var(--sep); border-radius:999px; background:var(--s1); color:var(--l1); padding:0 12px; font-size:14px; }
         .bt.verde { background:var(--verde); border-color:var(--verde); color:#fff; font-weight:600; } .bt.verde:hover { background:var(--verde-2); } .bt:disabled { opacity:.6; cursor:not-allowed; }
@@ -29,6 +43,7 @@
         .card b { display:block; font-size:24px; color:var(--l1); font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
         .card em { display:block; font-style:normal; font-size:12px; color:var(--l3); margin-top:3px; }
         .card.pos b { color:var(--verde-t); } .card.neg b { color:var(--verm-t); }
+        #cards .card:first-child { grid-column:span 2; } @media (max-width:700px) { #cards .card:first-child { grid-column:auto; } }
         .aviso { border-radius:10px; padding:10px 14px; font-size:13.5px; margin-bottom:8px; background:var(--amarelo-f); color:var(--amarelo-t); line-height:1.5; }
         .aviso > i { margin-right:8px; }
         .aviso.verm { background:var(--verm-f); color:var(--verm-t); }
@@ -80,12 +95,20 @@
     <div class="topo">
         <h1>Fluxo de caixa</h1>
         <div class="dir">
-            <select class="sel" id="selDias" onchange="preset(this.value)">
-                <option value="30">Próximos 30 dias</option><option value="60" selected>Próximos 60 dias</option><option value="90">Próximos 90 dias</option><option value="180">Próximos 180 dias</option><option value="x">Datas escolhidas</option>
-            </select>
-            <label class="dt">De <input type="date" id="inDe" onchange="mudouDe()" title="Começo do período (de hoje em diante)"></label>
-            <label class="dt">Até <input type="date" id="inAte" onchange="mudouAte()" title="Fim do período (até 1 ano)"></label>
-            <label class="dt">Ver o dia <input type="date" id="inDia" onchange="verDia()" title="Pula para uma data e abre o detalhe do dia"></label>
+            <span class="chipf"><button class="sel" id="btPeriodo" onclick="abrirFiltro(event)"><i class="bi bi-calendar3"></i> <span id="txtPeriodo">vencimento: próximos 60 dias</span> <i class="bi bi-caret-down-fill" style="font-size:11px"></i></button>
+                <div class="pop" id="popFiltro" onclick="event.stopPropagation()">
+                    <div class="pf-l">Filtrar por:</div>
+                    <select class="pf-sel" id="pfPor"><option>Data de vencimento</option></select>
+                    <div class="pf-l">Período</div>
+                    <div class="pf-chips" id="pfChips">
+                        <button data-p="u30" onclick="pfEscolher('u30')">últimos 30 dias</button><button data-p="p30" onclick="pfEscolher('p30')">próximos 30 dias</button><button data-p="p60" onclick="pfEscolher('p60')">próximos 60 dias</button><button data-p="sem" onclick="pfEscolher('sem')">sem filtro</button>
+                        <button data-p="dia" onclick="pfEscolher('dia')">no dia</button><button data-p="sem7" onclick="pfEscolher('sem7')">na semana</button><button data-p="mes" onclick="pfEscolher('mes')">no mês</button><button data-p="int" onclick="pfEscolher('int')">intervalo</button>
+                    </div>
+                    <div id="pfCampos"></div>
+                    <div class="pf-nota">O fluxo vai de 90 dias atrás (movimentos reais do banco, pela Belvo) até 1 ano à frente.</div>
+                    <div class="pf-bts"><button class="bt verde" onclick="aplicarFiltro()">aplicar</button><button class="pf-cancel" onclick="fecharFiltro()">cancelar</button></div>
+                </div>
+            </span>
             <button class="bt" onclick="abrirBelvo()"><i class="bi bi-bank"></i> Banco (Belvo)</button>
             <button class="bt" onclick="abrirSaldo()"><i class="bi bi-pencil-square"></i> Informar saldo</button>
             <button class="bt verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar dados</button>
@@ -138,54 +161,75 @@ const PD = {};   // dia -> registro
 
 async function carregar() {
     $('cards').innerHTML = '<div class="card"><small>Carregando…</small></div>';
-    try { D = await fetch('/api/finance/fluxo-caixa?ate=' + ateSel).then(x => x.json()); } catch (e) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(e.message)}</div>`; return; }
+    try { D = await fetch('/api/finance/fluxo-caixa?ate=' + ateSel + (de && de < somaDias(0) ? '&de=' + de : '')).then(x => x.json()); } catch (e) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(e.message)}</div>`; return; }
     if (D.erro) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(D.erro)}</div>`; return; }
     for (const k in PD) delete PD[k]; D.dias.forEach(x => PD[x.dia] = x);
     if (!mes) mes = (de || D.hoje).slice(0, 7);
-    ateSel = D.ate; $('inAte').value = D.ate; $('inAte').min = D.hoje; $('inAte').max = somaDias(365); $('inDe').min = D.hoje; $('inDe').max = D.ate; $('inDia').min = D.hoje; $('inDia').max = somaDias(365);
-    if (de && de > D.ate) { de = null; $('inDe').value = ''; }
+    ateSel = D.ate;
     desenhar();
 }
-// ----- periodo: atalhos, datas De/Ate e "Ver o dia"
-const faixa = () => D.dias.filter(x => x.dia >= (de || D.hoje) && x.dia <= D.ate);
-function preset(v) { if (v === 'x') return; ateSel = somaDias(Number(v)); de = null; $('inDe').value = ''; mes = null; carregar(); }
-function mudouDe() {
-    const v = $('inDe').value, hoje = D ? D.hoje : somaDias(0);
-    if (v && v < hoje) { alert('O fluxo começa hoje: escolha uma data de hoje em diante.'); $('inDe').value = de || ''; return; }
-    de = v || null; $('selDias').value = 'x';
-    if (de && de > ateSel) { ateSel = de; $('inAte').value = ateSel; mes = de.slice(0, 7); carregar(); return; }
-    mes = (de || hoje).slice(0, 7); escolhido = de || hoje; desenhar();
+// ----- filtro de periodo no molde do Olist: "Filtrar por data de vencimento" + periodo (aplicar / cancelar)
+let fimF = null, filtro = { p: 'p60' };   // de / fimF = comeco e fim do que a tela mostra; filtro = o que foi escolhido
+const addDias = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+const faixa = () => D.dias.filter(x => x.dia >= (de || D.hoje) && x.dia <= (fimF || D.ate));
+function periodoDe(f) {
+    const hoje = somaDias(0);
+    switch (f.p) {
+        case 'p30': return [hoje, addDias(hoje, 30)];
+        case 'p60': return [hoje, addDias(hoje, 60)];
+        case 'u30': return [addDias(hoje, -30), addDias(hoje, -1)];
+        case 'sem': return [addDias(hoje, -90), addDias(hoje, 180)];
+        case 'dia': return [f.dia || hoje, f.dia || hoje];
+        case 'sem7': { const d = f.dia || hoje, w = new Date(Date.parse(d + 'T12:00:00Z')).getUTCDay(), seg = addDias(d, -((w + 6) % 7)); return [seg, addDias(seg, 6)]; }
+        case 'mes': { const m = f.mes || hoje.slice(0, 7), [a, b] = m.split('-').map(Number); return [m + '-01', new Date(Date.UTC(a, b, 0)).toISOString().slice(0, 10)]; }
+        default: return [f.de || hoje, f.ate || addDias(hoje, 30)];
+    }
 }
-function mudouAte() {
-    const v = $('inAte').value, hoje = D ? D.hoje : somaDias(0);
-    if (!v || v < hoje) { $('inAte').value = ateSel; return; }
-    ateSel = v > somaDias(365) ? somaDias(365) : v; $('selDias').value = 'x';
-    if (de && de > ateSel) { de = null; $('inDe').value = ''; }
-    carregar();
+const rotuloPeriodo = (f, i, j) => ({ p30: 'próximos 30 dias', p60: 'próximos 60 dias', u30: 'últimos 30 dias', sem: 'sem filtro', dia: 'no dia ' + dataBR(i), sem7: 'semana ' + dataBR(i).slice(0, 5) + ' a ' + dataBR(j).slice(0, 5), mes: 'mês ' + dataBR(i).slice(3), int: dataBR(i) + ' a ' + dataBR(j) })[f.p] || dataBR(i) + ' a ' + dataBR(j);
+function abrirFiltro(ev) { ev.stopPropagation(); const el = $('popFiltro'), on = el.classList.contains('on'); fecharFiltro(); if (!on) { el.classList.add('on'); pfEscolher(filtro.p, true); } }
+function fecharFiltro() { document.querySelectorAll('.pop.on').forEach(m => m.classList.remove('on')); }
+document.addEventListener('click', fecharFiltro);
+function pfEscolher(p, manter) {
+    document.querySelectorAll('#pfChips button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+    const hoje = somaDias(0), [i, j] = periodoDe(filtro), esc2 = (v) => v || '';
+    const campo = (rot, tipo, id, val) => `<label>${rot}<input type="${tipo}" id="${id}" value="${esc2(val)}"></label>`;
+    $('pfCampos').innerHTML = p === 'dia' ? campo('No dia', 'date', 'pfDia', filtro.p === 'dia' && manter ? filtro.dia : hoje)
+        : p === 'sem7' ? campo('Semana do dia', 'date', 'pfDia', filtro.p === 'sem7' && manter ? filtro.dia : hoje)
+        : p === 'mes' ? campo('Mês', 'month', 'pfMes', filtro.p === 'mes' && manter ? filtro.mes : hoje.slice(0, 7))
+        : p === 'int' ? campo('De', 'date', 'pfDe', filtro.p === 'int' && manter ? filtro.de : i) + campo('Até', 'date', 'pfAte', filtro.p === 'int' && manter ? filtro.ate : j) : '';
+    $('pfChips').dataset.p = p;
 }
-async function verDia() {
-    const v = $('inDia').value; if (!v) return;
-    if (v < D.hoje) { alert('O fluxo começa hoje: escolha uma data de hoje em diante.'); $('inDia').value = ''; return; }
-    if (v > D.ate) { ateSel = v; $('selDias').value = 'x'; await carregar(); }
-    else if (de && v < de) { de = null; $('inDe').value = ''; $('selDias').value = 'x'; }
-    mes = v.slice(0, 7); escolhido = v; desenhar();
-    const el = $('det'); if (el.style.display !== 'none') el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+function aplicarFiltro() {
+    const p = $('pfChips').dataset.p || filtro.p, f = { p };
+    if (p === 'dia' || p === 'sem7') f.dia = $('pfDia').value || somaDias(0);
+    if (p === 'mes') f.mes = $('pfMes').value || somaDias(0).slice(0, 7);
+    if (p === 'int') { f.de = $('pfDe').value; f.ate = $('pfAte').value; if (!f.de || !f.ate) { alert('Preencha as duas datas.'); return; } }
+    definirPeriodo(f); fecharFiltro(); carregar();
+}
+// de hoje -90 dias ate hoje +365 (o que o fluxo cobre); o servidor le pelo menos 7 dias a frente
+function definirPeriodo(f) {
+    const hoje = somaDias(0), min = addDias(hoje, -90), max = addDias(hoje, 365);
+    let [i, j] = periodoDe(f); if (i > j) [i, j] = [j, i];
+    const lim = (d) => d < min ? min : d > max ? max : d; i = lim(i); j = lim(j);
+    filtro = f; de = i > hoje ? i : (i < hoje ? i : null); fimF = j; ateSel = j < addDias(hoje, 7) ? addDias(hoje, 7) : j; mes = i.slice(0, 7);
+    escolhido = i < hoje && j < hoje ? j : (i > hoje ? i : hoje); $('txtPeriodo').textContent = 'vencimento: ' + rotuloPeriodo(f, i, j);
 }
 function desenhar() { cartoes(); belvoBox(); avisos(); calendario(); grafico(); detalhe(); $('nota').innerHTML = 'O que entra = vendas do Mercado Livre que o Mercado Pago ainda vai liberar (valor líquido, já sem tarifa e frete), no dia da liberação. O que sai = contas a pagar em aberto do Olist, no vencimento; as atrasadas entram no dia de hoje. '
     + 'Saldo projetado do dia = saldo de hoje + tudo que entra − tudo que sai até o fim do dia. Não entram: saques, impostos fora do Olist, despesas que não estão no Olist, antecipações e cobranças avulsas que o Mercado Pago desconta no dia.'; }
 
 function cartoes() {
-    const S = D.saldo_hoje, sem = S.valor == null, F = faixa(), ini = de || D.hoje;
-    let rec = 0, pag = 0, menor = null; F.forEach(x => { rec += x.receber; pag += x.pagar; if (x.saldo != null && (!menor || x.saldo < menor.saldo)) menor = { dia: x.dia, saldo: x.saldo }; });
-    const R = { a_receber: Math.round(rec * 100) / 100, a_pagar: Math.round(pag * 100) / 100, diferenca: Math.round((rec - pag) * 100) / 100, saldo_final: F.length ? F[F.length - 1].saldo : null, menor_saldo: menor };
-    const periodo = ini === D.hoje ? 'até ' + dataBR(D.ate) : 'de ' + dataBR(ini) + ' a ' + dataBR(D.ate), antes = ini > D.hoje ? PD[new Date(Date.parse(ini + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10)] : null;
+    const S = D.saldo_hoje, sem = S.valor == null, F = faixa(), ini = de || D.hoje, fimR = fimF || D.ate, soPassado = fimR < D.hoje, soFuturo = ini >= D.hoje;
+    let rec = 0, pag = 0, menor = null, ultimoSaldo = null; F.forEach(x => { rec += x.receber; pag += x.pagar; if (x.saldo != null) { ultimoSaldo = x.saldo; if (!menor || x.saldo < menor.saldo) menor = { dia: x.dia, saldo: x.saldo }; } });
+    rec = Math.round(rec * 100) / 100; pag = Math.round(pag * 100) / 100; const dif = Math.round((rec - pag) * 100) / 100;
+    const periodo = ini === fimR ? 'em ' + dataBR(ini) : 'de ' + dataBR(ini) + ' a ' + dataBR(fimR), antes = ini > D.hoje ? PD[addDias(ini, -1)] : null;
+    const mp = (S.outras || []).find(o => /Mercado Pago/.test(o.fonte));
+    const partes = S.disponivel != null ? `Disponível ${R$(S.disponivel)} + reservas ${R$(S.reservas)}` : '';
     const c = [];
-    c.push(`<div class="card ${sem ? '' : S.valor < 0 ? 'neg' : ''}"><small>Saldo na conta do Mercado Pago hoje</small><b>${sem ? '—' : R$(S.valor)}</b><em>${sem ? 'não lido: clique em "Informar saldo"' : esc(S.fonte) + (S.em ? ' · ' + quando(S.em) : '')}</em></div>`);
-    c.push(`<div class="card pos"><small>A receber ${periodo}</small><b>${R$(R.a_receber)}</b><em>liberações do Mercado Pago</em></div>`);
-    c.push(`<div class="card neg"><small>A pagar ${periodo}</small><b>${R$(R.a_pagar)}</b><em>${D.avisos.pagar_nao_lido ? 'contas ainda não lidas' : 'contas em aberto no Olist'}</em></div>`);
-    c.push(`<div class="card ${R.diferenca >= 0 ? 'pos' : 'neg'}"><small>Diferença (receber − pagar)</small><b>${R$(R.diferenca)}</b><em>${R.diferenca >= 0 ? 'entra mais do que sai' : 'sai mais do que entra'}</em></div>`);
-    const fim = R.saldo_final;
-    c.push(`<div class="card ${fim == null ? '' : fim >= 0 ? 'pos' : 'neg'}"><small>Saldo projetado em ${dataBR(D.ate)}</small><b>${fim == null ? '—' : R$(fim)}</b><em>${fim == null ? 'precisa do saldo de hoje' : (antes && antes.saldo != null ? 'no início do período: ' + R$(antes.saldo) + ' · ' : '') + (R.menor_saldo ? 'menor saldo: ' + R$(R.menor_saldo.saldo) + ' em ' + dataBR(R.menor_saldo.dia) : '')}</em></div>`);
+    c.push(`<div class="card ${sem ? '' : S.valor < 0 ? 'neg' : ''}"><small>Saldo no banco hoje${S.disponivel != null ? ' (disponível + reservas)' : ''}</small><b>${sem ? '—' : R$(S.valor)}</b><em>${sem ? 'não lido: conecte a Belvo ou clique em "Informar saldo"' : [partes, esc(S.fonte) + (S.em ? ' · ' + quando(S.em) : ''), S.bloqueado ? 'bloqueado ' + R$(S.bloqueado) + ' fora da conta' : '', mp ? 'Mercado Pago (estimado): ' + R$(mp.valor) : ''].filter(Boolean).join(' · ')}</em></div>`);
+    c.push(`<div class="card pos"><small>${soPassado ? 'Entrou no banco' : soFuturo ? 'A receber' : 'Entra (real + previsto)'} ${periodo}</small><b>${R$(rec)}</b><em>${soPassado ? 'movimentos reais do extrato (Belvo)' : 'liberações do Mercado Pago' + (soFuturo ? '' : ' + extrato')}</em></div>`);
+    c.push(`<div class="card neg"><small>${soPassado ? 'Saiu do banco' : soFuturo ? 'A pagar' : 'Sai (real + previsto)'} ${periodo}</small><b>${R$(pag)}</b><em>${soPassado ? 'boletos, débitos, retenções… (extrato)' : D.avisos.pagar_nao_lido ? 'contas ainda não lidas' : 'contas em aberto no Olist' + (soFuturo ? '' : ' + extrato')}</em></div>`);
+    c.push(`<div class="card ${dif >= 0 ? 'pos' : 'neg'}"><small>Diferença (${soPassado ? 'entrou − saiu' : 'receber − pagar'})</small><b>${R$(dif)}</b><em>${dif >= 0 ? 'entra mais do que sai' : 'sai mais do que entra'}</em></div>`);
+    if (!soPassado) c.push(`<div class="card ${ultimoSaldo == null ? '' : ultimoSaldo >= 0 ? 'pos' : 'neg'}"><small>Saldo projetado em ${dataBR(fimR)}</small><b>${ultimoSaldo == null ? '—' : R$(ultimoSaldo)}</b><em>${ultimoSaldo == null ? 'precisa do saldo de hoje' : (antes && antes.saldo != null ? 'no início do período: ' + R$(antes.saldo) + ' · ' : '') + (menor ? 'menor saldo: ' + R$(menor.saldo) + ' em ' + dataBR(menor.dia) : '')}</em></div>`);
     $('cards').innerHTML = c.join('');
 }
 function avisos() {
@@ -202,7 +246,7 @@ function avisos() {
     $('avisos').innerHTML = out.join('');
 }
 function mudarMes(n) { const [a, m] = mes.split('-').map(Number); const d = new Date(Date.UTC(a, m - 1 + n, 1)); mes = d.toISOString().slice(0, 7); calendario(); }
-function irHoje() { mes = D.hoje.slice(0, 7); escolhido = de && de > D.hoje ? de : D.hoje; calendario(); detalhe(); }
+function irHoje() { mes = D.hoje.slice(0, 7); escolhido = D.hoje; calendario(); detalhe(); }
 function calendario() {
     const [a, m] = mes.split('-').map(Number), ini = new Date(Date.UTC(a, m - 1, 1)), ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate();
     $('mesTit').textContent = MESES[m - 1].charAt(0).toUpperCase() + MESES[m - 1].slice(1) + ' de ' + a;
@@ -210,9 +254,9 @@ function calendario() {
     for (let i = 0; i < ini.getUTCDay(); i++) h += '<div class="dia vazio"></div>';
     for (let n = 1; n <= ultimo; n++) {
         const d = `${mes}-${String(n).padStart(2, '0')}`, x = PD[d];
-        if (!x || d < (de || D.hoje) || d > D.ate) { h += `<div class="dia fora"><div class="n"><span>${n}</span></div></div>`; continue; }
-        const cls = ['dia', x.liquido > 0 ? 'p' : x.liquido < 0 ? 'm' : '', d === D.hoje ? 'hoje' : '', D.avisos.receber_ate && d > D.avisos.receber_ate ? 'alem' : '', x.saldo != null && x.saldo < 0 ? 'neg' : '', d === escolhido ? 'sel' : ''].filter(Boolean).join(' ');
-        h += `<div class="${cls}" onclick="escolher('${d}')"><div class="n"><span>${n}</span></div>`
+        if (!x || d < (de || D.hoje) || d > (fimF || D.ate)) { h += `<div class="dia fora"><div class="n"><span>${n}</span></div></div>`; continue; }
+        const cls = ['dia', x.liquido > 0 ? 'p' : x.liquido < 0 ? 'm' : '', x.realizado ? 'real' : '', d === D.hoje ? 'hoje' : '', D.avisos.receber_ate && d > D.avisos.receber_ate ? 'alem' : '', x.saldo != null && x.saldo < 0 ? 'neg' : '', d === escolhido ? 'sel' : ''].filter(Boolean).join(' ');
+        h += `<div class="${cls}" onclick="escolher('${d}')"><div class="n"><span>${n}</span>${x.realizado ? '<span class="qt">banco</span>' : ''}</div>`
             + (x.receber ? `<div class="rec">+ ${curto(x.receber)}</div>` : '') + (x.pagar ? `<div class="pag">− ${curto(x.pagar)}</div>` : '')
             + ((x.receber || x.pagar) ? `<div class="liq">${x.liquido >= 0 ? '+' : ''}${curto(x.liquido)}</div>` : '')
             + (x.saldo != null ? `<div class="sal">saldo ${curto(x.saldo)}</div>` : '') + '</div>';
@@ -228,6 +272,7 @@ function detalhe() {
         + `<span>Entra<b style="color:var(--verde-t)">${R$(x.receber)}</b></span><span>Sai<b style="color:var(--verm-t)">${R$(x.pagar)}</b></span><span>Diferença do dia<b>${R$(x.liquido)}</b></span>`
         + (x.saldo != null ? `<span>Saldo projetado no fim do dia<b style="color:${x.saldo < 0 ? 'var(--verm-t)' : 'var(--l1)'}">${R$(x.saldo)}</b></span>` : '') + '</div>';
     if (D.avisos.receber_ate && x.dia > D.avisos.receber_ate) h += `<div style="font-size:12.5px;color:var(--amarelo-t);margin-bottom:6px">Dia depois da última liberação conhecida (${dataBR(D.avisos.receber_ate)}): ainda não há vendas feitas com liberação neste dia.</div>`;
+    if (x.realizado) { el.innerHTML = h.replace(/<span>Saldo projetado[^]*?<\/span>/, '') + `<div style="font-size:13.5px;color:var(--l2)">Movimentos <b>reais</b> do banco neste dia (extrato da Belvo). <a href="/finance-extrato?de=${x.dia}&ate=${x.dia}" style="color:var(--azul)">Ver o extrato do dia</a></div>`; el.style.display = ''; return; }
     h += `<div style="font-size:13.5px;color:var(--l2);margin-bottom:8px">${x.qtd_receber ? `${x.qtd_receber} venda(s) com liberação do Mercado Pago neste dia.` : 'Nenhuma liberação do Mercado Pago neste dia.'}</div>`;
     if (x.itens_pagar.length) h += '<table><thead><tr><th>Fornecedor</th><th>Documento</th><th>Histórico</th><th>Vencimento</th><th class="n">Valor</th></tr></thead><tbody>'
         + x.itens_pagar.map(i => `<tr><td>${esc(i.fornecedor)}</td><td>${esc(i.documento)}</td><td style="color:var(--l2)">${esc((i.historico || '').slice(0, 70))}</td><td>${dataBR(i.vencimento)}${i.atrasada ? ' <span style="color:var(--verm-t)">(atrasada)</span>' : ''}</td><td class="n">${R$(i.valor)}</td></tr>`).join('') + '</tbody></table>';
@@ -328,7 +373,7 @@ async function salvarSaldo() {
 }
 async function usarAuto() { await fetch('/api/finance/fluxo-caixa/saldo', { method: 'DELETE' }).catch(() => {}); fecharSaldo(); carregar(); }
 
-(async () => { ateSel = somaDias(60); await carregar(); escolhido = D && D.hoje; if (D && !D.erro) { calendario(); detalhe(); } })();
+(async () => { definirPeriodo({ p: 'p60' }); await carregar(); escolhido = D && D.hoje; if (D && !D.erro) { calendario(); detalhe(); } })();
 document.body.classList.add('page-ready');
 </script>
 <script src="/assets/js/sidebar.js"></script>

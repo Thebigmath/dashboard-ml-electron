@@ -46,6 +46,7 @@
         <h1><span class="seta">›</span>Saldo Mercado Pago</h1>
         <button class="bt-verde" id="btAncora" onclick="gerar()"><i class="bi bi-arrow-repeat"></i> Atualizar saldo oficial (~8 min)</button>
     </div>
+    <div id="belvoSaldo"></div>
     <div class="cards" id="cards"></div>
     <div class="nota" id="nota"></div>
     <div class="abas"><a id="abaB" class="on" onclick="aba='bots';desenhar()">Desde o saldo oficial</a><a id="abaR" onclick="aba='rel';desenhar()">Movimentos do relatório</a></div>
@@ -93,6 +94,24 @@ async function acompanhar() {
 }
 carregar();
 document.body.classList.add('page-ready');
+</script>
+<script>
+// saldo REAL do banco (Belvo): disponivel + reservas, com o cartao, ao lado do saldo estimado do Mercado Pago (27/10/2026)
+(function () {
+    const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const quando = (iso) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+    fetch('/api/finance/saldo-atual').then(r => r.json()).then(s => {
+        const el = document.getElementById('belvoSaldo'); if (!el) return;
+        const B = s.belvo, mp = (s.outras || []).concat(/Mercado Pago/.test(s.fonte || '') ? [{ valor: s.valor, fonte: s.fonte }] : []).find(o => /Mercado Pago/.test(o.fonte));
+        if (!B || !B.conta) { el.innerHTML = '<div style="margin:0 0 14px;padding:12px 16px;border-radius:12px;border:1px dashed var(--sep);color:var(--l2);font-size:14px"><i class="bi bi-bank"></i> Belvo (Open Finance) ainda não conectada: o saldo real do banco aparece aqui. <a href="/finance-fluxo-caixa" style="color:var(--azul,#1F5FD1);font-weight:600">Conectar no Fluxo de caixa</a></div>'; return; }
+        const c = B.conta, k = B.cartao, tot = (c.disponivel || 0) + (c.total_reservas || 0), dif = mp ? tot - mp.valor : null;
+        const f = (rot, v) => `<span style="margin-right:22px">${rot} <b style="color:var(--l1);font-variant-numeric:tabular-nums">R$ ${brl(v)}</b></span>`;
+        el.innerHTML = `<div style="margin:0 0 14px;padding:14px 18px;border-radius:14px;border:1px solid var(--sep);background:var(--s2)"><div style="color:var(--l2);font-size:13px;margin-bottom:6px"><i class="bi bi-bank"></i> Saldo real do banco (Belvo · Open Finance) · lido ${quando(c.coletado_em || B.coletado_em)}</div>`
+            + `<div style="font-size:26px;font-weight:600;color:var(--l1);font-variant-numeric:tabular-nums">R$ ${brl(tot)} <span style="font-size:13px;font-weight:400;color:var(--l3)">disponível + reservas</span></div>`
+            + `<div style="margin-top:6px;font-size:13.5px;color:var(--l2)">${f('Disponível', c.disponivel)}${f('Reservas', c.total_reservas || 0)}${f('Bloqueado', c.bloqueado || 0)}${k ? f('Cartão usado', k.usado) + f('Cartão disponível', k.disponivel) : ''}</div>`
+            + (mp ? `<div style="margin-top:6px;font-size:12.5px;color:var(--l3)">Estimado pelo SEVEN abaixo: R$ ${brl(mp.valor)} (disponível da Belvo − estimado = R$ ${brl((c.disponivel || 0) - mp.valor)}). O estimado é uma conta; o da Belvo é a leitura do banco.</div>` : '') + '</div>';
+    }).catch(() => {});
+})();
 </script>
 <script src="/assets/js/sidebar.js"></script>
 </body>

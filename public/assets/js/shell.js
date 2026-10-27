@@ -30,11 +30,11 @@
             ['/seven#ia', 'bi-stars', 'Análise com IA'], ['/reputacao', 'bi-shield-exclamation', 'Reputação (Platinum)'], ['/seven#parados', 'bi-hourglass-split', 'Controle de estoque parado'], ['/seven#clonagem', 'bi-copy', 'Clonagem de anúncios']] },
         fin: { nome: 'Finance', curto: 'Finance', sub: 'O financeiro da conta', icone: 'bi-cash-coin', itens: [
             ['/finance#resumo', 'bi-clipboard-data', 'Resultado do mês (DRE)'], ['/finance-conciliacao', 'bi-arrow-left-right', 'Conciliação'],
-            ['/finance#produtos', 'bi-box', 'Margem por produto'], ['/finance-planilha', 'bi-table', 'Planilha avançada'], ['/finance-liberacoes', 'bi-calendar-check', 'Contas a receber'], ['/finance-contas-pagar', 'bi-receipt', 'Contas a pagar'], ['/finance-saldo-mp', 'bi-wallet2', 'Saldo Mercado Pago'], ['/finance-fluxo-caixa', 'bi-graph-up-arrow', 'Fluxo de caixa'], ['/finance#custos', 'bi-wallet2', 'Custos e Despesas'],
+            ['/finance#produtos', 'bi-box', 'Margem por produto'], ['/finance-planilha', 'bi-table', 'Planilha avançada'], ['/finance-liberacoes', 'bi-calendar-check', 'Contas a receber'], ['/finance-contas-pagar', 'bi-receipt', 'Contas a pagar'], ['/finance-saldo-mp', 'bi-wallet2', 'Saldo Mercado Pago'], ['/finance-fluxo-caixa', 'bi-graph-up-arrow', 'Fluxo de caixa'], ['/finance-extrato', 'bi-bank', 'Extrato do banco'], ['/finance#custos', 'bi-wallet2', 'Custos e Despesas'],
             ['/finance#notas', 'bi-file-earmark-pdf', 'Notas de fornecedores']] },
     };
     const caminho = location.pathname.replace(/\/$/, '') || '/';
-    const appDaPagina = ['/finance', '/finance-planilha', '/finance-conciliacao', '/finance-liberacoes', '/finance-contas-pagar', '/finance-saldo-mp', '/finance-fluxo-caixa'].includes(caminho) ? 'fin' : ['/seven', '/reputacao'].includes(caminho) ? 'ad' : ['/painel', '/feed', '/envio_full', '/agenda-full', '/erp-commander', '/metricas-stock', '/valor_estoque', '/frete', '/parados', '/stock-ops'].includes(caminho) ? 'stock' : null;
+    const appDaPagina = ['/finance', '/finance-planilha', '/finance-conciliacao', '/finance-liberacoes', '/finance-contas-pagar', '/finance-saldo-mp', '/finance-fluxo-caixa', '/finance-extrato'].includes(caminho) ? 'fin' : ['/seven', '/reputacao'].includes(caminho) ? 'ad' : ['/painel', '/feed', '/envio_full', '/agenda-full', '/erp-commander', '/metricas-stock', '/valor_estoque', '/frete', '/parados', '/stock-ops'].includes(caminho) ? 'stock' : null;
     let aberto = appDaPagina;   // app mostrado na segunda aba
     let info = {};
 
@@ -166,5 +166,26 @@
         if (aberto === 'conta') desenhar();
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar); else montar();
+    // saldo do banco (Belvo: disponivel + reservas) em todas as telas do Finance, no canto de baixo; clicar abre o Fluxo de caixa
+    function saldoChip() {
+        if (appDaPagina !== 'fin' || caminho === '/finance-fluxo-caixa' || document.getElementById('shSaldo')) return;
+        const st = document.createElement('style');
+        st.textContent = '#shSaldo{position:fixed;right:18px;bottom:16px;z-index:900;display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:var(--s1,#fff);color:var(--l1,#111);border:1px solid var(--sep,#ddd);box-shadow:0 8px 24px rgba(0,0,0,.22);font-size:13.5px;text-decoration:none;max-width:92vw}#shSaldo:hover{border-color:#1F5FD1}#shSaldo b{font-variant-numeric:tabular-nums;font-size:15px}#shSaldo small{color:var(--l3,#888);font-size:11.5px}';
+        document.head.appendChild(st);
+        const a = document.createElement('a'); a.id = 'shSaldo'; a.href = '/finance-fluxo-caixa'; a.style.display = 'none'; document.body.appendChild(a);
+        const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const hora = (iso) => { try { return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+        async function atualizar() {
+            try {
+                const s = await fetch('/api/finance/saldo-atual').then(r => r.json()); a.style.display = 'flex';
+                if (s.valor == null) { a.innerHTML = '<i class="bi bi-bank"></i><span>Saldo do banco <b>conectar a Belvo</b></span>'; a.title = 'Abrir o Fluxo de caixa para conectar a Belvo'; return; }
+                const bel = /Belvo/.test(s.fonte || '');
+                a.innerHTML = `<i class="bi bi-bank"></i><span>Saldo no banco <b>R$ ${brl(s.valor)}</b></span><small>${bel ? 'Belvo' : s.automatico ? 'estimado' : 'informado'} · ${hora(s.em)}</small>`;
+                a.title = (s.disponivel != null ? `Disponível R$ ${brl(s.disponivel)} + reservas R$ ${brl(s.reservas)}` : s.fonte || '') + (s.bloqueado ? ` · bloqueado R$ ${brl(s.bloqueado)} (fora)` : '') + ' — clique para abrir o Fluxo de caixa';
+            } catch {}
+        }
+        atualizar(); setInterval(atualizar, 120000);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { montar(); saldoChip(); }); else { montar(); saldoChip(); }
 })();

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrato do banco — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        /* Extrato do banco (27/10/2026): movimentos da conta corrente do Mercado Pago lidos pela Belvo (Open Finance), so leitura */
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .ex { --verde:#2E9E5B; --verde-2:#258A4E; --azul:#1F5FD1; --verm:#D64545; --caixa:var(--s2); --verde-t:#1E7A45; --verm-t:#B42318; --amarelo-f:#FCE9B8; --amarelo-t:#8A5A00;
+              padding:22px 32px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        [data-theme="dark"] .ex { --azul:#7FA8F5; --verde-t:#5BD38D; --verm-t:#FF8A80; --amarelo-f:rgba(255,190,60,.18); --amarelo-t:#FFC861; }
+        .topo { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+        .topo h1 { font-size:30px; font-weight:600; color:var(--l1); margin:0; letter-spacing:-.01em; }
+        .topo .dir { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .bt { height:42px; border-radius:999px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); padding:0 16px; font-size:14.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
+        .bt:hover { background:var(--s2); } .bt.verde { background:var(--verde); border-color:var(--verde); color:#fff; font-weight:600; } .bt.verde:hover { background:var(--verde-2); } .bt:disabled { opacity:.6; cursor:not-allowed; }
+        .filtros { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+        .ch { border:1px solid var(--sep); background:transparent; color:var(--l1); border-radius:999px; padding:8px 16px; font-size:14px; cursor:pointer; }
+        .ch.on { border-color:var(--azul); color:var(--azul); box-shadow:0 0 0 2px rgba(31,95,209,.18); }
+        .filtros input, .filtros select { height:40px; border:1px solid var(--sep); border-radius:999px; background:var(--s1); color:var(--l1); padding:0 14px; font-size:14px; }
+        .filtros input.busca { min-width:240px; }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:14px; }
+        .card { background:var(--caixa); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
+        .card small { display:block; color:var(--l2); font-size:12.5px; margin-bottom:4px; }
+        .card b { display:block; font-size:22px; color:var(--l1); font-variant-numeric:tabular-nums; }
+        .card em { display:block; font-style:normal; font-size:12px; color:var(--l3); margin-top:3px; }
+        .card.pos b { color:var(--verde-t); } .card.neg b { color:var(--verm-t); }
+        .aviso { border-radius:10px; padding:10px 14px; font-size:13.5px; margin-bottom:10px; background:var(--amarelo-f); color:var(--amarelo-t); line-height:1.5; }
+        .aviso a { color:inherit; font-weight:600; text-decoration:underline; cursor:pointer; }
+        .duas { display:grid; grid-template-columns:minmax(260px,380px) 1fr; gap:14px; align-items:start; }
+        @media (max-width:1000px) { .duas { grid-template-columns:1fr; } .ex { padding:18px 14px 40px; } }
+        .bloco { background:var(--caixa); border:1px solid var(--sep); border-radius:14px; padding:12px 14px; overflow-x:auto; }
+        .bloco h3 { font-size:15px; margin:0 0 8px; color:var(--l1); }
+        table { width:100%; border-collapse:collapse; font-size:13.5px; }
+        th { text-align:left; font-weight:400; color:var(--l2); padding:6px 8px; border-bottom:1px solid var(--sep); white-space:nowrap; }
+        td { padding:7px 8px; border-bottom:1px solid var(--sep); color:var(--l1); vertical-align:top; }
+        td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        tr.g { cursor:pointer; } tr.g:hover td { background:var(--s2); } tr.g.on td { background:var(--s2); font-weight:600; }
+        .ent { color:var(--verde-t); } .sai { color:var(--verm-t); }
+        .tag { display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:999px; background:var(--s2); color:var(--l2); border:1px solid var(--sep); }
+        .nota { margin-top:14px; font-size:12px; color:var(--l3); line-height:1.55; max-width:980px; }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="ex">
+    <div class="topo">
+        <h1>Extrato do banco</h1>
+        <div class="dir"><a class="bt" href="/finance-fluxo-caixa"><i class="bi bi-graph-up-arrow"></i> Fluxo de caixa</a><button class="bt verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar do banco</button></div>
+    </div>
+    <div class="filtros" id="filtros">
+        <button class="ch" data-p="hoje" onclick="periodo('hoje')">hoje</button><button class="ch" data-p="u7" onclick="periodo('u7')">últimos 7 dias</button><button class="ch" data-p="u30" onclick="periodo('u30')">últimos 30 dias</button>
+        <button class="ch" data-p="mes" onclick="periodo('mes')">este mês</button><button class="ch" data-p="mesant" onclick="periodo('mesant')">mês passado</button><button class="ch" data-p="int" onclick="periodo('int')">intervalo</button>
+        <input type="date" id="de" onchange="periodo('int')" title="De"><input type="date" id="ate" onchange="periodo('int')" title="Até">
+        <select id="tipo" onchange="carregar()"><option value="">entradas e saídas</option><option value="INFLOW">só entradas</option><option value="OUTFLOW">só saídas</option></select>
+        <input class="busca" id="q" placeholder="Buscar por fornecedor, descrição ou valor" oninput="clearTimeout(tq);tq=setTimeout(carregar,350)">
+    </div>
+    <div id="avisos"></div>
+    <div class="cards" id="cards"></div>
+    <div class="duas">
+        <div class="bloco"><h3>Por tipo de movimento <span class="tag" id="limpaGrupo" style="display:none;cursor:pointer" onclick="grupo='';carregar()">limpar ✕</span></h3><table id="tGrupos"></table></div>
+        <div class="bloco"><h3 id="hLista">Movimentos</h3><table id="tLista"></table></div>
+    </div>
+    <div class="nota">Movimentos da conta corrente do Mercado Pago, lidos pela Belvo (Open Finance) em modo somente leitura. A Belvo guarda o que o banco informou na última sincronização; o app pede dado novo a cada 3 horas e lê a cada 30 minutos. Compras no cartão de crédito não entram aqui (são de outra conta).</div>
+</div></main></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const R$ = (v) => (v < 0 ? '−R$ ' : 'R$ ') + brl(Math.abs(v));
+const dataBR = (d) => String(d || '').split('-').reverse().join('/');
+const somaDias = (n) => new Date(Date.now() - 3 * 3600000 + n * 86400000).toISOString().slice(0, 10);
+const quando = (iso) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+let per = 'u30', grupo = '', tq = null, D = null, timer = null;
+const qs = new URLSearchParams(location.search);
+if (qs.get('de') && qs.get('ate')) { per = 'int'; }
+function limites() {
+    const hoje = somaDias(0), [a, m] = hoje.split('-').map(Number);
+    if (per === 'hoje') return [hoje, hoje]; if (per === 'u7') return [somaDias(-6), hoje]; if (per === 'u30') return [somaDias(-29), hoje];
+    if (per === 'mes') return [hoje.slice(0, 7) + '-01', hoje]; if (per === 'mesant') { const i = new Date(Date.UTC(a, m - 2, 1)), f = new Date(Date.UTC(a, m - 1, 0)); return [i.toISOString().slice(0, 10), f.toISOString().slice(0, 10)]; }
+    return [$('de').value || hoje, $('ate').value || hoje];
+}
+function periodo(p) {
+    per = p; if (p !== 'int') { const [a, b] = limites(); $('de').value = a; $('ate').value = b; }
+    document.querySelectorAll('#filtros .ch').forEach(b => b.classList.toggle('on', b.dataset.p === p)); carregar();
+}
+async function carregar() {
+    const [de, ate] = limites();
+    try { D = await fetch(`/api/finance/belvo/extrato?de=${de}&ate=${ate}&tipo=${$('tipo').value}&grupo=${encodeURIComponent(grupo)}&q=${encodeURIComponent($('q').value)}`).then(x => x.json()); } catch (e) { $('avisos').innerHTML = `<div class="aviso">Erro: ${esc(e.message)}</div>`; return; }
+    // os grupos sao sempre os do periodo inteiro (sem o filtro de grupo), para dar para trocar de grupo
+    let G = D; if (grupo) { try { G = await fetch(`/api/finance/belvo/extrato?de=${de}&ate=${ate}&tipo=${$('tipo').value}&q=${encodeURIComponent($('q').value)}`).then(x => x.json()); } catch {} }
+    desenhar(de, ate, G);
+}
+function desenhar(de, ate, G) {
+    if (!D.lido) {
+        $('avisos').innerHTML = '<div class="aviso"><i class="bi bi-bank"></i> O extrato ainda não foi lido. Conecte a Belvo no <a href="/finance-fluxo-caixa">Fluxo de caixa → Banco (Belvo)</a> e clique em "Atualizar do banco".</div>';
+        $('cards').innerHTML = ''; $('tGrupos').innerHTML = ''; $('tLista').innerHTML = ''; return;
+    }
+    $('avisos').innerHTML = `<div style="font-size:12px;color:var(--l3);margin-bottom:8px">Extrato lido em ${quando(D.atualizado_em)} · guardado desde ${dataBR(D.desde)}</div>` + (de < D.desde ? `<div class="aviso">O período pedido começa antes de ${dataBR(D.desde)}, que é o início do que o app guardou.</div>` : '');
+    const R = D.resumo;
+    $('cards').innerHTML = `<div class="card pos"><small>Entrou</small><b>${R$(R.entrou)}</b><em>${dataBR(de)} a ${dataBR(ate)}</em></div><div class="card neg"><small>Saiu</small><b>${R$(R.saiu)}</b><em>&nbsp;</em></div>`
+        + `<div class="card ${R.liquido >= 0 ? 'pos' : 'neg'}"><small>Resultado do período</small><b>${R$(R.liquido)}</b><em>entrou − saiu</em></div><div class="card"><small>Movimentos</small><b>${R.qtd}</b><em>${D.cortado ? 'mostrando os 1.000 mais recentes' : ''}</em></div><div class="card" id="cSaldo"><small>Saldo no banco hoje</small><b>—</b></div>`;
+    $('limpaGrupo').style.display = grupo ? '' : 'none';
+    $('tGrupos').innerHTML = '<thead><tr><th>Tipo</th><th class="n">Qtd</th><th class="n">Entrou</th><th class="n">Saiu</th></tr></thead><tbody>' + G.grupos.map(g => `<tr class="g ${g.grupo === grupo ? 'on' : ''}" onclick="grupo='${esc(g.grupo).replace(/'/g, '&#39;')}';carregar()"><td>${esc(g.grupo)}</td><td class="n">${g.qtd}</td><td class="n ent">${g.entrou ? R$(g.entrou) : ''}</td><td class="n sai">${g.saiu ? R$(g.saiu) : ''}</td></tr>`).join('') + '</tbody>';
+    $('hLista').textContent = 'Movimentos' + (grupo ? ' — ' + grupo : '');
+    $('tLista').innerHTML = '<thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th class="n">Valor</th></tr></thead><tbody>' + D.linhas.map(x => `<tr><td>${dataBR(x.dia)}${x.em ? '<br><span style="color:var(--l3);font-size:11.5px">' + new Date(x.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</span>' : ''}</td><td><span class="tag">${esc(x.grupo)}</span></td><td>${esc(x.desc)}${x.cnpj ? '<br><span style="color:var(--l3);font-size:11.5px">CNPJ ' + x.cnpj + '</span>' : ''}</td><td class="n ${x.valor >= 0 ? 'ent' : 'sai'}">${x.valor >= 0 ? '+' : ''}${R$(x.valor)}</td></tr>`).join('') + '</tbody>';
+    fetch('/api/finance/saldo-atual').then(r => r.json()).then(s => { const el = $('cSaldo'); if (el && s.valor != null) el.innerHTML = `<small>Saldo no banco hoje</small><b>${R$(s.valor)}</b><em>${s.disponivel != null ? 'disponível ' + R$(s.disponivel) + ' + reservas ' + R$(s.reservas) : esc(s.fonte || '')}</em>`; }).catch(() => {});
+}
+async function atualizar() {
+    const b = $('btAtualizar'); b.disabled = true; b.innerHTML = '<i class="bi bi-hourglass-split"></i> Atualizando…';
+    await fetch('/api/finance/belvo/atualizar', { method: 'POST' }).catch(() => {});
+    for (let i = 0; i < 200; i++) { await new Promise(r => setTimeout(r, 2500)); const e = await fetch('/api/finance/belvo').then(x => x.json()).catch(() => null); if (e) { b.innerHTML = `<i class="bi bi-hourglass-split"></i> ${esc(e.etapa || 'Atualizando…')}`; if (!e.rodando) { if (e.erro) $('avisos').insertAdjacentHTML('afterbegin', `<div class="aviso">${esc(e.erro)}</div>`); break; } } }
+    b.disabled = false; b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar do banco'; carregar();
+}
+if (qs.get('de') && qs.get('ate')) { $('de').value = qs.get('de'); $('ate').value = qs.get('ate'); periodo('int'); } else periodo('u30');
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>
