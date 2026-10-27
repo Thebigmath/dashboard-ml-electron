@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.129",
+    "data": "2026-10-27",
+    "titulo": "Astra e Issacar funcionam em qualquer PC",
+    "texto": "- Astra, ranking do Issacar e saúde do Desenvolvedor agora acham suas pastas pela pasta do usuário de cada PC (antes o caminho tinha o nome do usuário do Windows do PC principal escrito, e em outro PC o app dizia que o Astra não foi encontrado). Neste PC nada muda. Se o Python do Astra não estiver no caminho padrão, o app usa o comando py do Windows."
+  },
+  {
     "versao": "1.9.128",
     "data": "2026-10-27",
     "titulo": "Seletor de modelos da IA e chave do Gemini por PC",
