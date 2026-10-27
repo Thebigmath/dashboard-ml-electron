@@ -71,6 +71,7 @@ app.get('/avisos', (req, res) => res.sendFile(path.join(__dirname, 'public/aviso
 app.get('/seven', (req, res) => res.sendFile(path.join(__dirname, 'public/seven.html')));
 app.get('/reputacao', (req, res) => res.sendFile(path.join(__dirname, 'public/reputacao.html')));
 app.get('/finance-saldo-mp', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_saldo_mp.html')));
+app.get('/finance-fluxo-caixa', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_fluxo_caixa.html')));
 app.get('/finance-contas-pagar', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_contas_pagar.html')));
 app.get('/finance-liberacoes', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_liberacoes.html')));
 app.get('/finance-conciliacao', (req, res) => res.sendFile(path.join(__dirname, 'public/finance_conciliacao.html')));

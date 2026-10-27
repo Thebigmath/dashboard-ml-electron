@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.130",
+    "data": "2026-10-27",
+    "titulo": "Fluxo de caixa no Finance",
+    "texto": "- Nova aba Finance → Fluxo de caixa: um calendário que mostra, dia a dia, o que ainda vai entrar (liberações do Mercado Pago) menos o que ainda vai sair (contas a pagar do Olist), a partir do saldo da conta do Mercado Pago. Mostra o saldo projetado de cada dia, o menor saldo do período e avisa quando ele fica negativo. Dá para ver 30, 60 ou 90 dias e clicar num dia para ver as contas dele.\n- O saldo do Mercado Pago vem sozinho onde o app consegue lê-lo (Cordeiro). Onde não consegue (Flavia), use o botão Informar saldo e digite o valor que aparece no Mercado Pago. O botão Atualizar dados lê de novo as contas a pagar do Olist e as liberações do Mercado Pago.\n- Atenção: o Mercado Pago só conhece as liberações das vendas já feitas (cerca de 3 semanas à frente). Depois dessa data o saldo projetado inclui só o que sai, sem as vendas futuras; a tela avisa e marca esses dias com borda tracejada. Não entram saques, impostos e despesas que não estão no Olist."
+  },
+  {
     "versao": "1.9.129",
     "data": "2026-10-27",
     "titulo": "Astra e Issacar funcionam em qualquer PC",

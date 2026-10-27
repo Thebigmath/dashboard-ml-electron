@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de caixa — Dashboard ML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        /* Fluxo de caixa (27/10/2026): calendario com o que entra (liberacoes do Mercado Pago) menos o que sai (contas a pagar do Olist), a partir do saldo do MP */
+        body { opacity:0; transition:opacity .38s cubic-bezier(.22,1,.36,1); }
+        body.page-ready { opacity:1; }
+        .fx, .modal-f { --verde:#2E9E5B; --verde-2:#258A4E; --verm:#D64545; --azul:#1F5FD1; --caixa:var(--s2);
+              --verde-f:#DDF3E6; --verde-t:#1E7A45; --verm-f:#FDE0DD; --verm-t:#B42318; --amarelo-f:#FCE9B8; --amarelo-t:#8A5A00;
+              padding:22px 32px 40px; width:100%; box-sizing:border-box; overflow-y:auto; height:100vh; }
+        [data-theme="dark"] .fx, [data-theme="dark"] .modal-f { --azul:#7FA8F5; --verde-f:rgba(60,200,120,.16); --verde-t:#5BD38D; --verm-f:rgba(255,80,70,.18); --verm-t:#FF8A80; --amarelo-f:rgba(255,190,60,.18); --amarelo-t:#FFC861; }
+        .topo { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+        .topo h1 { font-size:30px; font-weight:600; color:var(--l1); margin:0; letter-spacing:-.01em; }
+        .topo .dir { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .sel, .bt { height:42px; border-radius:999px; border:1px solid var(--sep); background:var(--s1); color:var(--l1); padding:0 16px; font-size:14.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+        .bt:hover, .sel:hover { background:var(--s2); }
+        .bt.verde { background:var(--verde); border-color:var(--verde); color:#fff; font-weight:600; } .bt.verde:hover { background:var(--verde-2); } .bt:disabled { opacity:.6; cursor:not-allowed; }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-bottom:14px; }
+        .card { background:var(--caixa); border:1px solid var(--sep); border-radius:14px; padding:14px 16px; }
+        .card small { display:block; color:var(--l2); font-size:12.5px; margin-bottom:4px; }
+        .card b { display:block; font-size:24px; color:var(--l1); font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+        .card em { display:block; font-style:normal; font-size:12px; color:var(--l3); margin-top:3px; }
+        .card.pos b { color:var(--verde-t); } .card.neg b { color:var(--verm-t); }
+        .aviso { border-radius:10px; padding:10px 14px; font-size:13.5px; margin-bottom:8px; background:var(--amarelo-f); color:var(--amarelo-t); line-height:1.5; }
+        .aviso > i { margin-right:8px; }
+        .aviso.verm { background:var(--verm-f); color:var(--verm-t); }
+        .aviso a { color:inherit; font-weight:600; text-decoration:underline; cursor:pointer; }
+        .cal-topo { display:flex; align-items:center; gap:10px; margin:18px 0 8px; }
+        .cal-topo h2 { font-size:21px; font-weight:600; color:var(--l1); margin:0; min-width:190px; }
+        .cal-topo .bt { height:36px; padding:0 12px; }
+        .legenda { margin-left:auto; display:flex; gap:14px; font-size:12.5px; color:var(--l2); flex-wrap:wrap; }
+        .legenda i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+        .grade { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; }
+        .sem { font-size:12px; color:var(--l3); text-align:center; padding:4px 0; text-transform:uppercase; letter-spacing:.04em; }
+        .dia { min-height:104px; border:1px solid var(--sep); border-radius:10px; padding:7px 8px; background:var(--s1); cursor:pointer; display:flex; flex-direction:column; gap:2px; font-size:12px; position:relative; transition:transform .12s; }
+        .dia:hover { transform:translateY(-1px); border-color:var(--azul); }
+        .dia.fora { opacity:.38; cursor:default; background:transparent; } .dia.fora:hover { transform:none; border-color:var(--sep); }
+        .dia.vazio { border:0; background:transparent; cursor:default; } .dia.vazio:hover { transform:none; }
+        .dia .n { font-size:13px; font-weight:600; color:var(--l1); display:flex; justify-content:space-between; }
+        .dia.hoje .n span:first-child { background:var(--azul); color:#fff; border-radius:999px; padding:0 7px; }
+        .dia .rec { color:var(--verde-t); font-variant-numeric:tabular-nums; } .dia .pag { color:var(--verm-t); font-variant-numeric:tabular-nums; }
+        .dia .liq { margin-top:auto; font-weight:600; font-variant-numeric:tabular-nums; color:var(--l1); }
+        .dia .sal { font-size:10.5px; color:var(--l3); font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .dia.p { background:linear-gradient(0deg,var(--verde-f),var(--s1)); } .dia.m { background:linear-gradient(0deg,var(--verm-f),var(--s1)); }
+        .dia.neg { border-color:var(--verm); box-shadow:inset 0 0 0 1px var(--verm); }
+        .dia.sel { outline:2px solid var(--azul); }
+        .dia.alem { border-style:dashed; }
+        .dia .qt { font-size:10.5px; color:var(--l3); }
+        .det { margin-top:16px; background:var(--caixa); border:1px solid var(--sep); border-radius:14px; padding:16px 18px; }
+        .det h3 { font-size:17px; margin:0 0 10px; color:var(--l1); }
+        .det .lin { display:flex; gap:22px; flex-wrap:wrap; margin-bottom:10px; font-size:14px; color:var(--l2); }
+        .det .lin b { color:var(--l1); font-variant-numeric:tabular-nums; margin-left:4px; }
+        .det table { width:100%; border-collapse:collapse; font-size:13.5px; }
+        .det th { text-align:left; font-weight:400; color:var(--l2); padding:6px 8px; border-bottom:1px solid var(--sep); } .det td { padding:7px 8px; border-bottom:1px solid var(--sep); color:var(--l1); }
+        .det td.n, .det th.n { text-align:right; font-variant-numeric:tabular-nums; }
+        .grafico { margin-top:16px; background:var(--caixa); border:1px solid var(--sep); border-radius:14px; padding:14px 18px 8px; }
+        .grafico h3 { font-size:15px; margin:0 0 6px; color:var(--l1); } .grafico svg { width:100%; height:auto; max-height:240px; display:block; }
+        .nota { margin-top:16px; font-size:12px; color:var(--l3); line-height:1.55; max-width:980px; }
+        .modal-f { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; } .modal-f.on { display:flex; }
+        .modal-c { background:var(--s1); border:1px solid var(--sep); border-radius:14px; padding:20px 22px; width:min(420px,92vw); }
+        .modal-c h3 { margin:0 0 6px; font-size:18px; color:var(--l1); } .modal-c p { font-size:13px; color:var(--l2); margin:0 0 12px; }
+        .modal-c input { width:100%; height:44px; border-radius:10px; border:1px solid var(--sep); background:var(--s2); color:var(--l1); padding:0 12px; font-size:17px; margin-bottom:12px; }
+        .modal-c .bts { display:flex; gap:8px; justify-content:flex-end; }
+        @media (max-width: 900px) { .fx { padding:18px 14px 40px; } .dia { min-height:74px; padding:4px; } .dia .qt, .dia .sal { display:none; } }
+    </style>
+<script src="/assets/js/shell.js"></script>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="aurora"><div class="aur-1"></div><div class="aur-2"></div><div class="aur-3"></div></div>
+<div class="d-flex"><main class="content"><div class="fx">
+    <div class="topo">
+        <h1>Fluxo de caixa</h1>
+        <div class="dir">
+            <select class="sel" id="selDias" onchange="dias=Number(this.value);carregar()">
+                <option value="30">Próximos 30 dias</option><option value="60" selected>Próximos 60 dias</option><option value="90">Próximos 90 dias</option>
+            </select>
+            <button class="bt" onclick="abrirSaldo()"><i class="bi bi-pencil-square"></i> Informar saldo</button>
+            <button class="bt verde" id="btAtualizar" onclick="atualizar()"><i class="bi bi-arrow-repeat"></i> Atualizar dados</button>
+        </div>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div id="avisos"></div>
+    <div class="cal-topo">
+        <button class="bt" onclick="mudarMes(-1)" aria-label="Mês anterior"><i class="bi bi-chevron-left"></i></button>
+        <h2 id="mesTit"></h2>
+        <button class="bt" onclick="mudarMes(1)" aria-label="Próximo mês"><i class="bi bi-chevron-right"></i></button>
+        <button class="bt" onclick="irHoje()">Hoje</button>
+        <span class="legenda"><span><i style="background:var(--verde-t)"></i>entra (liberação do MP)</span><span><i style="background:var(--verm-t)"></i>sai (contas a pagar)</span><span><i style="border:1px solid var(--verm)"></i>saldo negativo</span><span><i style="border:1px dashed var(--l3)"></i>depois da última liberação conhecida</span></span>
+    </div>
+    <div class="grade" id="grade"></div>
+    <div class="det" id="det" style="display:none"></div>
+    <div class="grafico"><h3>Saldo projetado dia a dia</h3><div id="graf"></div></div>
+    <div class="nota" id="nota"></div>
+</div></main></div>
+
+<div class="modal-f" id="mSaldo" onclick="if(event.target===this)fecharSaldo()">
+    <div class="modal-c">
+        <h3>Saldo da conta do Mercado Pago</h3>
+        <p id="mSaldoTxt">Quando o app não consegue ler o saldo sozinho, informe aqui o valor que aparece no Mercado Pago agora. Ele é o ponto de partida do fluxo.</p>
+        <input id="inSaldo" inputmode="decimal" placeholder="Ex.: 42.936,15" onkeydown="if(event.key==='Enter')salvarSaldo()">
+        <div class="bts"><button class="bt" id="btAuto" onclick="usarAuto()" style="display:none">Usar o saldo automático</button><button class="bt" onclick="fecharSaldo()">Cancelar</button><button class="bt verde" onclick="salvarSaldo()">Salvar</button></div>
+    </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const R$ = (v) => (v < 0 ? '−R$ ' : 'R$ ') + brl(Math.abs(v));
+const curto = (v) => { const a = Math.abs(v); return (v < 0 ? '−' : '') + (a >= 1000 ? (a / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mil' : Math.round(a).toLocaleString('pt-BR')); };
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const dataBR = (d) => d.split('-').reverse().join('/');
+const quando = (iso) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+let D = null, dias = 60, mes = null, escolhido = null, timer = null;
+const PD = {};   // dia -> registro
+
+async function carregar() {
+    $('cards').innerHTML = '<div class="card"><small>Carregando…</small></div>';
+    try { D = await fetch('/api/finance/fluxo-caixa?dias=' + dias).then(x => x.json()); } catch (e) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(e.message)}</div>`; return; }
+    if (D.erro) { $('cards').innerHTML = `<div class="aviso verm">Erro: ${esc(D.erro)}</div>`; return; }
+    for (const k in PD) delete PD[k]; D.dias.forEach(x => PD[x.dia] = x);
+    if (!mes) mes = D.hoje.slice(0, 7);
+    desenhar();
+}
+function desenhar() { cartoes(); avisos(); calendario(); grafico(); detalhe(); $('nota').innerHTML = 'O que entra = vendas do Mercado Livre que o Mercado Pago ainda vai liberar (valor líquido, já sem tarifa e frete), no dia da liberação. O que sai = contas a pagar em aberto do Olist, no vencimento; as atrasadas entram no dia de hoje. '
+    + 'Saldo projetado do dia = saldo de hoje + tudo que entra − tudo que sai até o fim do dia. Não entram: saques, impostos fora do Olist, despesas que não estão no Olist, antecipações e cobranças avulsas que o Mercado Pago desconta no dia.'; }
+
+function cartoes() {
+    const R = D.resumo, S = D.saldo_hoje, sem = S.valor == null;
+    const c = [];
+    c.push(`<div class="card ${sem ? '' : S.valor < 0 ? 'neg' : ''}"><small>Saldo na conta do Mercado Pago hoje</small><b>${sem ? '—' : R$(S.valor)}</b><em>${sem ? 'não lido: clique em "Informar saldo"' : esc(S.fonte) + (S.em ? ' · ' + quando(S.em) : '')}</em></div>`);
+    c.push(`<div class="card pos"><small>A receber até ${dataBR(D.ate)}</small><b>${R$(R.a_receber)}</b><em>liberações do Mercado Pago</em></div>`);
+    c.push(`<div class="card neg"><small>A pagar até ${dataBR(D.ate)}</small><b>${R$(R.a_pagar)}</b><em>${D.avisos.pagar_nao_lido ? 'contas ainda não lidas' : 'contas em aberto no Olist'}</em></div>`);
+    c.push(`<div class="card ${R.diferenca >= 0 ? 'pos' : 'neg'}"><small>Diferença (receber − pagar)</small><b>${R$(R.diferenca)}</b><em>${R.diferenca >= 0 ? 'entra mais do que sai' : 'sai mais do que entra'}</em></div>`);
+    const fim = R.saldo_final;
+    c.push(`<div class="card ${fim == null ? '' : fim >= 0 ? 'pos' : 'neg'}"><small>Saldo projetado em ${dataBR(D.ate)}</small><b>${fim == null ? '—' : R$(fim)}</b><em>${fim == null ? 'precisa do saldo de hoje' : (R.menor_saldo ? 'menor saldo: ' + R$(R.menor_saldo.saldo) + ' em ' + dataBR(R.menor_saldo.dia) : '')}</em></div>`);
+    $('cards').innerHTML = c.join('');
+}
+function avisos() {
+    const A = D.avisos, R = D.resumo, out = [];
+    if (R.primeiro_dia_negativo) out.push(`<div class="aviso verm"><i class="bi bi-exclamation-triangle-fill"></i> O saldo projetado fica <b>negativo em ${dataBR(R.primeiro_dia_negativo)}</b> (${R.dias_negativos} dia(s) no período). O menor saldo é ${R$(R.menor_saldo.saldo)} em ${dataBR(R.menor_saldo.dia)}.</div>`);
+    if (A.saldo_sem_leitura) out.push(`<div class="aviso"><i class="bi bi-wallet2"></i> O app não conseguiu ler o saldo do Mercado Pago${D.saldo_hoje.erro ? ' (' + esc(D.saldo_hoje.erro) + ')' : ''}. Informe o saldo para ver o saldo projetado. <a onclick="abrirSaldo()">Informar saldo</a></div>`);
+    if (A.pagar_nao_lido) out.push(`<div class="aviso"><i class="bi bi-receipt"></i> As contas a pagar do Olist ainda não foram lidas: o fluxo mostra só o que entra. <a onclick="atualizar()">Atualizar dados</a></div>`);
+    else if (A.pagar_incompleto) out.push(`<div class="aviso"><i class="bi bi-receipt"></i> As contas a pagar lidas vão só até ${dataBR(A.pagar_ate)}; depois disso o fluxo não mostra o que sai. <a onclick="atualizar()">Atualizar dados</a></div>`);
+    if (R.atrasadas) out.push(`<div class="aviso verm"><i class="bi bi-clock-history"></i> ${R.atrasadas} conta(s) atrasada(s), ${R$(R.valor_atrasadas)}, entram no dia de hoje.</div>`);
+    if (!A.receber_nao_lido && A.receber_ate && A.receber_ate < D.ate) out.push(`<div class="aviso"><i class="bi bi-info-circle"></i> O Mercado Pago só mostra as liberações das vendas já feitas, <b>até ${dataBR(A.receber_ate)}</b>. Depois dessa data o saldo projetado inclui só o que sai, sem as vendas que ainda vão acontecer (por isso ele cai).</div>`);
+    if (A.receber_nao_lido) out.push(`<div class="aviso"><i class="bi bi-calendar-check"></i> As liberações do Mercado Pago ainda não foram lidas. <a onclick="atualizar()">Atualizar dados</a></div>`);
+    const frescor = [A.receber_atualizado_em && 'liberações: ' + quando(A.receber_atualizado_em), A.pagar_atualizado_em && 'contas a pagar: ' + quando(A.pagar_atualizado_em)].filter(Boolean);
+    if (frescor.length) out.push(`<div style="font-size:12px;color:var(--l3);margin-bottom:4px">Última leitura — ${frescor.join(' · ')}</div>`);
+    $('avisos').innerHTML = out.join('');
+}
+function mudarMes(n) { const [a, m] = mes.split('-').map(Number); const d = new Date(Date.UTC(a, m - 1 + n, 1)); mes = d.toISOString().slice(0, 7); calendario(); }
+function irHoje() { mes = D.hoje.slice(0, 7); escolhido = D.hoje; calendario(); detalhe(); }
+function calendario() {
+    const [a, m] = mes.split('-').map(Number), ini = new Date(Date.UTC(a, m - 1, 1)), ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate();
+    $('mesTit').textContent = MESES[m - 1].charAt(0).toUpperCase() + MESES[m - 1].slice(1) + ' de ' + a;
+    let h = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map(s => `<div class="sem">${s}</div>`).join('');
+    for (let i = 0; i < ini.getUTCDay(); i++) h += '<div class="dia vazio"></div>';
+    for (let n = 1; n <= ultimo; n++) {
+        const d = `${mes}-${String(n).padStart(2, '0')}`, x = PD[d];
+        if (!x) { h += `<div class="dia fora"><div class="n"><span>${n}</span></div></div>`; continue; }
+        const cls = ['dia', x.liquido > 0 ? 'p' : x.liquido < 0 ? 'm' : '', d === D.hoje ? 'hoje' : '', D.avisos.receber_ate && d > D.avisos.receber_ate ? 'alem' : '', x.saldo != null && x.saldo < 0 ? 'neg' : '', d === escolhido ? 'sel' : ''].filter(Boolean).join(' ');
+        h += `<div class="${cls}" onclick="escolher('${d}')"><div class="n"><span>${n}</span></div>`
+            + (x.receber ? `<div class="rec">+ ${curto(x.receber)}</div>` : '') + (x.pagar ? `<div class="pag">− ${curto(x.pagar)}</div>` : '')
+            + ((x.receber || x.pagar) ? `<div class="liq">${x.liquido >= 0 ? '+' : ''}${curto(x.liquido)}</div>` : '')
+            + (x.saldo != null ? `<div class="sal">saldo ${curto(x.saldo)}</div>` : '') + '</div>';
+    }
+    $('grade').innerHTML = h;
+}
+function escolher(d) { escolhido = d; calendario(); detalhe(); }
+function detalhe() {
+    const el = $('det'), x = escolhido && PD[escolhido];
+    if (!x) { el.style.display = 'none'; return; }
+    const [a, m, n] = x.dia.split('-').map(Number), sem = SEMANA[new Date(Date.UTC(a, m - 1, n)).getUTCDay()];
+    let h = `<h3>${sem.charAt(0).toUpperCase() + sem.slice(1)}, ${dataBR(x.dia)}${x.dia === D.hoje ? ' · hoje' : ''}</h3><div class="lin">`
+        + `<span>Entra<b style="color:var(--verde-t)">${R$(x.receber)}</b></span><span>Sai<b style="color:var(--verm-t)">${R$(x.pagar)}</b></span><span>Diferença do dia<b>${R$(x.liquido)}</b></span>`
+        + (x.saldo != null ? `<span>Saldo projetado no fim do dia<b style="color:${x.saldo < 0 ? 'var(--verm-t)' : 'var(--l1)'}">${R$(x.saldo)}</b></span>` : '') + '</div>';
+    if (D.avisos.receber_ate && x.dia > D.avisos.receber_ate) h += `<div style="font-size:12.5px;color:var(--amarelo-t);margin-bottom:6px">Dia depois da última liberação conhecida (${dataBR(D.avisos.receber_ate)}): ainda não há vendas feitas com liberação neste dia.</div>`;
+    h += `<div style="font-size:13.5px;color:var(--l2);margin-bottom:8px">${x.qtd_receber ? `${x.qtd_receber} venda(s) com liberação do Mercado Pago neste dia.` : 'Nenhuma liberação do Mercado Pago neste dia.'}</div>`;
+    if (x.itens_pagar.length) h += '<table><thead><tr><th>Fornecedor</th><th>Documento</th><th>Histórico</th><th>Vencimento</th><th class="n">Valor</th></tr></thead><tbody>'
+        + x.itens_pagar.map(i => `<tr><td>${esc(i.fornecedor)}</td><td>${esc(i.documento)}</td><td style="color:var(--l2)">${esc((i.historico || '').slice(0, 70))}</td><td>${dataBR(i.vencimento)}${i.atrasada ? ' <span style="color:var(--verm-t)">(atrasada)</span>' : ''}</td><td class="n">${R$(i.valor)}</td></tr>`).join('') + '</tbody></table>';
+    else h += '<div style="font-size:13.5px;color:var(--l2)">Nenhuma conta a pagar neste dia.</div>';
+    el.innerHTML = h; el.style.display = '';
+}
+function grafico() {
+    const L = D.dias.filter(x => x.saldo != null);
+    if (!L.length) { $('graf').innerHTML = '<div style="font-size:13px;color:var(--l3);padding:20px 0">Informe o saldo do Mercado Pago para ver o saldo projetado.</div>'; return; }
+    const W = 1000, H = 190, pad = 8, v = L.map(x => x.saldo), mn = Math.min(0, ...v), mx = Math.max(0, ...v), esp = (mx - mn) || 1;
+    const X = (i) => pad + i * (W - 2 * pad) / Math.max(1, L.length - 1), Y = (s) => pad + (mx - s) * (H - 2 * pad - 14) / esp;
+    const pts = L.map((x, i) => `${X(i).toFixed(1)},${Y(x.saldo).toFixed(1)}`).join(' ');
+    const corpo = `M${X(0)},${Y(0)} ` + L.map((x, i) => `L${X(i).toFixed(1)},${Y(x.saldo).toFixed(1)}`).join(' ') + ` L${X(L.length - 1)},${Y(0)} Z`;
+    const marcas = [0, Math.floor(L.length / 2), L.length - 1].map(i => `<text x="${X(i)}" y="${H - 1}" font-size="11" fill="var(--l3)" text-anchor="${i === 0 ? 'start' : i === L.length - 1 ? 'end' : 'middle'}">${dataBR(L[i].dia).slice(0, 5)}</text>`).join('');
+    $('graf').innerHTML = `<svg viewBox="0 0 ${W} ${H}"><path d="${corpo}" fill="rgba(31,95,209,.13)"/><line x1="${pad}" x2="${W - pad}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--l3)" stroke-dasharray="4 4"/>`
+        + `<polyline points="${pts}" fill="none" stroke="#1F5FD1" stroke-width="2.4" vector-effect="non-scaling-stroke"/>${marcas}`
+        + `<text x="${W - pad}" y="${Y(0) - 4}" font-size="11" fill="var(--l3)" text-anchor="end">R$ 0</text></svg>`;
+}
+
+// ----- atualizar: contas a pagar do Olist (de 30 dias atras ate o fim do fluxo + 30) e liberacoes do Mercado Pago
+const somaDias = (n) => new Date(Date.now() - 3 * 3600000 + n * 86400000).toISOString().slice(0, 10);
+async function esperar(rota, rotulo) {
+    for (let i = 0; i < 400; i++) {
+        const e = await fetch(rota).then(x => x.json()).catch(() => null);
+        if (!e) return { erro: 'sem resposta' };
+        if (!e.rodando) return e;
+        $('btAtualizar').innerHTML = `<i class="bi bi-hourglass-split"></i> ${rotulo}${e.total ? ' ' + e.feito + ' de ' + e.total : '…'}`;
+        await new Promise(r => setTimeout(r, 2000));
+    }
+    return { erro: 'demorou demais' };
+}
+async function atualizar() {
+    const b = $('btAtualizar'); b.disabled = true; const erros = [];
+    try {
+        b.innerHTML = '<i class="bi bi-hourglass-split"></i> Contas a pagar…';
+        const p = await fetch('/api/finance/contas-pagar/atualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: somaDias(-30), ate: somaDias(dias + 30) }) }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
+        if (p.ok === false) erros.push('Contas a pagar: ' + (p.erro || 'não foi possível atualizar')); else { const e = await esperar('/api/finance/contas-pagar/estado', 'Contas a pagar'); if (e.erro) erros.push('Contas a pagar: ' + e.erro); }
+        b.innerHTML = '<i class="bi bi-hourglass-split"></i> Liberações do MP…';
+        const l = await fetch('/api/finance/liberacoes/atualizar', { method: 'POST' }).then(x => x.json()).catch(e => ({ ok: false, erro: e.message }));
+        if (l.ok === false) erros.push('Liberações: ' + (l.erro || 'não foi possível atualizar')); else { const e = await esperar('/api/finance/liberacoes/estado', 'Liberações'); if (e.erro) erros.push('Liberações: ' + e.erro); }
+    } finally { b.disabled = false; b.innerHTML = '<i class="bi bi-arrow-repeat"></i> Atualizar dados'; }
+    await carregar();
+    if (erros.length) $('avisos').insertAdjacentHTML('afterbegin', `<div class="aviso verm"><i class="bi bi-exclamation-octagon"></i> ${erros.map(esc).join(' · ')}</div>`);
+}
+// ----- saldo informado
+function abrirSaldo() {
+    const S = D && D.saldo_hoje; $('inSaldo').value = S && S.valor != null && !S.automatico ? brl(S.valor) : '';
+    $('btAuto').style.display = S && !S.automatico && S.valor != null ? '' : 'none';
+    $('mSaldoTxt').textContent = S && S.automatico ? 'O app já lê o saldo sozinho (' + S.fonte + '). Se quiser, informe outro valor: o mais recente vale.' : 'Quando o app não consegue ler o saldo sozinho, informe aqui o valor que aparece no Mercado Pago agora. Ele é o ponto de partida do fluxo.';
+    $('mSaldo').classList.add('on'); setTimeout(() => $('inSaldo').focus(), 50);
+}
+function fecharSaldo() { $('mSaldo').classList.remove('on'); }
+async function salvarSaldo() {
+    const r = await fetch('/api/finance/fluxo-caixa/saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: $('inSaldo').value }) }).then(x => x.json()).catch(e => ({ erro: e.message }));
+    if (r.erro) { alert(r.erro); return; }
+    fecharSaldo(); carregar();
+}
+async function usarAuto() { await fetch('/api/finance/fluxo-caixa/saldo', { method: 'DELETE' }).catch(() => {}); fecharSaldo(); carregar(); }
+
+(async () => { await carregar(); escolhido = D && D.hoje; if (D && !D.erro) { calendario(); detalhe(); } })();
+document.body.classList.add('page-ready');
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>
