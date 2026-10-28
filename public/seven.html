@@ -1616,11 +1616,11 @@ async function clAdicionar() {
     const t = $('clEntrada').value.trim(); if (!t) return;
     $('clBtnAdd').disabled = true;
     try { clDados = await api('/api/seven/clonagem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: t }) }); $('clEntrada').value = ''; clDesenhar(); }
-    catch (e) { alert('Não deu para colocar na fila: ' + e.message); }
+    catch (e) { await svAviso('Não deu para colocar na fila: ' + e.message); }
     finally { $('clBtnAdd').disabled = false; }
 }
 async function clRemover(mlb) {
-    if (!confirm('Tirar ' + mlb + ' da fila?')) return;
+    if (!(await svConfirmar('Tirar ' + mlb + ' da fila?', 'Tirar'))) return;
     clDados = await api('/api/seven/clonagem/' + mlb, { method: 'DELETE' }); clDesenhar();
 }
 function clEditar(mlb) {
@@ -1702,26 +1702,47 @@ function clCompatGerar() {
     $('clDesc').value = clCompatAplicar($('clDesc').value, bloco);
     msg.style.color = '#30D158'; msg.textContent = bloco.split('\n').filter(l => l.startsWith('•')).length + ' linhas na descrição. Confira e clique em Salvar e validar.';
 }
+// ---- Confirmação e aviso DENTRO da página (clonagem): o confirm()/alert() nativo do Electron no Windows deixa os campos de texto sem responder ao teclado depois de alguns usos ----
+function svDialogo(msg, botoes) {
+    return new Promise((resolve) => {
+        const f = document.createElement('div');
+        f.className = 'pc-fundo on'; f.style.zIndex = 10000;
+        f.innerHTML = `<div class="pc cl-form" style="max-width:480px"><div style="white-space:pre-wrap;font-size:14px;line-height:1.45;color:var(--l1)"></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"></div></div>`;
+        f.firstChild.firstChild.textContent = msg;
+        const fim = (v) => { document.removeEventListener('keydown', tecla, true); f.remove(); resolve(v); };
+        const tecla = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); fim(false); } };
+        let primeiro = null;
+        botoes.forEach((b) => {
+            const el = document.createElement('button'); el.type = 'button'; el.className = 'btn-acao'; el.textContent = b.rotulo;
+            if (b.cor) { el.style.borderColor = b.cor; el.style.color = b.cor; }
+            el.onclick = () => fim(b.valor); f.firstChild.lastChild.appendChild(el); primeiro = el;
+        });
+        document.addEventListener('keydown', tecla, true);
+        document.body.appendChild(f); primeiro.focus();
+    });
+}
+const svConfirmar = (msg, ok) => svDialogo(msg, [{ rotulo: 'Cancelar', valor: false }, { rotulo: ok || 'Confirmar', valor: true, cor: '#30D158' }]);
+const svAviso = (msg) => svDialogo(msg, [{ rotulo: 'OK', valor: true, cor: '#0A84FF' }]);
 function clFechar() { $('clFundo').classList.remove('on'); }
 async function clSalvar(mlb) {
     const corpo = { titulo: $('clTitulo').value, preco: $('clPreco').value, estoque: $('clEstoque').value, sku: $('clSku').value, tipo: $('clTipo').value, descricao: $('clDesc').value, destino: $('clDestino').value };
     try {
         await api('/api/seven/clonagem/' + mlb + '/editar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
         clFechar(); await clCarregar(); await clValidar(mlb);
-    } catch (e) { alert('Erro ao salvar: ' + e.message); }
+    } catch (e) { await svAviso('Erro ao salvar: ' + e.message); }
 }
 async function clValidar(mlb, btn) {
     if (btn) { btn.disabled = true; btn.textContent = 'Validando…'; }
     try { await api('/api/seven/clonagem/' + mlb + '/validar', { method: 'POST' }); }
-    catch (e) { alert('Erro ao validar: ' + e.message); }
+    catch (e) { await svAviso('Erro ao validar: ' + e.message); }
     await clCarregar();
 }
 async function clClonar(mlb, btn) {
     const r = clDados.fila.find(x => x.mlb === mlb), e = r.edicao;
-    if (!confirm(`Criar o anúncio novo na ${e.destino === 'outra' ? clDados.outra_conta : clDados.esta_conta}?\n\n${e.titulo}\n${epBRL(e.preco)} · ${e.estoque} un · SKU ${e.sku || '—'}\n\nIsso publica um anúncio novo de verdade no Mercado Livre.`)) return;
+    if (!(await svConfirmar(`Criar o anúncio novo na ${e.destino === 'outra' ? clDados.outra_conta : clDados.esta_conta}?\n\n${e.titulo}\n${epBRL(e.preco)} · ${e.estoque} un · SKU ${e.sku || '—'}\n\nIsso publica um anúncio novo de verdade no Mercado Livre.`, 'Criar anúncio'))) return;
     btn.disabled = true; btn.textContent = 'Clonando…';
-    try { const x = await api('/api/seven/clonagem/' + mlb + '/clonar', { method: 'POST' }); if (x.status !== 'clonado') alert('O Mercado Livre recusou: ' + (x.validacao?.erro || 'erro')); }
-    catch (e) { alert('Erro ao clonar: ' + e.message); }
+    try { const x = await api('/api/seven/clonagem/' + mlb + '/clonar', { method: 'POST' }); if (x.status !== 'clonado') await svAviso('O Mercado Livre recusou: ' + (x.validacao?.erro || 'erro')); }
+    catch (e) { await svAviso('Erro ao clonar: ' + e.message); }
     await clCarregar();
 }
 

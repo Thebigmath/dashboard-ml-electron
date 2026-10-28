@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.134",
+    "data": "2026-10-28",
+    "titulo": "Clonagem: campo SKU deixa de travar depois de várias clonagens",
+    "texto": "- Clonagem de anúncios: as perguntas e avisos (\"Criar o anúncio novo?\", \"Tirar da fila?\", erros ao salvar, validar e clonar) agora aparecem dentro da própria tela, no lugar dos diálogos nativos do Windows. Depois de algumas clonagens seguidas, os campos de texto (como o SKU) deixavam de receber o teclado; sem os diálogos nativos isso não acontece mais. Esc cancela e o foco já vem no botão."
+  },
+  {
     "versao": "1.9.133",
     "data": "2026-10-28",
     "titulo": "Clonagem: gerador de compatibilidade pelos anos; extrato do banco mais claro",
