@@ -308,6 +308,9 @@
         .cl-form textarea { min-height:180px; resize:vertical; }
         .cl-grade { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
         @media (max-width: 700px) { .cl-grade { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        .cl-compat { margin-top:12px; padding:10px 12px; border-radius:12px; border:1px solid var(--sep); background:var(--s2, var(--s1)); }
+        .cl-compat summary { cursor:pointer; font-size:13px; font-weight:600; color:var(--l1); }
+        .cl-comp-l { display:grid; grid-template-columns:minmax(0,1fr) 84px 84px 38px; gap:8px; margin-top:6px; align-items:center; }
         .vm-tab { width:100%; border-collapse:collapse; font-size:12.5px; }
         .vm-tab th { position:sticky; top:0; background:var(--s1); z-index:1; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--l3); padding:9px 8px; text-align:right; cursor:pointer; white-space:nowrap; border-bottom:1px solid var(--sep); }
         .vm-tab th:first-child, .vm-tab td:first-child, .vm-tab th:nth-child(2) { text-align:left; }
@@ -1631,9 +1634,73 @@ function clEditar(mlb) {
         <div><label>Estoque</label><input id="clEstoque" type="number" min="1" value="${e.estoque}"></div>
         <div><label>SKU</label><input id="clSku" value="${esc(e.sku)}"></div>
         <div><label>Tipo</label><select id="clTipo"><option value="gold_special"${e.tipo === 'gold_special' ? ' selected' : ''}>Clássico</option><option value="gold_pro"${e.tipo === 'gold_pro' ? ' selected' : ''}>Premium</option></select></div></div>
+      ${clCompatPainel(e.descricao)}
       <label>Descrição</label><textarea id="clDesc">${esc(e.descricao)}</textarea>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn-acao" onclick="clFechar()">Cancelar</button><button class="btn-acao" style="border-color:#0A84FF;color:#0A84FF" onclick="clSalvar('${mlb}')"><i class="bi bi-check-lg"></i> Salvar e validar</button></div>`;
     $('clFundo').classList.add('on');
+}
+// ---- Gerador da seção COMPATIBILIDADE da descrição (modelo + ano de/até): troca só essa seção, o resto do texto não muda ----
+const CL_SECAO = /^[A-ZÀ-Ý0-9 ]{4,}:\s*$/;   // título de seção da descrição (COMPATIBILIDADE:, FICHA TÉCNICA:...)
+function clCompatSecao(texto) {
+    const L = String(texto || '').replace(/\r\n/g, '\n').split('\n');
+    const ini = L.findIndex(l => /^COMPATIBILIDADE:\s*$/i.test(l.trim()));
+    let fim = -1;
+    if (ini >= 0) { fim = L.length; for (let i = ini + 1; i < L.length; i++) if (CL_SECAO.test(L[i].trim())) { fim = i; break; } }
+    return { L, ini, fim };
+}
+// lê a seção atual em linhas "modelo + ano"; null = tem linha em outro formato (não dá para ler com segurança)
+function clCompatLer(texto) {
+    const s = clCompatSecao(texto); if (s.ini < 0) return [];
+    const por = new Map();
+    for (const l of s.L.slice(s.ini + 1, s.fim)) {
+        const t = l.trim(); if (!t) continue;
+        const m = t.match(/^(?:[•\-–*]\s*)?(.+?)\s+((?:19|20)\d{2})$/); if (!m) return null;
+        const k = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!por.has(k)) por.set(k, { mod: m[1].trim().replace(/\s+/g, ' '), anos: new Set() });
+        por.get(k).anos.add(Number(m[2]));
+    }
+    const rows = [];
+    for (const { mod, anos } of por.values()) {
+        const a = [...anos].sort((x, y) => x - y); let de = a[0], ate = a[0];
+        for (let i = 1; i < a.length; i++) { if (a[i] === ate + 1) ate = a[i]; else { rows.push({ mod, de, ate }); de = ate = a[i]; } }
+        rows.push({ mod, de, ate });
+    }
+    return rows;
+}
+function clCompatMontar(rows) {
+    const blocos = [];
+    for (const r of rows) {
+        const mod = String(r.mod || '').trim().replace(/\s+/g, ' '), de = parseInt(r.de, 10), ate = parseInt(r.ate, 10) || de;
+        if (!mod || !de || de < 1950 || de > 2100 || ate < 1950 || ate > 2100) continue;
+        const a = Math.min(de, ate), b = Math.max(de, ate), l = [];
+        for (let y = a; y <= b; y++) l.push('• ' + mod + ' ' + y);
+        blocos.push(l.join('\n'));
+    }
+    return blocos.join('\n\n');
+}
+function clCompatAplicar(texto, bloco) {
+    const s = clCompatSecao(texto), L = s.L, novo = ['COMPATIBILIDADE:', '', ...bloco.split('\n'), ''];
+    if (s.ini >= 0) L.splice(s.ini, s.fim - s.ini, ...novo);
+    else { const f = L.findIndex(l => /^FICHA TÉCNICA:\s*$/i.test(l.trim())); if (f >= 0) L.splice(f, 0, ...novo); else L.push('', ...novo); }
+    return L.join('\n');
+}
+function clCompatLinha(r) {
+    return `<div class="cl-comp-l"><input class="cc-mod" placeholder="Modelo (ex.: Vw Polo)" value="${esc(r.mod)}"><input class="cc-de" type="number" min="1950" max="2100" placeholder="De" value="${r.de}"><input class="cc-ate" type="number" min="1950" max="2100" placeholder="Até" value="${r.ate}"><button type="button" class="ep-btn" title="Tirar este modelo" onclick="this.parentNode.remove()"><i class="bi bi-x-lg"></i></button></div>`;
+}
+function clCompatPainel(desc) {
+    const lidas = clCompatLer(desc), rows = lidas && lidas.length ? lidas : [{ mod: '', de: '', ate: '' }];
+    const ajuda = lidas === null ? 'A compatibilidade desta descrição está em outro formato. Monte abaixo e clique em Gerar: troca só a seção COMPATIBILIDADE.' : 'Escreva o modelo e o ano de/até. O robô troca só a seção COMPATIBILIDADE da descrição; o resto do texto não muda.';
+    return `<details class="cl-compat" open><summary><i class="bi bi-magic"></i> Gerar compatibilidade pelos anos</summary>
+      <div class="pia-fraco" style="margin-top:6px">${ajuda}</div>
+      <div id="clCompLinhas">${rows.map(clCompatLinha).join('')}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn-acao" onclick="$('clCompLinhas').insertAdjacentHTML('beforeend', clCompatLinha({ mod: '', de: '', ate: '' }))"><i class="bi bi-plus-lg"></i> Modelo</button><button type="button" class="btn-acao" style="border-color:#30D158;color:#30D158" onclick="clCompatGerar()"><i class="bi bi-check2"></i> Gerar</button><span id="clCompMsg" class="pia-fraco"></span></div></details>`;
+}
+function clCompatGerar() {
+    const rows = [...document.querySelectorAll('#clCompLinhas .cl-comp-l')].map(d => ({ mod: d.querySelector('.cc-mod').value, de: d.querySelector('.cc-de').value, ate: d.querySelector('.cc-ate').value }));
+    const bloco = clCompatMontar(rows), msg = $('clCompMsg');
+    if (!bloco) { msg.style.color = '#ff453a'; msg.textContent = 'Preencha ao menos um modelo com o ano (de 1950 a 2100).'; return; }
+    $('clDesc').value = clCompatAplicar($('clDesc').value, bloco);
+    msg.style.color = '#30D158'; msg.textContent = bloco.split('\n').filter(l => l.startsWith('•')).length + ' linhas na descrição. Confira e clique em Salvar e validar.';
 }
 function clFechar() { $('clFundo').classList.remove('on'); }
 async function clSalvar(mlb) {

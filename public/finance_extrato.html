@@ -99,14 +99,17 @@ async function carregar() {
     desenhar(de, ate, G);
 }
 function desenhar(de, ate, G) {
+    clearTimeout(timer);
+    fetch('/api/finance/belvo').then(r => r.json()).then(e => { if (e.rodando) { $('avisos').insertAdjacentHTML('afterbegin', `<div class="aviso"><i class="bi bi-hourglass-split"></i> O app está lendo o extrato na Belvo agora: ${esc(e.etapa || '')}. A página atualiza sozinha.</div>`); timer = setTimeout(carregar, 5000); } }).catch(() => {});
     if (!D.lido) {
         $('avisos').innerHTML = '<div class="aviso"><i class="bi bi-bank"></i> O extrato ainda não foi lido. Conecte a Belvo no <a href="/finance-fluxo-caixa">Fluxo de caixa → Banco (Belvo)</a> e clique em "Atualizar do banco".</div>';
         $('cards').innerHTML = ''; $('tGrupos').innerHTML = ''; $('tLista').innerHTML = ''; return;
     }
-    $('avisos').innerHTML = `<div style="font-size:12px;color:var(--l3);margin-bottom:8px">Extrato lido em ${quando(D.atualizado_em)} · guardado desde ${dataBR(D.desde)}</div>` + (de < D.desde ? `<div class="aviso">O período pedido começa antes de ${dataBR(D.desde)}, que é o início do que o app guardou.</div>` : '');
+    $('avisos').innerHTML = (D.parcial ? '<div class="aviso">Leitura em andamento: mostrando só o que já foi lido (os totais ainda estão incompletos).</div>' : '') + `<div style="font-size:12px;color:var(--l3);margin-bottom:8px">Extrato lido em ${quando(D.atualizado_em)} · guardado desde ${dataBR(D.desde)}</div>` + (de < D.desde ? `<div class="aviso">O período pedido começa antes de ${dataBR(D.desde)}, que é o início do que o app guardou.</div>` : '');
     const R = D.resumo;
     $('cards').innerHTML = `<div class="card pos"><small>Entrou</small><b>${R$(R.entrou)}</b><em>${dataBR(de)} a ${dataBR(ate)}</em></div><div class="card neg"><small>Saiu</small><b>${R$(R.saiu)}</b><em>&nbsp;</em></div>`
-        + `<div class="card ${R.liquido >= 0 ? 'pos' : 'neg'}"><small>Resultado do período</small><b>${R$(R.liquido)}</b><em>entrou − saiu</em></div><div class="card"><small>Movimentos</small><b>${R.qtd}</b><em>${D.cortado ? 'mostrando os 1.000 mais recentes' : ''}</em></div><div class="card" id="cSaldo"><small>Saldo no banco hoje</small><b>—</b></div>`;
+        + `<div class="card ${R.liquido >= 0 ? 'pos' : 'neg'}"><small>Resultado do período</small><b>${R$(R.liquido)}</b><em>entrou − saiu${R.internas && R.internas.qtd ? ' (sem os movimentos internos)' : ''}</em></div><div class="card"><small>Movimentos</small><b>${R.qtd}</b><em>${D.cortado ? 'mostrando os 1.000 mais recentes' : ''}</em></div><div class="card" id="cSaldo"><small>Saldo no banco hoje</small><b>—</b></div>`;
+    if (R.internas && R.internas.qtd) $('avisos').insertAdjacentHTML('beforeend', `<div class="aviso"><i class="bi bi-arrow-left-right"></i> ${R.internas.qtd} movimento(s) interno(s) (reservas e transferências para a própria empresa) (saiu ${R$(R.internas.saiu)}, entrou ${R$(R.internas.entrou)}) ficam de fora dos totais: não são receita nem despesa.</div>`);
     $('limpaGrupo').style.display = grupo ? '' : 'none';
     $('tGrupos').innerHTML = '<thead><tr><th>Tipo</th><th class="n">Qtd</th><th class="n">Entrou</th><th class="n">Saiu</th></tr></thead><tbody>' + G.grupos.map(g => `<tr class="g ${g.grupo === grupo ? 'on' : ''}" onclick="grupo='${esc(g.grupo).replace(/'/g, '&#39;')}';carregar()"><td>${esc(g.grupo)}</td><td class="n">${g.qtd}</td><td class="n ent">${g.entrou ? R$(g.entrou) : ''}</td><td class="n sai">${g.saiu ? R$(g.saiu) : ''}</td></tr>`).join('') + '</tbody>';
     $('hLista').textContent = 'Movimentos' + (grupo ? ' — ' + grupo : '');

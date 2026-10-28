@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.133",
+    "data": "2026-10-28",
+    "titulo": "Clonagem: gerador de compatibilidade pelos anos; extrato do banco mais claro",
+    "texto": "- Clonagem de anúncios: na tela \"Editar antes de clonar\" há uma caixa nova, \"Gerar compatibilidade pelos anos\". Você escreve o modelo e o ano de/até (ex.: Vw Polo, 2017 a 2027), pode acrescentar outros modelos e clicar em Gerar: o robô troca só a seção COMPATIBILIDADE da descrição, com uma linha por ano, e o resto do texto fica como está. Ao abrir um anúncio, a caixa já vem preenchida com os modelos e anos que a descrição tem hoje.\n- Extrato do banco: a primeira leitura agora mostra o andamento e vai preenchendo a tela aos poucos (antes ficava em branco por alguns minutos). Pix para o próprio CNPJ e movimentos de reserva ficam fora dos totais, em um grupo separado, para não inflar entradas e saídas."
+  },
+  {
     "versao": "1.9.132",
     "data": "2026-10-27",
     "titulo": "Banco (Belvo) em todo o Finance: saldo, extrato e conferência de boletos",
