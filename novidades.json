@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.9.135",
+    "data": "2026-10-29",
+    "titulo": "Custos atualizados: retrovisores sem custo fechados",
+    "texto": "- Custos atualizados pelo Mercado Turbo (planilha de 29/10): 72 custos mudaram e 83 entraram novos. Os 12 SKUs de retrovisor que ainda estavam sem custo (Uno Mille/Fire, Kadett, Mobi, Ranger e seus pares) ganharam custo pela primeira vez — o valor do estoque no Full deixa de descontar essas unidades. Faltam só 2 SKUs sem custo no Full (TAP-250 e 580043866-importado)."
+  },
+  {
     "versao": "1.9.134",
     "data": "2026-10-28",
     "titulo": "Clonagem: campo SKU deixa de travar depois de várias clonagens",
